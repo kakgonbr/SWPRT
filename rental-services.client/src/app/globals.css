@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+@layer base {
+  :root {
+    --background: 20 14.3% 4.1%; /* Adjusted for a slightly warmer dark background */
+    --foreground: 0 0% 95%; /* Light Grey/White */
+
+    --card: 20 14.3% 5.1%; /* Slightly lighter than background */
+    --card-foreground: 0 0% 95%;
+
+    --popover: 20 14.3% 5.1%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 30 100% 55%; /* Deep Orange #FF851B */
+    --primary-foreground: 20 14.3% 4.1%; /* Dark color for contrast on orange */
+
+    --secondary: 20 14.3% 10%; /* Darker secondary */
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 20 14.3% 10%;
+    --muted-foreground: 0 0% 60%; /* Lighter muted foreground for dark theme */
+
+    --accent: 51 100% 50%; /* Gold #FFD700 */
+    --accent-foreground: 20 14.3% 4.1%; /* Dark color for contrast on gold */
+
+    --destructive: 0 72.2% 50.6%; /* Adjusted destructive for better visibility */
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 20 14.3% 15%; /* Darker border */
+    --input: 20 14.3% 15%; /* Darker input */
+    --ring: 30 100% 55%; /* Primary color for focus rings */
+
+    --radius: 0.5rem;
+
+    --chart-1: 30 100% 55%;
+    --chart-2: 51 100% 50%;
+    --chart-3: 197 37% 34%;
+    --chart-4: 43 74% 56%;
+    --chart-5: 27 87% 57%;
+
+    /* Sidebar variables, may not be used extensively if no persistent sidebar */
+    --sidebar-background: 20 14.3% 6%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 30 100% 55%;
+    --sidebar-primary-foreground: 20 14.3% 4.1%;
+    --sidebar-accent: 51 100% 50%;
+    --sidebar-accent-foreground: 20 14.3% 4.1%;
+    --sidebar-border: 20 14.3% 15%;
+    --sidebar-ring: 30 100% 55%;
+  }
+
+  .dark {
+    /* These values are now the default in :root. This block can be removed or used for specific overrides if needed. */
+    /* For consistency, if .dark class is explicitly used, it will ensure these values. */
+    --background: 0 0% 17%; /* Dark Grey #2B2B2B */
+    --foreground: 0 0% 95%; /* Light Grey/White */
+
+    --card: 0 0% 22%; 
+    --card-foreground: 0 0% 95%;
+
+    --popover: 0 0% 22%;
+    --popover-foreground: 0 0% 95%;
+
+    --primary: 30 100% 55%; /* Deep Orange #FF851B */
+    --primary-foreground: 0 0% 10%; 
+
+    --secondary: 0 0% 25%;
+    --secondary-foreground: 0 0% 95%;
+
+    --muted: 0 0% 25%;
+    --muted-foreground: 0 0% 60%;
+
+    --accent: 51 100% 50%; /* Gold #FFD700 */
+    --accent-foreground: 0 0% 10%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 30%;
+    --input: 0 0% 30%;
+    --ring: 30 100% 55%; /* Primary color for focus rings */
+
+    --chart-1: 30 100% 55%;
+    --chart-2: 51 100% 50%;
+    --chart-3: 197 37% 34%;
+    --chart-4: 43 74% 56%;
+    --chart-5: 27 87% 57%;
+
+    --sidebar-background: 0 0% 19%;
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 30 100% 55%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 51 100% 50%;
+    --sidebar-accent-foreground: 0 0% 10%;
+    --sidebar-border: 0 0% 30%;
+    --sidebar-ring: 30 100% 55%;
+  }
+    body {
+        @apply dark:bg-background dark:text-foreground;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+    }
+    main {
+        flex-grow: 1;
+    }
+}
+
+
+@layer utilities {
+    .border-border {
+        border-color: hsl(var(--border));
+    }
+}
+* {
+    @apply border-border;
+}
