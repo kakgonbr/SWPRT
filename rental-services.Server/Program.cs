@@ -3,6 +3,11 @@ namespace rental_services.Server
 {
     public class Program
     {
+        internal static bool DoSomething()
+        {
+            return true;
+        }
+
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
