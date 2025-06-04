@@ -1,32 +1,34 @@
 
 "use client";
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import ChatMessage from '@/components/chat/chat-message';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, Send, MessageSquare, CornerDownLeft, Bot, Users, X } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from '@/lib/types';
 import { aiChatSupport, type AiChatSupportInput, type AiChatSupportOutput } from '@/ai/flows/ai-chat-support';
+import { useChatWidget } from '@/contexts/chat-widget-context'; // Import useChatWidget
 
 type ChatMode = 'ai' | 'staff';
 
-interface ChatWidgetProps {
-  isOpen: boolean;
-  onClose: () => void;
-}
+// ChatWidgetProps interface is no longer needed as isOpen and onClose are removed
+// interface ChatWidgetProps {
+//   isOpen: boolean;
+//   onClose: () => void;
+// }
 
-export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
-  const [messages, setMessages] = useState<ChatMessageType[]>([
-    {
-      id: 'initial-ai',
-      text: "Hello! How can I help you with your motorbike rental today? You can also switch to chat with Staff Support using the tabs above the input.",
-      sender: 'ai',
-      timestamp: new Date(),
-    }
-  ]);
+export default function ChatWidget(/*{ isOpen, onClose }: ChatWidgetProps*/) {
+  const { 
+    isChatWidgetOpen, 
+    closeChatWidget, 
+    initialMessagesForWidget,
+    setInitialMessagesForWidget // To clear after consuming
+  } = useChatWidget();
+
+  const [messages, setMessages] = useState<ChatMessageType[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [chatMode, setChatMode] = useState<ChatMode>('ai');
@@ -38,19 +40,30 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
   useEffect(scrollToBottom, [messages]);
 
+  const resetToDefaultInitialMessage = useCallback(() => {
+    setMessages([
+      {
+        id: 'initial-ai',
+        text: "Hello! How can I help you with your motorbike rental today? You can also switch to chat with Staff Support using the tabs above the input.",
+        sender: 'ai',
+        timestamp: new Date(),
+      }
+    ]);
+  }, []);
+
   useEffect(() => {
-    // Reset to initial message if widget is closed and reopened, or mode changes significantly
-    if (isOpen && messages.length <= 1 && messages[0]?.id !== 'initial-ai') {
-        setMessages([
-            {
-              id: 'initial-ai',
-              text: "Hello! How can I help you with your motorbike rental today? You can also switch to chat with Staff Support using the tabs above the input.",
-              sender: 'ai',
-              timestamp: new Date(),
-            }
-          ]);
+    if (isChatWidgetOpen) {
+      if (initialMessagesForWidget && initialMessagesForWidget.length > 0) {
+        setMessages(initialMessagesForWidget);
+        setInitialMessagesForWidget([]); // Clear after consuming
+      } else if (messages.length === 0 || messages[0]?.id !== 'initial-ai') {
+        resetToDefaultInitialMessage();
+      }
+    } else {
+      // Optionally reset messages when widget is closed, or preserve state
+      // resetToDefaultInitialMessage(); // Uncomment to reset every time it's closed
     }
-  }, [isOpen]);
+  }, [isChatWidgetOpen, initialMessagesForWidget, setInitialMessagesForWidget, resetToDefaultInitialMessage, messages]);
 
 
   const handleSendMessage = async () => {
@@ -89,11 +102,11 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
         };
         setMessages(prev => [...prev, errorMessage]);
       }
-    } else { // chatMode === 'staff'
+    } else { 
       await new Promise(resolve => setTimeout(resolve, 500)); 
       const staffThinkingMessage: ChatMessageType = {
         id: `staff-typing-${Date.now()}`,
-        text: "Connecting you to staff support...",
+        text: "Staff member is typing...", // Or a more direct simulation of staff reply
         sender: 'system',
         timestamp: new Date(),
       };
@@ -105,7 +118,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
 
       const staffResponseMessage: ChatMessageType = {
         id: `staff-response-${Date.now()}`,
-        text: "Hello! This is VroomVroom.vn Staff Support. A real person will be with you shortly. In the meantime, please describe your issue.",
+        text: `This is a simulated staff reply to: "${currentInput.substring(0, 50)}..." \nActual staff replies would appear here.`,
         sender: 'staff',
         timestamp: new Date(),
       };
@@ -130,10 +143,15 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
       sender: 'system',
       timestamp: new Date(),
     };
-    setMessages(prev => [...prev, systemMessage]);
+    // Add system message only if there are other messages, or if it's not the very first initial state
+    if (messages.length > 0 && messages[0]?.id !== 'initial-ai') {
+       setMessages(prev => [...prev, systemMessage]);
+    } else if (messages.length === 0 && mode !== 'ai') { // If starting fresh and switching to staff
+       setMessages([systemMessage]);
+    }
   };
 
-  if (!isOpen) {
+  if (!isChatWidgetOpen) { // Use isChatWidgetOpen from context
     return null;
   }
 
@@ -144,7 +162,7 @@ export default function ChatWidget({ isOpen, onClose }: ChatWidgetProps) {
             <MessageSquare className="w-6 h-6 text-primary" />
             <CardTitle className="text-lg font-semibold">Support Chat</CardTitle>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose} className="h-7 w-7">
+        <Button variant="ghost" size="icon" onClick={closeChatWidget} className="h-7 w-7"> {/* Use closeChatWidget from context */}
           <X className="h-4 w-4" />
           <span className="sr-only">Close chat</span>
         </Button>

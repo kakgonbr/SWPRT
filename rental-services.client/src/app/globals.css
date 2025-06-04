@@ -101,23 +101,19 @@ body {
     --sidebar-border: 0 0% 30%;
     --sidebar-ring: 30 100% 55%;
   }
-    body {
-        @apply dark:bg-background dark:text-foreground;
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-    }
-    main {
-        flex-grow: 1;
-    }
 }
 
-
-@layer utilities {
-    .border-border {
-        border-color: hsl(var(--border));
-    }
-}
-* {
+@layer base {
+  * {
     @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  main {
+    flex-grow: 1;
+  }
 }

@@ -1,6 +1,6 @@
 {
   "node": {
-    "4037c22295ea10db31f15a86901f75050bf9d43962": {
+    "408a39d88915e5b6167f23d28b15b905426121517b": {
       "workers": {
         "app/page": {
           "moduleId": "[project]/.next-internal/server/app/page/actions.js { ACTIONS_MODULE0 => \"[project]/src/ai/flows/ai-chat-support.ts [app-rsc] (ecmascript)\" } [app-rsc] (server actions loader, ecmascript)",
@@ -13,5 +13,5 @@
     }
   },
   "edge": {},
-  "encryptionKey": "resOy4g+78UgNvb8hkhQ0wkwQ+JpHalbvAxUuFIC9pg="
+  "encryptionKey": "Xm8nFLgmP2H47irD8YsTN8VpPVoWpN0NLPqRiiPCNK8="
 }

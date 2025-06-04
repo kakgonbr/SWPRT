@@ -29,6 +29,7 @@ const navItems = [
   { href: '/admin/rentals/active', label: 'Active Rentals', icon: ListChecks },
   { href: '/admin/rentals/upcoming', label: 'Upcoming Rentals', icon: CalendarClock },
   { href: '/admin/users', label: 'User Management', icon: Users },
+  // { href: '/admin/support-messages', label: 'Support Messages', icon: MessagesSquare }, // Removed
 ];
 
 export default function AdminLayout({ children }: AdminLayoutProps) {

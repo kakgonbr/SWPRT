@@ -4,7 +4,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { CalendarClock, Users, Clock } from 'lucide-react';
+import { Button } from '@/components/ui/button'; // Added
+import { useToast } from '@/hooks/use-toast'; // Added
+import { CalendarClock, Users, Clock, CheckCircle } from 'lucide-react'; // Added CheckCircle
 import { MOCK_BIKES, MOCK_RENTALS, MOCK_USERS } from '@/lib/mock-data';
 import type { Bike, Rental, User as AppUser } from '@/lib/types';
 import { format } from 'date-fns';
@@ -15,19 +17,19 @@ interface EnrichedRental extends Rental {
 }
 
 export default function UpcomingRentalsPage() {
-  const [allRentals, setAllRentals] = useState<Rental[]>([]);
+  const [allRentalsData, setAllRentalsData] = useState<Rental[]>(MOCK_RENTALS); // Initialize with mock data
   const [allUsers, setAllUsers] = useState<AppUser[]>([]);
   const [bikes, setBikes] = useState<Bike[]>([]);
+  const { toast } = useToast(); // Added
 
   useEffect(() => {
-    // Simulate fetching data
+    // Simulate fetching data - MOCK_RENTALS is already in allRentalsData
     setBikes(MOCK_BIKES);
-    setAllRentals(MOCK_RENTALS);
     setAllUsers(MOCK_USERS);
   }, []);
 
   const upcomingAppointments: EnrichedRental[] = useMemo(() => {
-    return allRentals
+    return allRentalsData // Use allRentalsData
       .filter(r => r.status === 'Upcoming')
       .map(r => ({
         ...r,
@@ -35,7 +37,20 @@ export default function UpcomingRentalsPage() {
         bikeName: bikes.find(b => b.id === r.bikeId)?.name || r.bikeName || 'Unknown Bike',
       }))
       .sort((a,b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
-  }, [allRentals, allUsers, bikes]);
+  }, [allRentalsData, allUsers, bikes]);
+
+  const handleConfirmPickup = (rentalId: string) => {
+    setAllRentalsData(prevRentals =>
+      prevRentals.map(r =>
+        r.id === rentalId ? { ...r, status: 'Active' } : r
+      )
+    );
+    const confirmedRental = upcomingAppointments.find(r => r.id === rentalId);
+    toast({
+      title: "Pickup Confirmed",
+      description: `${confirmedRental?.bikeName || 'Bike'} pickup by ${confirmedRental?.renterName || 'user'} confirmed. Status set to Active.`,
+    });
+  };
 
   return (
     <Card className="shadow-lg">
@@ -44,7 +59,7 @@ export default function UpcomingRentalsPage() {
           <CardTitle className="text-2xl font-semibold flex items-center">
             <CalendarClock className="h-7 w-7 mr-2 text-primary" />Upcoming Rental Appointments
           </CardTitle>
-          <CardDescription>View future rental bookings and prepare accordingly.</CardDescription>
+          <CardDescription>View future rental bookings and prepare accordingly. Confirm pickup to move to active rentals.</CardDescription>
         </div>
         <Badge variant="outline">{upcomingAppointments.length} Upcoming</Badge>
       </CardHeader>
@@ -61,6 +76,17 @@ export default function UpcomingRentalsPage() {
                   <Clock className="w-4 h-4 mr-1.5"/> Period: {format(new Date(rental.startDate), "PPP")} - {format(new Date(rental.endDate), "PPP")}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">Rental ID: {rental.id}</p>
+                {rental.status === 'Upcoming' && (
+                  <Button 
+                    onClick={() => handleConfirmPickup(rental.id)} 
+                    size="sm" 
+                    variant="outline" 
+                    className="mt-3 w-full sm:w-auto"
+                  >
+                    <CheckCircle className="w-4 h-4 mr-2" />
+                    Confirm Bike Pickup
+                  </Button>
+                )}
               </div>
             ))}
           </div>
@@ -73,4 +99,3 @@ export default function UpcomingRentalsPage() {
     </Card>
   );
 }
-

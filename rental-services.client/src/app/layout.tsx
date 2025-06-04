@@ -5,8 +5,9 @@ import type { Metadata } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/contexts/auth-context';
+import { ChatWidgetProvider } from '@/contexts/chat-widget-context'; // Import the new provider
 import { Toaster } from '@/components/ui/toaster';
-import React, { useState, useEffect } from 'react'; 
+import React from 'react'; 
 import Header from '@/components/layout/header';
 import Footer from '@/components/layout/footer';
 import ChatWidget from '@/components/chat/chat-widget';
@@ -32,11 +33,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [isChatWidgetOpen, setIsChatWidgetOpen] = useState(false);
-
-  const toggleChatWidget = () => {
-    setIsChatWidgetOpen(prev => !prev);
-  };
+  // Chat widget state is now managed by ChatWidgetProvider
 
   return (
     <html lang="en" className="dark" suppressHydrationWarning={true}>
@@ -45,13 +42,15 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}
       >
         <AuthProvider>
-          <Header toggleChatWidget={toggleChatWidget} />
-          <main className="flex-grow container mx-auto px-4 py-8">
-            {children}
-          </main>
-          <Footer />
-          <ChatWidget isOpen={isChatWidgetOpen} onClose={() => setIsChatWidgetOpen(false)} />
-          <Toaster />
+          <ChatWidgetProvider> {/* Wrap with ChatWidgetProvider */}
+            <Header /> {/* Header no longer needs toggleChatWidget prop */}
+            <main className="flex-grow container mx-auto px-4 py-8">
+              {children}
+            </main>
+            <Footer />
+            <ChatWidget /> {/* ChatWidget no longer needs isOpen or onClose props */}
+            <Toaster />
+          </ChatWidgetProvider>
         </AuthProvider>
       </body>
     </html>

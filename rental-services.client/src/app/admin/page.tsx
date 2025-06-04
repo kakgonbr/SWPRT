@@ -1,16 +1,16 @@
 
 "use client";
 
-import { ShieldAlert, Users as UsersIconLucide, UserPlus, ArrowRight, Bike as BikeIcon, ListChecks, CalendarClock, Eye, TrendingUp, Repeat, ShoppingBag, BarChartHorizontal } from 'lucide-react';
+import { ShieldAlert, Users as UsersIconLucide, UserPlus, ArrowRight, Bike as BikeIcon, ListChecks, CalendarClock, Eye, TrendingUp, Repeat, ShoppingBag, BarChartHorizontal, Activity, MessageSquare } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { MOCK_USERS, MOCK_BIKES, MOCK_RENTALS } from '@/lib/mock-data';
 import { useMemo } from 'react';
-import { startOfMonth, endOfMonth, startOfQuarter, endOfQuarter, startOfYear, endOfYear, isWithinInterval, subMonths, addMonths, format as formatDateFns } from 'date-fns';
+import { startOfMonth, endOfMonth, isWithinInterval, subMonths, addMonths, format as formatDateFns, startOfQuarter, endOfQuarter, startOfYear, endOfYear } from 'date-fns';
 import type { User } from '@/lib/types';
 
-import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, ResponsiveContainer, Line, LineChart } from 'recharts';
 import {
   ChartContainer,
   ChartTooltip,
@@ -52,6 +52,30 @@ export default function AdminOverviewPage() {
   const totalUsers = useMemo(() => MOCK_USERS.length, []);
   const totalBikes = useMemo(() => MOCK_BIKES.length, []);
   
+  const userStats = useMemo(() => {
+    const now = new Date();
+    const currentMonthStart = startOfMonth(now);
+    const currentMonthEnd = endOfMonth(now);
+    const currentQuarterStart = startOfQuarter(now);
+    const currentQuarterEnd = endOfQuarter(now);
+    const currentYearStart = startOfYear(now);
+    const currentYearEnd = endOfYear(now);
+
+    const newThisMonth = MOCK_USERS.filter(user => 
+      isWithinInterval(new Date(user.createdAt), { start: currentMonthStart, end: currentMonthEnd })
+    ).length;
+
+    const newThisQuarter = MOCK_USERS.filter(user => 
+      isWithinInterval(new Date(user.createdAt), { start: currentQuarterStart, end: currentQuarterEnd })
+    ).length;
+
+    const newThisYear = MOCK_USERS.filter(user =>
+      isWithinInterval(new Date(user.createdAt), { start: currentYearStart, end: currentYearEnd })
+    ).length;
+    
+    return { newThisMonth, newThisQuarter, newThisYear };
+  }, []);
+
   const rentalStats = useMemo(() => {
     const active = MOCK_RENTALS.filter(r => r.status === 'Active').length;
     const upcoming = MOCK_RENTALS.filter(r => r.status === 'Upcoming').length;
@@ -74,12 +98,10 @@ export default function AdminOverviewPage() {
 
   const monthlyUserSignupsChartData = useMemo(() => {
     const now = new Date();
-    // Go back 11 months to get the start of the 12-month period
     const firstMonthOfPeriod = startOfMonth(subMonths(now, 11)); 
   
     const counts: { [key: string]: number } = {};
   
-    // Initialize counts for the last 12 months
     for (let i = 0; i < 12; i++) {
       const monthDate = addMonths(firstMonthOfPeriod, i);
       const monthKey = formatDateFns(monthDate, 'yyyy-MM');
@@ -88,7 +110,6 @@ export default function AdminOverviewPage() {
   
     MOCK_USERS.forEach(user => {
       const signupDate = new Date(user.createdAt);
-      // Ensure the user was created within the 12-month window
       if (signupDate >= firstMonthOfPeriod && signupDate <= endOfMonth(now)) {
         const monthKey = formatDateFns(signupDate, 'yyyy-MM');
         if (counts[monthKey] !== undefined) {
@@ -97,14 +118,12 @@ export default function AdminOverviewPage() {
       }
     });
     
-    const chartData = Object.keys(counts)
-      .sort() // Sort keys to ensure months are in chronological order
+    return Object.keys(counts)
+      .sort()
       .map(monthKey => ({
-        month: formatDateFns(new Date(monthKey + '-01T00:00:00'), 'MMM yy'), // Add time to avoid timezone issues with just yyyy-MM
+        month: formatDateFns(new Date(monthKey + '-01T00:00:00'), 'MMM yy'),
         newUsers: counts[monthKey],
       }));
-      
-    return chartData;
   }, []);
 
   const userChartConfig = {
@@ -114,51 +133,53 @@ export default function AdminOverviewPage() {
     },
   } satisfies ChartConfig;
 
+  const monthlyRentalTrendsChartData = useMemo(() => {
+    const now = new Date();
+    const firstMonthOfPeriod = startOfMonth(subMonths(now, 11));
+    const counts: { [key: string]: number } = {};
+
+    for (let i = 0; i < 12; i++) {
+      const monthDate = addMonths(firstMonthOfPeriod, i);
+      const monthKey = formatDateFns(monthDate, 'yyyy-MM');
+      counts[monthKey] = 0;
+    }
+
+    MOCK_RENTALS.forEach(rental => {
+      const rentalStartDate = new Date(rental.startDate);
+      // Check if the rental's start date falls within the 12-month window
+      if (rentalStartDate >= firstMonthOfPeriod && rentalStartDate <= endOfMonth(now)) {
+        const monthKey = formatDateFns(rentalStartDate, 'yyyy-MM');
+        if (counts[monthKey] !== undefined) {
+          counts[monthKey]++;
+        }
+      }
+    });
+
+    return Object.keys(counts)
+      .sort()
+      .map(monthKey => ({
+        month: formatDateFns(new Date(monthKey + '-01T00:00:00'), 'MMM yy'),
+        totalRentals: counts[monthKey],
+      }));
+  }, []);
+
+  const rentalChartConfig = {
+    totalRentals: {
+      label: "Total Rentals",
+      color: "hsl(var(--chart-2))",
+    },
+  } satisfies ChartConfig;
+
 
   const metricCards: MetricCardProps[] = [
     { title: "Total Registered Users", value: totalUsers, icon: UsersIconLucide, description: "All-time user count", link: "/admin/users", linkText: "Manage Users"},
+    { title: "New Users (This Month)", value: userStats.newThisMonth, icon: UserPlus, description: "Signed up this month" },
+    { title: "New Users (This Quarter)", value: userStats.newThisQuarter, icon: UserPlus, description: "Signed up this quarter" },
+    { title: "New Users (This Year)", value: userStats.newThisYear, icon: UserPlus, description: "Signed up this year" },
     { title: "Total Bikes", value: totalBikes, icon: BikeIcon, description: "Bikes in fleet", link: "/admin/fleet", linkText: "Manage Fleet" },
     { title: "Active Rentals", value: rentalStats.active, icon: ListChecks, description: "Currently rented out", link: "/admin/rentals/active", linkText: "View Active" },
     { title: "Upcoming Rentals", value: rentalStats.upcoming, icon: CalendarClock, description: "Future bookings", link: "/admin/rentals/upcoming", linkText: "View Upcoming" },
     { title: "Most Popular Bike", value: rentalStats.popularBikeName, icon: TrendingUp, description: "Based on rental count" },
-    { title: "Completed Rentals", value: rentalStats.completed, icon: Repeat, description: "Total past rentals" },
-    { title: "Total Bookings", value: MOCK_RENTALS.length, icon: ShoppingBag, description: "All-time rental bookings" },
-    { title: "Website Visits", value: "1,234", icon: Eye, description: "This month (placeholder)" },
-  ];
-
-  const navigationCardItems = [
-    {
-      title: "Fleet Management",
-      description: "View, add, edit, or remove bikes from the catalog.",
-      details: "Manage all motorbikes available for rent. Update details, availability, and pricing.",
-      href: "/admin/fleet",
-      linkText: "Fleet Management",
-      icon: BikeIcon,
-    },
-    {
-      title: "Active Rentals",
-      description: "Monitor bikes currently rented out to customers.",
-      details: "See which bikes are on the road, who rented them, and when they are due back.",
-      href: "/admin/rentals/active",
-      linkText: "Active Rentals",
-      icon: ListChecks,
-    },
-    {
-      title: "Upcoming Rentals",
-      description: "Track future rental bookings and prepare accordingly.",
-      details: "Stay ahead by viewing scheduled pickups and ensuring bike availability.",
-      href: "/admin/rentals/upcoming",
-      linkText: "Upcoming Rentals",
-      icon: CalendarClock,
-    },
-    {
-      title: "User Management",
-      description: "Manage user accounts, roles, and permissions.",
-      details: "View all registered users, modify their roles, or remove accounts as needed.",
-      href: "/admin/users",
-      linkText: "User Management",
-      icon: UsersIconLucide,
-    },
   ];
 
   return (
@@ -187,14 +208,13 @@ export default function AdminOverviewPage() {
         </div>
       </div>
 
-      <div className="mb-8">
-        <h2 className="text-2xl font-semibold mb-4 text-foreground/90 flex items-center">
-          <BarChartHorizontal className="w-6 h-6 mr-2 text-primary"/> User Registration Trends
-        </h2>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
         <Card className="shadow-md hover:shadow-lg transition-shadow">
           <CardHeader>
-            <CardTitle className="text-lg">New Users Over Last 12 Months</CardTitle>
-            <CardDescription>Monthly count of new user registrations.</CardDescription>
+            <CardTitle className="text-lg flex items-center">
+                <BarChartHorizontal className="w-5 h-5 mr-2 text-primary"/> User Registration Trends
+            </CardTitle>
+            <CardDescription>Monthly count of new user registrations for the last 12 months.</CardDescription>
           </CardHeader>
           <CardContent className="h-[350px] p-2 md:p-4">
             <ChartContainer config={userChartConfig} className="w-full h-full">
@@ -225,40 +245,46 @@ export default function AdminOverviewPage() {
             </ChartContainer>
           </CardContent>
         </Card>
+
+        <Card className="shadow-md hover:shadow-lg transition-shadow">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center">
+                 <Activity className="w-5 h-5 mr-2 text-primary"/> Rental Volume Trends
+            </CardTitle>
+            <CardDescription>Monthly count of total rentals started for the last 12 months.</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[350px] p-2 md:p-4">
+            <ChartContainer config={rentalChartConfig} className="w-full h-full">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyRentalTrendsChartData} margin={{ top: 5, right: 10, left: -10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis 
+                    dataKey="month" 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={8}
+                    fontSize={12}
+                  />
+                  <YAxis 
+                    tickLine={false} 
+                    axisLine={false} 
+                    tickMargin={8}
+                    fontSize={12}
+                    allowDecimals={false} 
+                  />
+                  <Tooltip
+                    cursor={{ fill: 'hsl(var(--muted))' }}
+                    content={<ChartTooltipContent indicator="dot" />}
+                  />
+                  <Bar dataKey="totalRentals" fill="var(--color-totalRentals)" radius={4} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
       </div>
       
-      <div>
-        <h2 className="text-2xl font-semibold mb-4 text-foreground/90">Management Sections</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
-          {navigationCardItems.map((item) => {
-            const IconComponent = item.icon;
-            return (
-              <Card key={item.title} className="hover:shadow-lg transition-shadow flex flex-col">
-                <CardHeader>
-                  <CardTitle className="flex items-center text-xl">
-                    <IconComponent className="w-6 h-6 mr-2 text-primary" />
-                    {item.title}
-                  </CardTitle>
-                  <CardDescription>{item.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="flex flex-col flex-grow p-6 pt-0">
-                  <p className="text-sm text-muted-foreground mb-4 flex-grow">
-                    {item.details}
-                  </p>
-                  <div className="mt-auto">
-                    <Button asChild variant="outline" className="w-full">
-                      <Link href={item.href} className="truncate">
-                        {item.linkText}
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Link>
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
+      {/* Management Sections removed */}
     </div>
   );
 }

@@ -2,9 +2,10 @@
 "use client";
 
 import Link from 'next/link';
-import { Bike, LogIn, LogOut, UserCircle, UserPlus, LayoutDashboard, MessageSquare, History, ShoppingCart, SettingsIcon } from 'lucide-react';
+import { Bike, LogIn, LogOut, UserCircle, UserPlus, LayoutDashboard, MessageSquare, History, ShoppingCart, SettingsIcon, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/auth-context';
+import { useChatWidget } from '@/contexts/chat-widget-context'; // Import useChatWidget
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,12 +16,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-interface HeaderProps {
-  toggleChatWidget: () => void;
-}
+// HeaderProps interface is no longer needed as toggleChatWidget is removed
+// interface HeaderProps {
+//   toggleChatWidget: () => void;
+// }
 
-export default function Header({ toggleChatWidget }: HeaderProps) {
+export default function Header(/*{ toggleChatWidget }: HeaderProps*/) {
   const { user, logout, isAuthenticated } = useAuth();
+  const { openChatWidget } = useChatWidget(); // Get openChatWidget from context
 
   const getInitials = (name: string) => {
     const names = name.split(' ');
@@ -41,7 +44,7 @@ export default function Header({ toggleChatWidget }: HeaderProps) {
           </Link>
           <Button
             variant="ghost"
-            onClick={toggleChatWidget}
+            onClick={() => openChatWidget()} // Use openChatWidget from context
             className="px-1 py-1 md:px-2 text-sm font-medium text-foreground/70 hover:text-primary hover:bg-transparent"
           >
             <MessageSquare className="h-5 w-5 md:mr-1.5"/>
@@ -82,10 +85,10 @@ export default function Header({ toggleChatWidget }: HeaderProps) {
                     </Link>
                   </DropdownMenuItem>
                 )}
-                 {user?.role === 'staff' && (
+                 {(user?.role === 'staff' || user?.role === 'admin') && ( 
                   <DropdownMenuItem asChild>
                     <Link href="/staff" className="flex items-center">
-                      <LayoutDashboard className="mr-2 h-4 w-4" />
+                      <UserCheck className="mr-2 h-4 w-4" /> 
                       Staff Panel
                     </Link>
                   </DropdownMenuItem>
