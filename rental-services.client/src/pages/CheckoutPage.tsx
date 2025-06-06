@@ -1,6 +1,6 @@
 // src/pages/CheckoutPage.tsx
-import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import {useState, useEffect} from 'react'
+import {useNavigate, useSearchParams, Link} from 'react-router-dom'
 import {
     ArrowLeft,
     Calendar,
@@ -17,28 +17,28 @@ import {
 
     Info
 } from 'lucide-react'
-import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
-import { Label } from '../components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
-import { Checkbox } from '../components/ui/checkbox'
-import { Separator } from '../components/ui/separator'
+import {Button} from '../components/ui/button'
+import {Input} from '../components/ui/input'
+import {Label} from '../components/ui/label'
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '../components/ui/card'
+import {Checkbox} from '../components/ui/checkbox'
+import {Separator} from '../components/ui/separator'
 //@ts-ignore
 
-import { Badge } from '../components/ui/badge'
-import { Calendar as CalendarComponent } from '../components/ui/calendar'
-import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover'
-import { useAuth } from '../contexts/auth-context'
-import { useToast } from '../hooks/use-toast'
-import { MOCK_BIKES, RENTAL_OPTIONS } from '../lib/mock-data'
-import { format, addDays, differenceInDays } from 'date-fns'
-import { cn } from '../lib/utils'
+import {Badge} from '../components/ui/badge'
+import {Calendar as CalendarComponent} from '../components/ui/calendar'
+import {Popover, PopoverContent, PopoverTrigger} from '../components/ui/popover'
+import {useAuth} from '../contexts/auth-context'
+import {useToast} from '../hooks/use-toast'
+import {MOCK_BIKES, RENTAL_OPTIONS} from '../lib/mock-data'
+import {format, addDays, differenceInDays} from 'date-fns'
+import {cn} from '../lib/utils'
 
 export default function CheckoutPage() {
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
-    const { user, isAuthenticated, loading } = useAuth()
-    const { toast } = useToast()
+    const {user, isAuthenticated, loading} = useAuth()
+    const {toast} = useToast()
 
     const bikeId = searchParams.get('bikeId')
     const bike = MOCK_BIKES.find(b => b.id === bikeId)
@@ -46,9 +46,17 @@ export default function CheckoutPage() {
     const [startDate, setStartDate] = useState<Date>()
     const [endDate, setEndDate] = useState<Date>()
     const [selectedOptions, setSelectedOptions] = useState(
-        RENTAL_OPTIONS.map(option => ({ ...option, selected: false }))
+        RENTAL_OPTIONS.map(option => ({...option, selected: false}))
     )
     const [isSubmitting, setIsSubmitting] = useState(false)
+
+    const [selectedLocation, setSelectedLocation] = useState<string>('')
+
+    const LOCATIONS = [
+        {id: "loc1", name: "Hanoi Downtown", address: "15 Tran Hung Dao St, Hoan Kiem"},
+        {id: "loc2", name: "Hanoi West", address: "88 Cau Giay St, Cau Giay"},
+        {id: "loc3", name: "Hanoi South", address: "102 Nguyen Van Cu St, Long Bien"},
+    ]
 
     useEffect(() => {
         if (loading) return
@@ -74,7 +82,7 @@ export default function CheckoutPage() {
         setSelectedOptions(prev =>
             prev.map(option =>
                 option.id === optionId
-                    ? { ...option, selected: !option.selected }
+                    ? {...option, selected: !option.selected}
                     : option
             )
         )
@@ -94,21 +102,29 @@ export default function CheckoutPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!startDate || !endDate || !bike || !user) return
+        if (!startDate || !endDate || !bike || !user || !selectedLocation) {
+            toast({
+                title: "Missing Information",
+                description: "Please select dates and a pickup location.",
+                variant: "destructive",
+            })
+            return
+        }
 
         setIsSubmitting(true)
 
         try {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 2000))
-            //@ts-ignore
             const selectedOptionNames = selectedOptions
                 .filter(option => option.selected)
                 .map(option => option.name)
 
+            const locationName = LOCATIONS.find(loc => loc.id === selectedLocation)?.name
+
             toast({
                 title: "Booking Confirmed!",
-                description: `Your rental for ${bike.name} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')}.`,
+                description: `Your rental for ${bike.name} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')} at ${locationName}.`,
             })
 
             navigate('/rentals')
@@ -143,7 +159,7 @@ export default function CheckoutPage() {
             {/* Back Button */}
             <Button variant="ghost" className="mb-6" asChild>
                 <Link to={`/bikes/${bike.id}`}>
-                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    <ArrowLeft className="w-4 h-4 mr-2"/>
                     Back to Bike Details
                 </Link>
             </Button>
@@ -172,7 +188,7 @@ export default function CheckoutPage() {
                                                     !startDate && "text-muted-foreground"
                                                 )}
                                             >
-                                                <Calendar className="mr-2 h-4 w-4" />
+                                                <Calendar className="mr-2 h-4 w-4"/>
                                                 {startDate ? format(startDate, "PPP") : "Pick a date"}
                                             </Button>
                                         </PopoverTrigger>
@@ -199,7 +215,7 @@ export default function CheckoutPage() {
                                                     !endDate && "text-muted-foreground"
                                                 )}
                                             >
-                                                <Calendar className="mr-2 h-4 w-4" />
+                                                <Calendar className="mr-2 h-4 w-4"/>
                                                 {endDate ? format(endDate, "PPP") : "Pick a date"}
                                             </Button>
                                         </PopoverTrigger>
@@ -219,12 +235,38 @@ export default function CheckoutPage() {
                             {days > 0 && (
                                 <div className="p-3 bg-muted rounded-lg">
                                     <p className="text-sm text-muted-foreground">
-                                        Rental duration: <span className="font-medium">{days} {days === 1 ? 'day' : 'days'}</span>
+                                        Rental duration: <span
+                                        className="font-medium">{days} {days === 1 ? 'day' : 'days'}</span>
                                     </p>
                                 </div>
                             )}
 
-                            <Separator />
+                            {/* Location Selection */}
+                            <div className="space-y-2 mt-4">
+                                <Label>Pickup Location</Label>
+                                <div className="space-y-3">
+                                    {LOCATIONS.filter(location =>
+                                        // This would ideally check which locations have this bike available
+                                        bike.availableLocations?.includes(location.id) || true
+                                    ).map((location) => (
+                                        <div key={location.id} className="flex items-center space-x-3">
+                                            <Checkbox
+                                                id={location.id}
+                                                checked={selectedLocation === location.id}
+                                                onCheckedChange={() => setSelectedLocation(location.id)}
+                                            />
+                                            <div className="flex-1">
+                                                <Label htmlFor={location.id} className="cursor-pointer font-medium">
+                                                    {location.name}
+                                                </Label>
+                                                <p className="text-xs text-muted-foreground">{location.address}</p>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+
+                            <Separator/>
 
                             {/* Rental Options */}
                             <div className="space-y-4">
@@ -319,13 +361,13 @@ export default function CheckoutPage() {
                                     <h3 className="font-semibold">{bike.name}</h3>
                                     <p className="text-sm text-muted-foreground">{bike.type}</p>
                                     <div className="flex items-center mt-1">
-                                        <MapPin className="w-3 h-3 mr-1" />
+                                        <MapPin className="w-3 h-3 mr-1"/>
                                         <span className="text-xs text-muted-foreground">{bike.location}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <Separator />
+                            <Separator/>
 
                             {/* Pricing Breakdown */}
                             <div className="space-y-2">
@@ -343,7 +385,7 @@ export default function CheckoutPage() {
                                         </div>
                                     ))}
 
-                                <Separator />
+                                <Separator/>
 
                                 <div className="flex justify-between font-semibold">
                                     <span>Total</span>
@@ -351,12 +393,12 @@ export default function CheckoutPage() {
                                 </div>
                             </div>
 
-                            <Separator />
+                            <Separator/>
 
                             {/* Terms and Conditions */}
                             <div className="space-y-3">
                                 <div className="flex items-start space-x-2">
-                                    <Checkbox id="terms" />
+                                    <Checkbox id="terms"/>
                                     <Label htmlFor="terms" className="text-sm cursor-pointer">
                                         I agree to the{' '}
                                         <Link to="/terms" className="text-primary underline">
@@ -366,7 +408,7 @@ export default function CheckoutPage() {
                                 </div>
 
                                 <div className="flex items-start space-x-2">
-                                    <Checkbox id="insurance" />
+                                    <Checkbox id="insurance"/>
                                     <Label htmlFor="insurance" className="text-sm cursor-pointer">
                                         I understand the insurance coverage and liability
                                     </Label>
@@ -377,20 +419,20 @@ export default function CheckoutPage() {
                                 className="w-full"
                                 size="lg"
                                 onClick={handleSubmit}
-                                disabled={isSubmitting || !startDate || !endDate}
+                                disabled={isSubmitting || !startDate || !endDate || !selectedLocation}
                             >
                                 {isSubmitting ? (
                                     <>Processing...</>
                                 ) : (
                                     <>
-                                        <CreditCard className="w-4 h-4 mr-2" />
+                                        <CreditCard className="w-4 h-4 mr-2"/>
                                         Confirm Booking - ${total.toFixed(2)}
                                     </>
                                 )}
                             </Button>
 
                             <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
-                                <Shield className="w-4 h-4" />
+                                <Shield className="w-4 h-4"/>
                                 <span>Secure payment protected by SSL</span>
                             </div>
                         </CardContent>
