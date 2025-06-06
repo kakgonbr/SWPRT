@@ -23,6 +23,7 @@ import { AdminDashboard } from './pages/admin'
 import ErrorBoundary from './components/ErrorBoundary'
 // 404 Page
 import NotFoundPage from './pages/NotFoundPage'
+import StaffDashboard from './pages/staff/StaffDashboard'
 
 function App() {
     return (
@@ -44,6 +45,7 @@ function App() {
                                     <Route path="/auth/login" element={<LoginPage />} />
                                     <Route path="/auth/signup" element={<SignupPage />} />
                                     <Route path="/admin" element={<AdminDashboard />} />
+                                    <Route path='/staff' element={<StaffDashboard />} />
                                     <Route path="*" element={<NotFoundPage />} />
                                 </Routes>
                             </main>

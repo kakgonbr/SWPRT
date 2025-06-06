@@ -16,6 +16,7 @@ export interface User {
 }
 
 export interface Bike {
+    availableLocations: any;
     id: string
     name: string
     type: string

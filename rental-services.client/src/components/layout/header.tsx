@@ -106,13 +106,25 @@ export default function Header() {
                             </Link>
                         </DropdownMenuItem>
 
-                        {(user.role === 'admin' || user.role === 'staff') && (
+                        {(user.role === 'admin') && (
                             <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>
                                     <Link to="/admin" onClick={() => setIsSheetOpen(false)}>
                                         <Shield className="mr-2 h-4 w-4" />
                                         <span>Admin Panel</span>
+                                    </Link>
+                                </DropdownMenuItem>
+                            </>
+                        )}
+
+                        {(user.role === 'staff') && (
+                            <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                    <Link to="/staff" onClick={() => setIsSheetOpen(false)}>
+                                        <Shield className="mr-2 h-4 w-4" />
+                                        <span>Staff Panel</span>
                                     </Link>
                                 </DropdownMenuItem>
                             </>
@@ -154,11 +166,11 @@ export default function Header() {
                 </Link>
 
                 {/* Desktop Navigation */}
-                {!isMobile && (
-                    <nav className="flex items-center space-x-6">
-                        <NavigationLinks />
-                    </nav>
-                )}
+                {/*{!isMobile && (*/}
+                {/*    <nav className="flex items-center space-x-6">*/}
+                {/*        <NavigationLinks />*/}
+                {/*    </nav>*/}
+                {/*)}*/}
 
                 <div className="flex items-center space-x-4">
                     <Button

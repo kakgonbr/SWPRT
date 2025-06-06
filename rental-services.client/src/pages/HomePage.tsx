@@ -1,11 +1,14 @@
 // src/pages/HomePage.tsx
-import {Link} from 'react-router-dom'
-import {Search, Bike, MapPin, Star, Shield, Clock} from 'lucide-react'
-import {Button} from '../components/ui/button'
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '../components/ui/card'
-import {MOCK_BIKES} from '../lib/mock-data'
+import { Link } from 'react-router-dom'
+import React, { useState } from 'react'
+import { Search, Bike, MapPin, Star, Shield, Clock } from 'lucide-react'
+import { Button } from '../components/ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import { MOCK_BIKES } from '../lib/mock-data'
 
 export default function HomePage() {
+    const [startDate, setStartDate] = useState('')
+    const [endDate, setEndDate] = useState('')
     const featuredBikes = MOCK_BIKES.slice(0, 3)
 
     return (
@@ -20,16 +23,42 @@ export default function HomePage() {
                         Discover the freedom of the open road with our premium motorbike rentals.
                         From city scooters to adventure bikes, we have the perfect ride for every journey.
                     </p>
+                    {/* Rental Date Selection Section */}
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+                        <div>
+                            <label className="block text-sm font-medium mb-1" htmlFor="start-date">Start Date</label>
+                            <input
+                                id="start-date"
+                                type="date"
+                                className="border rounded px-3 py-2"
+                                value={startDate}
+                                onChange={e => setStartDate(e.target.value)}
+                                min={new Date().toISOString().split('T')[0]}
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-sm font-medium mb-1" htmlFor="end-date">End Date</label>
+                            <input
+                                id="end-date"
+                                type="date"
+                                className="border rounded px-3 py-2"
+                                value={endDate}
+                                onChange={e => setEndDate(e.target.value)}
+                                min={startDate || new Date().toISOString().split('T')[0]}
+                                disabled={!startDate}
+                            />
+                        </div>
+                    </div>
                     <div className="flex flex-col sm:flex-row gap-4 justify-center">
                         <Button size="lg" asChild>
                             <Link to="/bikes">
-                                <Search className="w-5 h-5 mr-2"/>
+                                <Search className="w-5 h-5 mr-2" />
                                 Browse Bikes
                             </Link>
                         </Button>
                         <Button size="lg" variant="outline" asChild>
                             <Link to="/location-finder">
-                                <MapPin className="w-5 h-5 mr-2"/>
+                                <MapPin className="w-5 h-5 mr-2" />
                                 Find Locations
                             </Link>
                         </Button>
@@ -50,7 +79,7 @@ export default function HomePage() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                         <Card>
                             <CardHeader>
-                                <Shield className="w-10 h-10 text-primary mb-4"/>
+                                <Shield className="w-10 h-10 text-primary mb-4" />
                                 <CardTitle>Safe & Reliable</CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -63,7 +92,7 @@ export default function HomePage() {
 
                         <Card>
                             <CardHeader>
-                                <Clock className="w-10 h-10 text-primary mb-4"/>
+                                <Clock className="w-10 h-10 text-primary mb-4" />
                                 <CardTitle>Quick & Easy</CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -76,7 +105,7 @@ export default function HomePage() {
 
                         <Card>
                             <CardHeader>
-                                <MapPin className="w-10 h-10 text-primary mb-4"/>
+                                <MapPin className="w-10 h-10 text-primary mb-4" />
                                 <CardTitle>Multiple Locations</CardTitle>
                             </CardHeader>
                             <CardContent>
@@ -116,10 +145,10 @@ export default function HomePage() {
                                         <span className="text-primary font-bold">${bike.pricePerDay}/day</span>
                                     </CardTitle>
                                     <CardDescription className="flex items-center">
-                                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400 mr-1"/>
+                                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400 mr-1" />
                                         {bike.rating}
                                         <span className="mx-2">•</span>
-                                        <MapPin className="w-4 h-4 mr-1"/>
+                                        <MapPin className="w-4 h-4 mr-1" />
                                         {bike.location}
                                     </CardDescription>
                                 </CardHeader>
@@ -129,7 +158,7 @@ export default function HomePage() {
                                     </p>
                                     <Button className="w-full" asChild>
                                         <Link to={`/bikes/${bike.id}`}>
-                                            <Bike className="w-4 h-4 mr-2"/>
+                                            <Bike className="w-4 h-4 mr-2" />
                                             View Details
                                         </Link>
                                     </Button>
