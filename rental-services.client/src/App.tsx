@@ -3,8 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Toaster } from './components/ui/toaster'
 import { AuthProvider } from './contexts/auth-context'
 import { ChatWidgetProvider } from './contexts/chat-widget-context'
-import Header from './components/layout/Header'
-import Footer from './components/layout/Footer'
+import Header from './components/layout/header.tsx'
+import Footer from './components/layout/footer.tsx'
 import ChatWidget from './components/chat/ChatWidget'
 
 // Import pages
