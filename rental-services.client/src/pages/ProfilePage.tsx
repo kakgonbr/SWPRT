@@ -14,7 +14,8 @@ import {
     Upload,
     FileImage,
     CheckCircle,
-    Loader2
+    Loader2,
+    Lock
 } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
@@ -27,6 +28,20 @@ import { useAuth } from '../contexts/auth-context'
 import { useToast } from '../hooks/use-toast'
 import { format } from 'date-fns'
 import ChangePasswordDialog from '../components/ChangePasswordDialog'
+import IdReviewDialog from '../components/IdReviewDialog'
+
+// Define the extracted ID data interface
+interface ExtractedIdData {
+    fullName: string
+    dateOfBirth: string
+    idNumber: string
+    address: string
+    documentType: string
+    expiryDate?: string
+    issueDate?: string
+    placeOfBirth?: string
+    nationality?: string
+}
 
 export default function ProfilePage() {
     const navigate = useNavigate()
@@ -37,6 +52,11 @@ export default function ProfilePage() {
     const [isEditing, setIsEditing] = useState(false)
     const [isUploadingId, setIsUploadingId] = useState(false)
     const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
+    const [isIdReviewOpen, setIsIdReviewOpen] = useState(false)
+    const [isSavingIdData, setIsSavingIdData] = useState(false)
+    const [extractedIdData, setExtractedIdData] = useState<ExtractedIdData | null>(null)
+    const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null)
+
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -63,7 +83,24 @@ export default function ProfilePage() {
         })
     }, [user, isAuthenticated, loading, navigate])
 
+    useEffect(() => {
+        console.log('State changes:')
+        console.log('isIdReviewOpen:', isIdReviewOpen)
+        console.log('extractedIdData:', extractedIdData)
+        console.log('uploadedImageUrl:', uploadedImageUrl)
+    }, [isIdReviewOpen, extractedIdData, uploadedImageUrl])
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        // Only prevent editing of ID number if ID document is verified
+        if (user?.credentialIdImageUrl && e.target.name === 'credentialIdNumber') {
+            toast({
+                title: "Field Locked",
+                description: "ID Number cannot be edited because it has been verified from your ID document.",
+                variant: "destructive"
+            })
+            return
+        }
+
         setFormData(prev => ({
             ...prev,
             [e.target.name]: e.target.value
@@ -139,45 +176,47 @@ export default function ProfilePage() {
         setIsUploadingId(true)
 
         try {
-            const formData = new FormData()
-            formData.append('idDocument', file)
+            // Create a local URL for the uploaded file
+            const imageUrl = URL.createObjectURL(file)
 
-            // Replace with your actual API endpoint
-            const response = await fetch('/api/user/upload-id-document', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'Authorization': `Bearer ${localStorage.getItem('token')}` // Adjust based on your auth implementation
-                }
-            })
+            // Simulate API processing delay
+            await new Promise(resolve => setTimeout(resolve, 2000))
 
-            if (!response.ok) {
-                throw new Error('Upload failed')
+            // Mock extracted data - in real implementation this would come from your OCR service
+            const mockExtractedData: ExtractedIdData = {
+                fullName: "John Doe Smith",
+                dateOfBirth: "1990-03-15",
+                idNumber: "A123456789",
+                address: "123 Main Street, City, State 12345",
+                documentType: "National ID Card",
+                nationality: "Malaysian",
+                placeOfBirth: "Kuala Lumpur",
+                issueDate: "2020-01-15",
+                expiryDate: "2030-01-15"
             }
 
-            const result = await response.json()
+            console.log('Setting extracted data:', mockExtractedData) // Debug log
+            console.log('Setting image URL:', imageUrl) // Debug log
 
-            // Update form data with OCR extracted ID number
-            if (result.extractedIdNumber) {
-                setFormData(prev => ({
-                    ...prev,
-                    credentialIdNumber: result.extractedIdNumber
-                }))
-            }
+            // Set the extracted data and uploaded image URL
+            setExtractedIdData(mockExtractedData)
+            setUploadedImageUrl(imageUrl)
 
+            // Show success message
             toast({
-                title: "ID Document Uploaded Successfully",
-                description: "Your ID has been verified and the ID number has been extracted automatically.",
+                title: "ID Document Processed",
+                description: "Information extracted successfully. Please review the details.",
             })
 
-            // Optionally refresh user data to get the new credentialIdImageUrl
-            // You might want to call a refresh function from your auth context here
+            // Show the review dialog
+            setIsIdReviewOpen(true)
+            console.log('Opening review dialog') // Debug log
 
         } catch (error) {
             console.error('ID upload error:', error)
             toast({
                 title: "Upload Failed",
-                description: "Failed to upload ID document. Please try again.",
+                description: "Failed to process ID document. Please try again.",
                 variant: "destructive"
             })
         } finally {
@@ -189,8 +228,66 @@ export default function ProfilePage() {
         }
     }
 
+    const handleIdConfirm = async () => {
+        if (!extractedIdData) return
+
+        setIsSavingIdData(true)
+
+        try {
+            // Update form data with extracted information
+            setFormData(prev => ({
+                ...prev,
+                name: extractedIdData.fullName,
+                dateOfBirth: extractedIdData.dateOfBirth,
+                credentialIdNumber: extractedIdData.idNumber,
+                address: extractedIdData.address
+            }))
+
+            // In real implementation, save to API here
+            await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate API call
+
+            toast({
+                title: "ID Document Verified Successfully",
+                description: "Your identity has been verified and your profile has been updated with the extracted information.",
+            })
+
+            // Close the review dialog
+            setIsIdReviewOpen(false)
+
+            // Optionally refresh user data to get the new credentialIdImageUrl
+            // You might want to call a refresh function from your auth context here
+
+        } catch (error) {
+            console.error('Error saving ID data:', error)
+            toast({
+                title: "Save Failed",
+                description: "Failed to save ID information. Please try again.",
+                variant: "destructive"
+            })
+        } finally {
+            setIsSavingIdData(false)
+        }
+    }
+
+    const handleIdReject = () => {
+        setExtractedIdData(null)
+        setUploadedImageUrl(null)
+        setIsIdReviewOpen(false)
+
+        toast({
+            title: "Upload Cancelled",
+            description: "Please re-upload your ID document if the extracted information was incorrect.",
+            variant: "destructive"
+        })
+    }
+
     const triggerIdUpload = () => {
         fileInputRef.current?.click()
+    }
+
+    const isFieldLocked = (fieldName: string) => {
+        // Only lock the ID number field when ID document is verified
+        return user?.credentialIdImageUrl && fieldName === 'credentialIdNumber'
     }
 
     if (loading) {
@@ -339,7 +436,10 @@ export default function ProfilePage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="credentialIdNumber">ID Number</Label>
+                                <Label htmlFor="credentialIdNumber" className="flex items-center gap-2">
+                                    ID Number
+                                    {isFieldLocked('credentialIdNumber') && <Lock className="h-3 w-3 text-muted-foreground" />}
+                                </Label>
                                 <div className="relative">
                                     <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                     <Input
@@ -347,10 +447,13 @@ export default function ProfilePage() {
                                         name="credentialIdNumber"
                                         value={formData.credentialIdNumber}
                                         onChange={handleInputChange}
-                                        disabled={!isEditing}
-                                        className="pl-10"
+                                        disabled={!isEditing || isFieldLocked('credentialIdNumber')}
+                                        className={`pl-10 ${isFieldLocked('credentialIdNumber') ? 'bg-gray-50' : ''}`}
                                     />
                                 </div>
+                                {isFieldLocked('credentialIdNumber') && (
+                                    <p className="text-xs text-muted-foreground">Locked - Verified from ID document</p>
+                                )}
                             </div>
                         </div>
 
@@ -406,8 +509,11 @@ export default function ProfilePage() {
                                                         <CheckCircle className="h-5 w-5" />
                                                         <span className="font-medium">Verification Completed</span>
                                                     </div>
-                                                    <p className="text-sm text-muted-foreground">
+                                                    <p className="text-sm text-muted-foreground mb-2">
                                                         Your ID document has been successfully verified and processed.
+                                                    </p>
+                                                    <p className="text-sm text-muted-foreground">
+                                                        <strong>Note:</strong> Information extracted from your ID document cannot be edited manually for security purposes.
                                                     </p>
                                                 </div>
                                             </div>
@@ -434,7 +540,7 @@ export default function ProfilePage() {
                                             <FileImage className="h-12 w-12 mx-auto text-gray-400 mb-4" />
                                             <h4 className="text-lg font-medium mb-2">Upload your ID Document</h4>
                                             <p className="text-sm text-muted-foreground mb-4">
-                                                Upload a clear photo of your government-issued ID. Our system will automatically extract your ID number.
+                                                Upload a clear photo of your government-issued ID. Our system will automatically extract your information for verification.
                                             </p>
                                             <Button
                                                 onClick={triggerIdUpload}
@@ -479,6 +585,34 @@ export default function ProfilePage() {
                 isOpen={isChangePasswordOpen}
                 onClose={() => setIsChangePasswordOpen(false)}
             />
+
+            <IdReviewDialog
+                isOpen={isIdReviewOpen}
+                onClose={() => setIsIdReviewOpen(false)}
+                onConfirm={handleIdConfirm}
+                onReject={handleIdReject}
+                extractedData={extractedIdData}
+                uploadedImageUrl={uploadedImageUrl}
+                isProcessing={isSavingIdData}
+            />
+
+            {/* Add this temporarily in your JSX for testing: */}
+            <Button
+                onClick={() => {
+                    setExtractedIdData({
+                        fullName: "Test User",
+                        dateOfBirth: "1990-01-01",
+                        idNumber: "TEST123",
+                        address: "Test Address",
+                        documentType: "Test ID"
+                    })
+                    setUploadedImageUrl("data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjEwMCI+PHJlY3Qgd2lkdGg9IjIwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9IiNjY2MiLz48L3N2Zz4=")
+                    setIsIdReviewOpen(true)
+                }}
+                className="mb-4"
+            >
+                Test Review Dialog
+            </Button>
         </div>
     )
 }
