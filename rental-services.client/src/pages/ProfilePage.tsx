@@ -26,6 +26,7 @@ import { Badge } from '../components/ui/badge'
 import { useAuth } from '../contexts/auth-context'
 import { useToast } from '../hooks/use-toast'
 import { format } from 'date-fns'
+import ChangePasswordDialog from '../components/ChangePasswordDialog'
 
 export default function ProfilePage() {
     const navigate = useNavigate()
@@ -35,6 +36,7 @@ export default function ProfilePage() {
 
     const [isEditing, setIsEditing] = useState(false)
     const [isUploadingId, setIsUploadingId] = useState(false)
+    const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false)
     const [formData, setFormData] = useState({
         name: '',
         email: '',
@@ -371,7 +373,11 @@ export default function ProfilePage() {
 
                         <div className="space-y-4">
                             <h3 className="text-lg font-semibold">Account Security</h3>
-                            <Button variant="outline" className="w-full md:w-auto">
+                            <Button
+                                variant="outline"
+                                className="w-full md:w-auto"
+                                onClick={() => setIsChangePasswordOpen(true)}
+                            >
                                 <Key className="h-4 w-4 mr-2" />
                                 Change Password
                             </Button>
@@ -468,6 +474,11 @@ export default function ProfilePage() {
                     </CardContent>
                 </Card>
             </div>
+
+            <ChangePasswordDialog
+                isOpen={isChangePasswordOpen}
+                onClose={() => setIsChangePasswordOpen(false)}
+            />
         </div>
     )
 }
