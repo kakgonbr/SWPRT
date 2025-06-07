@@ -6,28 +6,59 @@ import {
     Bike,
     Calendar,
     DollarSign,
-    //@ts-ignore
     TrendingUp,
-    //@ts-ignore
-
     AlertTriangle,
-    //@ts-ignore
-
     MessageSquare,
-    //@ts-ignore
-    BarChart3
+    BarChart3,
+    Edit,
+    Save,
+    X
 } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Badge } from '../../components/ui/badge'
 import { Button } from '../../components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs'
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogFooter,
+} from '../../components/ui/dialog'
+import { Input } from '../../components/ui/input'
+import { Label } from '../../components/ui/label'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '../../components/ui/select'
+import { Avatar, AvatarFallback, AvatarImage } from '../../components/ui/avatar'
 import { useAuth } from '../../contexts/auth-context'
+import { useToast } from '../../hooks/use-toast'
 import { MOCK_USERS, MOCK_BIKES, MOCK_RENTALS } from '../../lib/mock-data'
 import { format, subDays, startOfMonth, endOfMonth } from 'date-fns'
+
+interface User {
+    id: string
+    name: string
+    email: string
+    role: 'renter' | 'admin' | 'staff'
+    avatarUrl?: string
+    createdAt: Date
+    dateOfBirth?: string
+    address?: string
+    credentialIdNumber?: string
+    status: boolean
+}
 
 export default function AdminDashboard() {
     const navigate = useNavigate()
     const { user, isAuthenticated, loading } = useAuth()
+    const { toast } = useToast()
+
     const [stats, setStats] = useState({
         totalUsers: 0,
         totalBikes: 0,
@@ -36,6 +67,20 @@ export default function AdminDashboard() {
         recentUsers: 0,
         availableBikes: 0
     })
+
+    // User edit dialog state
+    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
+    const [selectedUser, setSelectedUser] = useState<User | null>(null)
+    const [editFormData, setEditFormData] = useState({
+        name: '',
+        email: '',
+        role: 'renter' as 'renter' | 'admin' | 'staff',
+        dateOfBirth: '',
+        address: '',
+        credentialIdNumber: '',
+        status: true
+    })
+    const [isSaving, setIsSaving] = useState(false)
 
     useEffect(() => {
         if (loading) return
@@ -67,6 +112,93 @@ export default function AdminDashboard() {
             availableBikes: MOCK_BIKES.filter(b => b.isAvailable).length
         })
     }, [user, isAuthenticated, loading, navigate])
+
+    const handleEditUser = (userToEdit: User) => {
+        setSelectedUser(userToEdit)
+        setEditFormData({
+            name: userToEdit.name,
+            email: userToEdit.email,
+            role: userToEdit.role,
+            dateOfBirth: userToEdit.dateOfBirth || '',
+            address: userToEdit.address || '',
+            credentialIdNumber: userToEdit.credentialIdNumber || '',
+            status: userToEdit.status,
+        })
+        setIsEditDialogOpen(true)
+    }
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setEditFormData(prev => ({
+            ...prev,
+            [e.target.name]: e.target.value
+        }))
+    }
+
+    const handleRoleChange = (value: string) => {
+        setEditFormData(prev => ({
+            ...prev,
+            role: value as 'renter' | 'admin' | 'staff'
+        }))
+    }
+
+    const handleStatusChange = (value: string) => {
+        setEditFormData(prev => ({
+            ...prev,
+            isActive: value === 'active'
+        }))
+    }
+
+    const handleSaveUser = async () => {
+        if (!selectedUser) return
+
+        setIsSaving(true)
+        try {
+            // In a real app, you would make an API call here
+            const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                },
+                body: JSON.stringify(editFormData)
+            })
+
+            if (response.ok) {
+                toast({
+                    title: "User Updated",
+                    description: "User information has been updated successfully.",
+                })
+                setIsEditDialogOpen(false)
+                setSelectedUser(null)
+                // In a real app, you would refetch the users data here
+            } else {
+                throw new Error('Failed to update user')
+            }
+        } catch (error) {
+            console.error('Error updating user:', error)
+            toast({
+                title: "Update Failed",
+                description: "Failed to update user information. Please try again.",
+                variant: "destructive"
+            })
+        } finally {
+            setIsSaving(false)
+        }
+    }
+
+    const handleCancel = () => {
+        setIsEditDialogOpen(false)
+        setSelectedUser(null)
+        setEditFormData({
+            name: '',
+            email: '',
+            role: 'renter',
+            dateOfBirth: '',
+            address: '',
+            credentialIdNumber: '',
+            status: true
+        })
+    }
 
     const recentRentals = MOCK_RENTALS
         .sort((a, b) => b.orderDate.getTime() - a.orderDate.getTime())
@@ -244,11 +376,12 @@ export default function AdminDashboard() {
                                 {MOCK_USERS.map((user) => (
                                     <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
                                         <div className="flex items-center space-x-4">
-                                            <img
-                                                src={user.avatarUrl}
-                                                alt={user.name}
-                                                className="w-12 h-12 rounded-full"
-                                            />
+                                            <Avatar className="w-12 h-12">
+                                                <AvatarImage src={user.avatarUrl} alt={user.name} />
+                                                <AvatarFallback>
+                                                    {user.name.split(' ').map(n => n[0]).join('')}
+                                                </AvatarFallback>
+                                            </Avatar>
                                             <div>
                                                 <p className="font-medium">{user.name}</p>
                                                 <p className="text-sm text-muted-foreground">{user.email}</p>
@@ -258,6 +391,9 @@ export default function AdminDashboard() {
                                             </div>
                                         </div>
                                         <div className="flex items-center space-x-2">
+                                            <Badge variant={user.status ? 'default' : 'destructive'}>
+                                                {user.status ? 'Active' : 'Inactive'}
+                                            </Badge>
                                             <Badge variant={
                                                 user.role === 'admin' ? 'default' :
                                                     user.role === 'staff' ? 'secondary' :
@@ -265,7 +401,12 @@ export default function AdminDashboard() {
                                             }>
                                                 {user.role}
                                             </Badge>
-                                            <Button variant="outline" size="sm">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleEditUser(user)}
+                                            >
+                                                <Edit className="h-4 w-4 mr-1" />
                                                 Edit
                                             </Button>
                                         </div>
@@ -357,6 +498,153 @@ export default function AdminDashboard() {
                     </Card>
                 </TabsContent>
             </Tabs>
+
+            {/* User Edit Dialog */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                        <DialogTitle>Edit User Information</DialogTitle>
+                        <DialogDescription>
+                            Update user details and account settings for {selectedUser?.name}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    {selectedUser && (
+                        <div className="grid gap-4 py-4">
+                            {/* User Avatar and Basic Info */}
+                            <div className="flex items-center space-x-4 pb-4 border-b">
+                                <Avatar className="w-16 h-16">
+                                    <AvatarImage src={selectedUser.avatarUrl} alt={selectedUser.name} />
+                                    <AvatarFallback>
+                                        {selectedUser.name.split(' ').map(n => n[0]).join('')}
+                                    </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <h3 className="text-lg font-medium">{selectedUser.name}</h3>
+                                    <p className="text-sm text-muted-foreground">
+                                        Member since {format(selectedUser.createdAt, 'MMM yyyy')}
+                                    </p>
+                                </div>
+                            </div>
+
+                            {/* Form Fields */}
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-name">Full Name</Label>
+                                    <Input
+                                        id="edit-name"
+                                        name="name"
+                                        value={editFormData.name}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter full name"
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-email">Email</Label>
+                                    <Input
+                                        id="edit-email"
+                                        name="email"
+                                        type="email"
+                                        value={editFormData.email}
+                                        onChange={handleInputChange}
+                                        placeholder="Enter email address"
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-role">Role</Label>
+                                    <Select value={editFormData.role} onValueChange={handleRoleChange}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select role" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="customer">Customer</SelectItem>
+                                            <SelectItem value="staff">Staff</SelectItem>
+                                            <SelectItem value="admin">Admin</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="edit-status">Account Status</Label>
+                                    <Select
+                                        value={editFormData.status ? 'active' : 'inactive'}
+                                        onValueChange={handleStatusChange}
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="active">Active</SelectItem>
+                                            <SelectItem value="inactive">Inactive</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-dob">Date of Birth</Label>
+                                <Input
+                                    id="edit-dob"
+                                    name="dateOfBirth"
+                                    type="date"
+                                    value={editFormData.dateOfBirth}
+                                    onChange={handleInputChange}
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-address">Address</Label>
+                                <Input
+                                    id="edit-address"
+                                    name="address"
+                                    value={editFormData.address}
+                                    onChange={handleInputChange}
+                                    placeholder="Enter address"
+                                />
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="edit-id">Credential ID Number</Label>
+                                <Input
+                                    id="edit-id"
+                                    name="credentialIdNumber"
+                                    value={editFormData.credentialIdNumber}
+                                    onChange={handleInputChange}
+                                    placeholder="Enter ID number"
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            onClick={handleCancel}
+                            disabled={isSaving}
+                        >
+                            <X className="h-4 w-4 mr-2" />
+                            Cancel
+                        </Button>
+                        <Button
+                            onClick={handleSaveUser}
+                            disabled={isSaving}
+                        >
+                            {isSaving ? (
+                                <>Saving...</>
+                            ) : (
+                                <>
+                                    <Save className="h-4 w-4 mr-2" />
+                                    Save Changes
+                                </>
+                            )}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </div>
     )
 }

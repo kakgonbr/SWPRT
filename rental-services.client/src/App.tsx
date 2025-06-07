@@ -3,8 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Toaster } from './components/ui/toaster'
 import { AuthProvider } from './contexts/auth-context'
 import { ChatWidgetProvider } from './contexts/chat-widget-context'
-import Header from './components/layout/header.tsx'
-import Footer from './components/layout/footer.tsx'
+import Footer from './components/layout/Footer.tsx'
+import Header from './components/layout/Header.tsx'
 import ChatWidget from './components/chat/ChatWidget'
 
 // Import pages
@@ -24,6 +24,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 // 404 Page
 import NotFoundPage from './pages/NotFoundPage'
 import StaffDashboard from './pages/staff/StaffDashboard'
+import ForgotPasswordPage from './pages/auth/ForgotPassword.tsx'
 
 function App() {
     return (
@@ -44,6 +45,7 @@ function App() {
                                     <Route path="/location-finder" element={<LocationFinderPage />} />
                                     <Route path="/auth/login" element={<LoginPage />} />
                                     <Route path="/auth/signup" element={<SignupPage />} />
+                                    <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
                                     <Route path="/admin" element={<AdminDashboard />} />
                                     <Route path='/staff' element={<StaffDashboard />} />
                                     <Route path="*" element={<NotFoundPage />} />

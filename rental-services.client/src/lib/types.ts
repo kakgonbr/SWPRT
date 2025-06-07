@@ -5,6 +5,7 @@ export interface User {
     email: string;
     name: string;
     role: UserRole;
+    status: boolean; //0: active, 1: deactive
     avatarUrl?: string;
     lastLogin?: Date;
     feedbackCount?: number;
