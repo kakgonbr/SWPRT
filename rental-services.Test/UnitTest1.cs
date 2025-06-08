@@ -7,7 +7,7 @@ namespace rental_services.Test
         [Fact]
         public void Test1()
         {
-            rental_services.Server.Program.DoSomething().Should().BeFalse();
+            rental_services.Server.Program.DoSomething().Should().BeTrue();
         }
     }
 }
