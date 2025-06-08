@@ -146,11 +146,11 @@ const MOCK_REPORTS: CustomerReport[] = [
     }
 ]
 
-interface ReportsManagementTabProps {
-    onAssignReport?: (reportId: string, assignee: string) => void
-}
+//interface ReportsManagementTabProps {
+//    onAssignReport?: (reportId: string, assignee: string) => void
+//}
 
-export default function ReportsManagementTab({ onAssignReport }: ReportsManagementTabProps) {
+export default function ReportsManagementTab() {
     const [reports, setReports] = useState<CustomerReport[]>(MOCK_REPORTS)
     const [filteredReports, setFilteredReports] = useState<CustomerReport[]>(MOCK_REPORTS)
     const [searchTerm, setSearchTerm] = useState('')

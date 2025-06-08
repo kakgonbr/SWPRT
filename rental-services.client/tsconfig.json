@@ -10,6 +10,6 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true,
-    "skipDefaultLibCheck": true,
+    "skipDefaultLibCheck": true
   },
 }

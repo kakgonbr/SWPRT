@@ -1,5 +1,3 @@
-import { format } from 'date-fns'
-
 export interface CustomerMessage {
     id: string
     customerId: string

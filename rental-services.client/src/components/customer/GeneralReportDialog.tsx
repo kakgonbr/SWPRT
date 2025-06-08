@@ -123,16 +123,16 @@ export default function GeneralReportDialog({
         onClose()
     }
 
-    const getCategoryIcon = (category: string) => {
-        switch (category) {
-            case 'bug': return <Bug className="h-4 w-4" />
-            case 'website': return <Globe className="h-4 w-4" />
-            case 'payment': return <CreditCard className="h-4 w-4" />
-            case 'security': return <Shield className="h-4 w-4" />
-            case 'mobile': return <Smartphone className="h-4 w-4" />
-            default: return <AlertTriangle className="h-4 w-4" />
-        }
-    }
+    //const getCategoryIcon = (category: string) => {
+    //    switch (category) {
+    //        case 'bug': return <Bug className="h-4 w-4" />
+    //        case 'website': return <Globe className="h-4 w-4" />
+    //        case 'payment': return <CreditCard className="h-4 w-4" />
+    //        case 'security': return <Shield className="h-4 w-4" />
+    //        case 'mobile': return <Smartphone className="h-4 w-4" />
+    //        default: return <AlertTriangle className="h-4 w-4" />
+    //    }
+    //}
 
     const getPriorityBadge = (priority: string) => {
         switch (priority) {

@@ -66,6 +66,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             credentialIdNumber: '',
             credentialIdImageUrl: undefined,
             createdAt: new Date(),
+            status: true
         }
 
         setUser(newUser)

@@ -87,19 +87,19 @@ export default function ReportIssueDialog({
         onClose()
     }
 
-    const getIssueTypeIcon = (type: string) => {
-        switch (type) {
-            case 'engine': return <Settings className="h-4 w-4" />
-            case 'battery': return <Battery className="h-4 w-4" />
-            case 'tire': return <Circle className="h-4 w-4" />
-            case 'brakes': return <Shield className="h-4 w-4" />
-            case 'lights': return <Zap className="h-4 w-4" />
-            case 'fuel': return <Wrench className="h-4 w-4" />
-            case 'steering': return <Settings className="h-4 w-4" />
-            case 'damage': return <AlertTriangle className="h-4 w-4" />
-            default: return <Wrench className="h-4 w-4" />
-        }
-    }
+    //const getIssueTypeIcon = (type: string) => {
+    //    switch (type) {
+    //        case 'engine': return <Settings className="h-4 w-4" />
+    //        case 'battery': return <Battery className="h-4 w-4" />
+    //        case 'tire': return <Circle className="h-4 w-4" />
+    //        case 'brakes': return <Shield className="h-4 w-4" />
+    //        case 'lights': return <Zap className="h-4 w-4" />
+    //        case 'fuel': return <Wrench className="h-4 w-4" />
+    //        case 'steering': return <Settings className="h-4 w-4" />
+    //        case 'damage': return <AlertTriangle className="h-4 w-4" />
+    //        default: return <Wrench className="h-4 w-4" />
+    //    }
+    //}
 
     const getSeverityBadge = (severity: string) => {
         switch (severity) {

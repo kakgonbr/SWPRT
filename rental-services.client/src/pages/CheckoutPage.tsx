@@ -6,16 +6,7 @@ import {
     Calendar,
     MapPin,
     CreditCard,
-    Shield,
-    //@ts-ignore
-
-    Plus,
-    //@ts-ignore
-
-    Minus,
-    //@ts-ignore
-
-    Info
+    Shield
 } from 'lucide-react'
 import {Button} from '../components/ui/button'
 import {Input} from '../components/ui/input'
@@ -23,9 +14,6 @@ import {Label} from '../components/ui/label'
 import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '../components/ui/card'
 import {Checkbox} from '../components/ui/checkbox'
 import {Separator} from '../components/ui/separator'
-//@ts-ignore
-
-import {Badge} from '../components/ui/badge'
 import {Calendar as CalendarComponent} from '../components/ui/calendar'
 import {Popover, PopoverContent, PopoverTrigger} from '../components/ui/popover'
 import {useAuth} from '../contexts/auth-context'
@@ -116,9 +104,6 @@ export default function CheckoutPage() {
         try {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 2000))
-            const selectedOptionNames = selectedOptions
-                .filter(option => option.selected)
-                .map(option => option.name)
 
             const locationName = LOCATIONS.find(loc => loc.id === selectedLocation)?.name
 

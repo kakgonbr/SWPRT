@@ -36,7 +36,7 @@ import {
 } from 'lucide-react'
 
 export default function MaintenanceMode() {
-    const { settings, loading, toggleMaintenanceMode, updateSettings } = useSystemSettings()
+    const { settings, toggleMaintenanceMode, updateSettings } = useSystemSettings()
     const [maintenanceMessage, setMaintenanceMessage] = useState('')
     const [startTime, setStartTime] = useState('')
     const [endTime, setEndTime] = useState('')

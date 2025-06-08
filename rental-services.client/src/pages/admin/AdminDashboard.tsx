@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/auth-context'
 import { useDashboardStats } from '../../hooks/useDashboardStats'
 import { useUserManagement } from '../../hooks/useUserManagement'
+import { type User } from '../../components/admin/UserEditDialog'
 
 import DashboardHeader from '../../components/admin/DashboardHeader'
 import StatsCards from '../../components/admin/StartCards'
@@ -11,12 +12,12 @@ import DashboardTabs from '../../components/admin/DashboardTabs'
 import UserEditDialog from '../../components/admin/UserEditDialog'
 import ExportReportSection from '../../components/admin/ExportReportSection'
 import { Button } from '../../components/ui/button'
-import { Shield, Settings } from 'lucide-react'
+import { Shield } from 'lucide-react'
 
 export default function AdminDashboard() {
     const navigate = useNavigate()
     const { user, isAuthenticated, loading } = useAuth()
-    const { stats, isLoading: statsLoading } = useDashboardStats()
+    const { stats } = useDashboardStats()
     const {
         isEditDialogOpen,
         selectedUser,
@@ -91,7 +92,7 @@ export default function AdminDashboard() {
             {/* User Edit Dialog */}
             <UserEditDialog
                 isOpen={isEditDialogOpen}
-                selectedUser={selectedUser}
+                selectedUser={selectedUser as User | null}
                 editFormData={editFormData}
                 setEditFormData={setEditFormData}
                 isSaving={isSaving}

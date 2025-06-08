@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { Star, ThumbsUp, Camera, Filter, Plus } from 'lucide-react'
+import { Star, ThumbsUp, Filter, Plus } from 'lucide-react'
 import { Button } from './ui/button'
 import { Card, CardContent, CardHeader } from './ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar'
 import { Badge } from './ui/badge'
-import { Separator } from './ui/separator'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from './ui/dialog'
 import { Textarea } from './ui/textarea'
@@ -21,7 +20,7 @@ interface BikeReviewsProps {
     totalReviews: number
 }
 
-export function BikeReviews({ bikeId, reviews, averageRating, totalReviews }: BikeReviewsProps) {
+export function BikeReviews({ reviews, averageRating, totalReviews }: BikeReviewsProps) {
     const [sortBy, setSortBy] = useState('newest')
     const [filterRating, setFilterRating] = useState('all')
     const [isWriteReviewOpen, setIsWriteReviewOpen] = useState(false)
@@ -30,9 +29,9 @@ export function BikeReviews({ bikeId, reviews, averageRating, totalReviews }: Bi
         title: '',
         comment: '',
         images: [] as File[]
-    })
-    const { user, isAuthenticated } = useAuth()
-    const { toast } = useToast()
+    });
+    const { isAuthenticated } = useAuth();
+    const { toast } = useToast();
 
     const getInitials = (name: string) => {
         return name

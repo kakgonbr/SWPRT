@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import { format } from 'date-fns'
 import {
     Dialog,
@@ -13,7 +12,7 @@ import { Textarea } from '../ui/textarea'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { ScrollArea } from '../ui/scroll-area'
 import { Send, Bot, User } from 'lucide-react'
-import { type CustomerMessage, type ConversationMessage } from '../../lib/mock-staff-data'
+import { type CustomerMessage } from '../../lib/mock-staff-data'
 
 interface ChatDialogProps {
     isOpen: boolean

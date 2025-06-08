@@ -56,14 +56,12 @@ import {
     Trash2,
     Eye,
     EyeOff,
-    Calendar,
-    Palette,
-    ExternalLink
+    Calendar
 } from 'lucide-react'
 import { type PopupBanner } from '../../types/admin'
 
 export default function PopupBannerConfig() {
-    const { banners, loading, createBanner, updateBanner, deleteBanner, toggleBannerStatus } = usePopupBanner()
+    const { banners, createBanner, updateBanner, deleteBanner, toggleBannerStatus } = usePopupBanner()
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [selectedBanner, setSelectedBanner] = useState<PopupBanner | null>(null)
@@ -186,7 +184,7 @@ export default function PopupBannerConfig() {
         }
     }
 
-    const BannerForm = ({ isEdit = false }: { isEdit?: boolean }) => (
+    const BannerForm = () => (
         <div className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
@@ -551,7 +549,7 @@ export default function PopupBannerConfig() {
                             Modify the banner settings and content
                         </DialogDescription>
                     </DialogHeader>
-                    <BannerForm isEdit />
+                    <BannerForm />
                     <DialogFooter>
                         <Button
                             variant="outline"

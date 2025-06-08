@@ -1,6 +1,6 @@
 // src/pages/HomePage.tsx
 import { Link, useNavigate } from 'react-router-dom'
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Search, Bike, MapPin, Star, Shield, Clock, Calendar, ArrowRight } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'

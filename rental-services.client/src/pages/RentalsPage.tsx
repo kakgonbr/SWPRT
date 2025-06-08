@@ -13,17 +13,9 @@ import {
     Bug // Add this import
 } from 'lucide-react'
 import { Button } from '../components/ui/button'
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card'
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs'
 import { Badge } from '../components/ui/badge'
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogFooter,
-    DialogHeader,
-    DialogTitle,
-} from '../components/ui/dialog'
 import {
     AlertDialog,
     AlertDialogAction,

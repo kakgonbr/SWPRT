@@ -441,7 +441,7 @@ export default function ProfilePage() {
                                         name="credentialIdNumber"
                                         value={formData.credentialIdNumber}
                                         onChange={handleInputChange}
-                                        disabled={!isEditing || isFieldLocked('credentialIdNumber')}
+                                        disabled={!isEditing || !!isFieldLocked('credentialIdNumber')}
                                         className={`pl-10 ${isFieldLocked('credentialIdNumber') ? 'bg-gray-50' : ''}`}
                                     />
                                 </div>
@@ -568,6 +568,8 @@ export default function ProfilePage() {
                                 accept="image/*"
                                 onChange={handleIdUpload}
                                 className="hidden"
+                                aria-label="Upload ID document image"
+                                title="Upload ID document image"
                             />
                         </div>
 

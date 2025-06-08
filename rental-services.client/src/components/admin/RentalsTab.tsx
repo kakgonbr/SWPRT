@@ -13,7 +13,7 @@ import {
 } from '../ui/select'
 import { MOCK_RENTALS } from '../../lib/mock-data'
 import { format } from 'date-fns'
-import RentalDetailsDialog from './RentalDetailsDialog '
+import RentalDetailsDialog from './RentalDetailsDialog'
 
 export interface Rental {
     id: string

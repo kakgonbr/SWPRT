@@ -50,9 +50,6 @@ export default function BikesTab() {
     const locations = Array.from(new Set(bikes.map(bike => bike.location).filter(Boolean)))
 
     // Helper function to format bike name as "Type - Location"
-    const formatBikeName = (bike: Bike) => {
-        return bike.location ? `${bike.type} - ${bike.location}` : bike.type
-    }
 
     // Filter and aggregate bikes based on location
     const getFilteredData = () => {
@@ -133,10 +130,6 @@ export default function BikesTab() {
     const handleDeleteBike = (bike: Bike) => {
         setSelectedBike(bike)
         setIsDeleteDialogOpen(true)
-    }
-
-    const handleViewTypeDetails = (bikeType: string) => {
-        setSelectedBikeType(bikeType)
     }
 
     const handleBackToTypes = () => {

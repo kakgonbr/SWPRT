@@ -9,10 +9,8 @@ import {
     User,
     LogOut,
     Calendar,
-    Settings,
     Shield,
     Menu,
-    AlertTriangle,
     Heart,
     Bug,
     Wrench

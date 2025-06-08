@@ -38,7 +38,6 @@ import {
     Heart,
     Star,
     Search,
-    Filter,
     Eye,
     MessageSquare,
     Calendar,

@@ -5,7 +5,7 @@ import { Button } from '../ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { MOCK_USERS } from '../../lib/mock-data'
 import { format } from 'date-fns'
-import { type User } from '../../pages/admin/AdminDashboard'
+import { type User } from '../../lib/types'
 
 interface UsersTabProps {
     onEditUser: (user: User) => void

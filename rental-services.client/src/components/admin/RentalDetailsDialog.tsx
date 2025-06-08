@@ -1,4 +1,4 @@
-import { Calendar, CreditCard, MapPin, Phone, Mail, FileText, DollarSign, X } from 'lucide-react'
+import { Calendar, MapPin, Phone, FileText, DollarSign, X } from 'lucide-react'
 import {
     Dialog,
     DialogContent,
