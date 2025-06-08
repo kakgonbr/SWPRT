@@ -19,30 +19,38 @@ import {
 import { Button } from '../ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { format } from 'date-fns'
-import { type User } from '../../pages/admin/AdminDashboard'
+
+
+// Define proper types instead of importing from AdminDashboard
+interface User {
+    id: string
+    name: string
+    email: string
+    role: 'renter' | 'admin' | 'staff'
+    dateOfBirth: string
+    address: string
+    credentialIdNumber: string
+    status: boolean
+    avatarUrl?: string
+    createdAt: string | Date
+}
+
+interface UserFormData {
+    name: string
+    email: string
+    role: 'renter' | 'admin' | 'staff'
+    dateOfBirth: string
+    address: string
+    credentialIdNumber: string
+    status: boolean
+}
 
 interface UserEditDialogProps {
     isOpen: boolean
     onClose: () => void
     selectedUser: User | null
-    editFormData: {
-        name: string
-        email: string
-        role: 'renter' | 'admin' | 'staff'
-        dateOfBirth: string
-        address: string
-        credentialIdNumber: string
-        status: boolean
-    }
-    setEditFormData: React.Dispatch<React.SetStateAction<{
-        name: string
-        email: string
-        role: 'renter' | 'admin' | 'staff'
-        dateOfBirth: string
-        address: string
-        credentialIdNumber: string
-        status: boolean
-    }>>
+    editFormData: UserFormData
+    setEditFormData: React.Dispatch<React.SetStateAction<UserFormData>>
     onSave: () => void
     isSaving: boolean
 }
@@ -100,7 +108,7 @@ export default function UserEditDialog({
                             <div>
                                 <h3 className="text-lg font-medium">{selectedUser.name}</h3>
                                 <p className="text-sm text-muted-foreground">
-                                    Member since {format(selectedUser.createdAt, 'MMM yyyy')}
+                                    Member since {format(new Date(selectedUser.createdAt), 'MMM yyyy')}
                                 </p>
                             </div>
                         </div>
@@ -225,3 +233,6 @@ export default function UserEditDialog({
         </Dialog>
     )
 }
+
+// Export types for use in other components
+export type { User, UserFormData }

@@ -18,6 +18,7 @@ import LocationFinderPage from './pages/LocationFinderPage'
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
 import { AdminDashboard } from './pages/admin'
+import AdminControlPanel from './pages/admin/AdminControlPanel'
 
 // Error boundary component
 import ErrorBoundary from './components/ErrorBoundary'
@@ -25,7 +26,6 @@ import ErrorBoundary from './components/ErrorBoundary'
 import NotFoundPage from './pages/NotFoundPage'
 import StaffDashboard from './pages/staff/StaffDashboard'
 import ForgotPasswordPage from './pages/auth/ForgotPassword.tsx'
-import { ReportIssueDialog } from './components/ReportIssueDialog.tsx'
 
 function App() {
     return (
@@ -48,6 +48,7 @@ function App() {
                                     <Route path="/auth/signup" element={<SignupPage />} />
                                     <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
                                     <Route path="/admin" element={<AdminDashboard />} />
+                                    <Route path="/admin/control-panel" element={<AdminControlPanel />} />
                                     <Route path='/staff' element={<StaffDashboard />} />
                                     <Route path="*" element={<NotFoundPage />} />
                                 </Routes>

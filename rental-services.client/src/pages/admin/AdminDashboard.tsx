@@ -10,6 +10,8 @@ import StatsCards from '../../components/admin/StartCards'
 import DashboardTabs from '../../components/admin/DashboardTabs'
 import UserEditDialog from '../../components/admin/UserEditDialog'
 import ExportReportSection from '../../components/admin/ExportReportSection'
+import { Button } from '../../components/ui/button'
+import { Shield, Settings } from 'lucide-react'
 
 export default function AdminDashboard() {
     const navigate = useNavigate()
@@ -37,7 +39,7 @@ export default function AdminDashboard() {
     }, [user, isAuthenticated, loading, navigate])
 
     // Loading state
-    if (loading || statsLoading) {
+    if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -52,25 +54,49 @@ export default function AdminDashboard() {
 
     return (
         <div className="container mx-auto px-4 py-8">
-            {/* Header with Export Section */}
-            <div className="flex justify-between items-center mb-6">
-                <DashboardHeader />
-                <ExportReportSection />
+            {/* Header with Control Panel Access */}
+            <div className="flex items-center justify-between mb-8">
+                <div>
+                    <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
+                    <p className="text-muted-foreground">
+                        Welcome back, {user?.name}! Manage your rental platform.
+                    </p>
+                </div>
+
+                {/* Control Panel Button - Only for Admin */}
+                {user.role === 'admin' && (
+                    <Button
+                        onClick={() => navigate('/admin/control-panel')}
+                        className="flex items-center gap-2"
+                        variant="outline"
+                    >
+                        <Shield className="h-4 w-4" />
+                        Control Panel
+                    </Button>
+                )}
             </div>
 
-            {/* Dashboard Content */}
+            {/* Dashboard Header */}
+            <DashboardHeader />
+
+            {/* Stats Cards */}
             <StatsCards stats={stats} />
+
+            {/* Dashboard Tabs */}
             <DashboardTabs onEditUser={handleEditUser} />
 
-            {/* User Edit Modal */}
+            {/* Export Report Section */}
+            <ExportReportSection />
+
+            {/* User Edit Dialog */}
             <UserEditDialog
                 isOpen={isEditDialogOpen}
-                onClose={handleCancel}
                 selectedUser={selectedUser}
                 editFormData={editFormData}
                 setEditFormData={setEditFormData}
-                onSave={handleSaveUser}
                 isSaving={isSaving}
+                onSave={handleSaveUser}
+                onClose={handleCancel}
             />
         </div>
     )
