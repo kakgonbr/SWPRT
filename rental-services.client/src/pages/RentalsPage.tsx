@@ -9,7 +9,8 @@ import {
     CalendarX2,
     DollarSign,
     X,
-    AlertTriangle
+    AlertTriangle,
+    Bug // Add this import
 } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../components/ui/card'
@@ -38,6 +39,7 @@ import { format, differenceInHours } from 'date-fns'
 import { useAuth } from '../contexts/auth-context'
 import { MOCK_RENTALS } from '../lib/mock-data'
 import type { Rental } from '../lib/types'
+import ReportIssueDialog from '../components/customer/ReportIssueDialog'
 
 export default function RentalsPage() {
     const navigate = useNavigate()
@@ -48,6 +50,9 @@ export default function RentalsPage() {
     const [cancellingRental, setCancellingRental] = useState<string | null>(null)
     const [showCancelDialog, setShowCancelDialog] = useState(false)
     const [rentalToCancel, setRentalToCancel] = useState<Rental | null>(null)
+    // Add report dialog state
+    const [showReportDialog, setShowReportDialog] = useState(false)
+    const [rentalToReport, setRentalToReport] = useState<Rental | null>(null)
 
     useEffect(() => {
         if (loading) return
@@ -73,6 +78,12 @@ export default function RentalsPage() {
     const handleCancelClick = (rental: Rental) => {
         setRentalToCancel(rental)
         setShowCancelDialog(true)
+    }
+
+    // Add report handler
+    const handleReportClick = (rental: Rental) => {
+        setRentalToReport(rental)
+        setShowReportDialog(true)
     }
 
     const handleConfirmCancel = async () => {
@@ -123,6 +134,12 @@ export default function RentalsPage() {
 
         // Check if rental start date is in the future
         return rental.startDate > new Date()
+    }
+
+    // Add function to check if report is allowed
+    const canReportIssue = (rental: Rental) => {
+        // Allow reporting for active or completed rentals
+        return rental.status === 'Active' || rental.status === 'Completed'
     }
 
     const getCancellationPolicy = (rental: Rental) => {
@@ -199,6 +216,19 @@ export default function RentalsPage() {
                         <Button variant="outline" size="sm" className="flex-1" asChild>
                             <Link to={`/bikes/${rental.bikeId}`}>View Details</Link>
                         </Button>
+
+                        {/* Report Issue Button */}
+                        {canReportIssue(rental) && (
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleReportClick(rental)}
+                                className="flex-1 text-orange-600 border-orange-200 hover:bg-orange-50"
+                            >
+                                <Bug className="w-4 w-4 mr-1" />
+                                Report Issue
+                            </Button>
+                        )}
 
                         {canCancelRental(rental) && (
                             <Button
@@ -358,6 +388,18 @@ export default function RentalsPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Report Issue Dialog */}
+            <ReportIssueDialog
+                isOpen={showReportDialog}
+                onClose={() => setShowReportDialog(false)}
+                rental={rentalToReport}
+                userInfo={{
+                    id: user?.id || '',
+                    name: user?.name || '',
+                    email: user?.email || ''
+                }}
+            />
         </div>
     )
 }

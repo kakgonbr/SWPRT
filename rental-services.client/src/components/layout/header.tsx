@@ -13,7 +13,9 @@ import {
     Shield,
     Menu,
     AlertTriangle,
-    Heart
+    Heart,
+    Bug,
+    Wrench
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import {
@@ -29,15 +31,19 @@ import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet'
 import { useChatWidget } from '../../contexts/chat-widget-context'
 import { useAuth } from '../../contexts/auth-context'
 import { useIsMobile } from '../../hooks/use-mobile'
-import { ReportIssueDialog } from '../ReportIssueDialog'
 import { FeedbackDialog } from '../FeedbackDialog'
+import GeneralReportDialog from '../customer/GeneralReportDialog'
+import ReportIssueDialog from '../customer/ReportIssueDialog'
 
 export default function Header() {
     const { openChatWidget } = useChatWidget()
     const { user, isAuthenticated, logout } = useAuth()
     const isMobile = useIsMobile()
     const [isSheetOpen, setIsSheetOpen] = useState(false)
-    const [isReportIssueOpen, setIsReportIssueOpen] = useState(false)
+    // Bike issue report for header button
+    const [isBikeReportOpen, setIsBikeReportOpen] = useState(false)
+    // Website issue report for dropdown
+    const [isWebsiteReportOpen, setIsWebsiteReportOpen] = useState(false)
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
 
     const handleLogout = () => {
@@ -109,16 +115,16 @@ export default function Header() {
                             </Link>
                         </DropdownMenuItem>
 
-                        {/* Add Feedback and Report Issue to dropdown */}
+                        {/* Feedback and Website Report in dropdown */}
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={() => setIsFeedbackOpen(true)}>
                             <Heart className="mr-2 h-4 w-4" />
                             <span>Give Feedback</span>
                         </DropdownMenuItem>
 
-                        <DropdownMenuItem onClick={() => setIsReportIssueOpen(true)}>
-                            <AlertTriangle className="mr-2 h-4 w-4" />
-                            <span>Report Issue</span>
+                        <DropdownMenuItem onClick={() => setIsWebsiteReportOpen(true)}>
+                            <Bug className="mr-2 h-4 w-4" />
+                            <span>Report Website Issue</span>
                         </DropdownMenuItem>
 
                         {(user.role === 'admin') && (
@@ -199,7 +205,7 @@ export default function Header() {
                         <span className="sr-only">Open chat support</span>
                     </Button>
 
-                    {/* Feedback and Report Buttons - Desktop Only - REMOVED !isAuthenticated condition */}
+                    {/* Feedback and Bike Report Buttons - Desktop Only */}
                     {!isMobile && (
                         <div className="flex items-center space-x-2">
                             <Button
@@ -212,14 +218,15 @@ export default function Header() {
                                 Feedback
                             </Button>
 
+                            {/* Changed to Bike Report */}
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                onClick={() => setIsReportIssueOpen(true)}
+                                onClick={() => setIsBikeReportOpen(true)}
                                 className="text-red-600 hover:text-red-700 hover:bg-red-50"
                             >
-                                <AlertTriangle className="h-4 w-4 mr-1" />
-                                Report
+                                <Wrench className="h-4 w-4 mr-1" />
+                                Report Bike Issue
                             </Button>
                         </div>
                     )}
@@ -242,7 +249,7 @@ export default function Header() {
                                         <NavigationLinks />
                                     </nav>
 
-                                    {/* Mobile Feedback/Report Buttons - REMOVED !isAuthenticated condition */}
+                                    {/* Mobile Feedback/Report Buttons */}
                                     <div className="flex flex-col space-y-2 border-t pt-4">
                                         <Button
                                             variant="ghost"
@@ -256,16 +263,30 @@ export default function Header() {
                                             Give Feedback
                                         </Button>
 
+                                        {/* Changed to Bike Report for mobile header */}
                                         <Button
                                             variant="ghost"
                                             onClick={() => {
-                                                setIsReportIssueOpen(true)
+                                                setIsBikeReportOpen(true)
                                                 setIsSheetOpen(false)
                                             }}
                                             className="justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
                                         >
-                                            <AlertTriangle className="h-4 w-4 mr-2" />
-                                            Report Issue
+                                            <Wrench className="h-4 w-4 mr-2" />
+                                            Report Bike Issue
+                                        </Button>
+
+                                        {/* Website report in mobile menu (separate from avatar dropdown) */}
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => {
+                                                setIsWebsiteReportOpen(true)
+                                                setIsSheetOpen(false)
+                                            }}
+                                            className="justify-start text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                                        >
+                                            <Bug className="h-4 w-4 mr-2" />
+                                            Report Website Issue
                                         </Button>
                                     </div>
 
@@ -280,14 +301,32 @@ export default function Header() {
             </div>
 
             {/* Dialog components */}
-            <ReportIssueDialog
-                isOpen={isReportIssueOpen}
-                onClose={() => setIsReportIssueOpen(false)}
-            />
-
             <FeedbackDialog
                 isOpen={isFeedbackOpen}
                 onClose={() => setIsFeedbackOpen(false)}
+            />
+
+            {/* Bike Issue Report Dialog - for header button */}
+            <ReportIssueDialog
+                isOpen={isBikeReportOpen}
+                onClose={() => setIsBikeReportOpen(false)}
+                rental={null} // No specific rental from header
+                userInfo={{
+                    id: user?.id || '',
+                    name: user?.name || '',
+                    email: user?.email || ''
+                }}
+            />
+
+            {/* Website Issue Report Dialog - for dropdown */}
+            <GeneralReportDialog
+                isOpen={isWebsiteReportOpen}
+                onClose={() => setIsWebsiteReportOpen(false)}
+                userInfo={{
+                    id: user?.id || '',
+                    name: user?.name || '',
+                    email: user?.email || ''
+                }}
             />
         </header>
     )
