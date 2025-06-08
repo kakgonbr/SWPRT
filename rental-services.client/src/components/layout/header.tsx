@@ -14,7 +14,8 @@ import {
     Shield,
     Menu,
     //@ts-ignore
-    X
+    X,
+    AlertTriangle
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import {
@@ -30,12 +31,14 @@ import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet'
 import { useChatWidget } from '../../contexts/chat-widget-context'
 import { useAuth } from '../../contexts/auth-context'
 import { useIsMobile } from '../../hooks/use-mobile'
+import { ReportIssueDialog } from '../ReportIssueDialog' // Add this import
 
 export default function Header() {
     const { openChatWidget } = useChatWidget()
     const { user, isAuthenticated, logout } = useAuth()
     const isMobile = useIsMobile()
     const [isSheetOpen, setIsSheetOpen] = useState(false)
+    const [isReportIssueOpen, setIsReportIssueOpen] = useState(false)
 
     const handleLogout = () => {
         logout()
@@ -162,15 +165,8 @@ export default function Header() {
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                 <Link to="/" className="flex items-center space-x-2">
                     <Bike className="h-8 w-8 text-primary" />
-                    <span className="font-bold text-xl text-primary">VroomVroom.vn</span>
+                    <span className="font-bold text-xl text-primary">VroomVroom.click</span>
                 </Link>
-
-                {/* Desktop Navigation */}
-                {/*{!isMobile && (*/}
-                {/*    <nav className="flex items-center space-x-6">*/}
-                {/*        <NavigationLinks />*/}
-                {/*    </nav>*/}
-                {/*)}*/}
 
                 <div className="flex items-center space-x-4">
                     <Button
@@ -208,8 +204,25 @@ export default function Header() {
                             </SheetContent>
                         </Sheet>
                     )}
+
+                    {/* Report Issue Button */}
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsReportIssueOpen(true)}
+                        className="fixed bottom-4 right-4 z-50 shadow-lg bg-red-500 hover:bg-red-600 text-white"
+                    >
+                        <AlertTriangle className="h-4 w-4 mr-2" />
+                        Report Issue
+                    </Button>
                 </div>
             </div>
+
+            {/* Add the ReportIssueDialog component */}
+            <ReportIssueDialog
+                isOpen={isReportIssueOpen}
+                onClose={() => setIsReportIssueOpen(false)}
+            />
         </header>
     )
 }

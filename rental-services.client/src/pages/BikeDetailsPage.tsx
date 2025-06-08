@@ -1,18 +1,25 @@
 // src/pages/BikeDetailsPage.tsx
-import {useParams, Link} from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
 //@ts-ignore
 
-import {ArrowLeft, Star, MapPin, Calendar, Users, Fuel, Gauge} from 'lucide-react'
-import {Button} from '../components/ui/button'
+import { ArrowLeft, Star, MapPin, Calendar, Users, Fuel, Gauge } from 'lucide-react'
+import { Button } from '../components/ui/button'
 //@ts-ignore
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '../components/ui/card'
-import {Badge} from '../components/ui/badge'
-import {Separator} from '../components/ui/separator'
-import {MOCK_BIKES} from '../lib/mock-data'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import { Badge } from '../components/ui/badge'
+import { Separator } from '../components/ui/separator'
+import { MOCK_BIKES, MOCK_BIKE_REVIEWS } from '../lib/mock-data'
+import { BikeReviews } from '../components/BikeReviews'
 
 export default function BikeDetailsPage() {
-    const {id} = useParams<{ id: string }>()
+    const { id } = useParams<{ id: string }>()
     const bike = MOCK_BIKES.find(b => b.id === id)
+
+    // Get reviews for this bike
+    const bikeReviews = MOCK_BIKE_REVIEWS.filter(review => review.bikeId === id)
+    const averageRating = bikeReviews.length > 0
+        ? bikeReviews.reduce((sum, review) => sum + review.rating, 0) / bikeReviews.length
+        : 0
 
     if (!bike) {
         return (
@@ -30,7 +37,7 @@ export default function BikeDetailsPage() {
             {/* Back Button */}
             <Button variant="ghost" className="mb-6" asChild>
                 <Link to="/bikes">
-                    <ArrowLeft className="w-4 h-4 mr-2"/>
+                    <ArrowLeft className="w-4 h-4 mr-2" />
                     Back to Bikes
                 </Link>
             </Button>
@@ -57,11 +64,11 @@ export default function BikeDetailsPage() {
                         <h1 className="text-3xl font-bold mb-2">{bike.name}</h1>
                         <div className="flex items-center gap-4 text-muted-foreground">
                             <div className="flex items-center">
-                                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400 mr-1"/>
-                                <span>{bike.rating}</span>
+                                <Star className="w-4 h-4 fill-yellow-400 text-yellow-400 mr-1" />
+                                <span>{averageRating.toFixed(1)} ({bikeReviews.length} reviews)</span>
                             </div>
                             <div className="flex items-center">
-                                <MapPin className="w-4 h-4 mr-1"/>
+                                <MapPin className="w-4 h-4 mr-1" />
                                 <span>{bike.location}</span>
                             </div>
                         </div>
@@ -72,7 +79,7 @@ export default function BikeDetailsPage() {
                         <span className="text-lg font-normal text-muted-foreground">/day</span>
                     </div>
 
-                    <Separator/>
+                    <Separator />
 
                     <div>
                         <h3 className="font-semibold mb-2">Description</h3>
@@ -83,13 +90,13 @@ export default function BikeDetailsPage() {
                         <h3 className="font-semibold mb-3">Specifications</h3>
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex items-center">
-                                <Gauge className="w-4 h-4 mr-2 text-muted-foreground"/>
+                                <Gauge className="w-4 h-4 mr-2 text-muted-foreground" />
                                 <span className="text-sm">
                                     {bike.cylinderVolume ? `${bike.cylinderVolume}cc` : 'Electric'}
                                 </span>
                             </div>
                             <div className="flex items-center">
-                                <Users className="w-4 h-4 mr-2 text-muted-foreground"/>
+                                <Users className="w-4 h-4 mr-2 text-muted-foreground" />
                                 <span className="text-sm">{bike.amount} available</span>
                             </div>
                         </div>
@@ -98,17 +105,16 @@ export default function BikeDetailsPage() {
                     <div>
                         <h3 className="font-semibold mb-3">Features</h3>
                         <div className="grid grid-cols-1 gap-2">
-
                             {bike.features?.map((feature, index) => (
                                 <div key={index} className="flex items-center">
-                                    <div className="w-2 h-2 bg-primary rounded-full mr-3"/>
+                                    <div className="w-2 h-2 bg-primary rounded-full mr-3" />
                                     <span className="text-sm">{feature}</span>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    <Separator/>
+                    <Separator />
 
                     <div className="space-y-3">
                         <Button
@@ -119,7 +125,7 @@ export default function BikeDetailsPage() {
                         >
                             {bike.isAvailable ? (
                                 <Link to={`/checkout?bikeId=${bike.id}`}>
-                                    <Calendar className="w-4 h-4 mr-2"/>
+                                    <Calendar className="w-4 h-4 mr-2" />
                                     Book Now
                                 </Link>
                             ) : (
@@ -129,12 +135,22 @@ export default function BikeDetailsPage() {
 
                         <Button variant="outline" className="w-full" asChild>
                             <Link to="/location-finder">
-                                <MapPin className="w-4 h-4 mr-2"/>
+                                <MapPin className="w-4 h-4 mr-2" />
                                 Find Pickup Location
                             </Link>
                         </Button>
                     </div>
                 </div>
+            </div>
+
+            {/* Reviews Section */}
+            <div className="mt-12">
+                <BikeReviews
+                    bikeId={id!}
+                    reviews={bikeReviews}
+                    averageRating={averageRating}
+                    totalReviews={bikeReviews.length}
+                />
             </div>
         </div>
     )

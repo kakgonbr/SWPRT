@@ -313,6 +313,65 @@ export const MOCK_ADMIN_SUPPORT_MESSAGES: AdminSupportMessage[] = [
     }
 ];
 
+// Add this to your mock-data.ts file or create a separate reviews file
+export interface BikeReview {
+    id: string
+    bikeId: string
+    userId: string
+    userName: string
+    userAvatar?: string
+    rating: number
+    title: string
+    comment: string
+    createdAt: string
+    isVerifiedRental: boolean
+    helpfulCount: number
+    images?: string[]
+}
+
+export const MOCK_BIKE_REVIEWS: BikeReview[] = [
+    {
+        id: "review-1",
+        bikeId: "bike1",
+        userId: "user-1",
+        userName: "Sarah Johnson",
+        userAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah",
+        rating: 5,
+        title: "Excellent bike for city tours!",
+        comment: "I rented this bike for a week-long trip around the city. The performance was outstanding, fuel efficient, and very comfortable for long rides. The bike was in perfect condition when I picked it up. Highly recommend!",
+        createdAt: "2024-03-15T10:30:00Z",
+        isVerifiedRental: true,
+        helpfulCount: 12,
+        images: ["https://picsum.photos/400/300?random=1", "https://picsum.photos/400/300?random=2"]
+    },
+    {
+        id: "review-2",
+        bikeId: "bike1",
+        userId: "user-2",
+        userName: "Mike Chen",
+        userAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Mike",
+        rating: 4,
+        title: "Good value for money",
+        comment: "Solid bike with good performance. The only minor issue was that the seat could be more comfortable for longer rides. Staff was very helpful during pickup and return.",
+        createdAt: "2024-03-10T14:22:00Z",
+        isVerifiedRental: true,
+        helpfulCount: 8
+    },
+    {
+        id: "review-3",
+        bikeId: "bike1",
+        userId: "user-3",
+        userName: "Emma Wilson",
+        userAvatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=Emma",
+        rating: 5,
+        title: "Perfect for beginners",
+        comment: "As a new rider, this bike was perfect for me. Easy to handle, responsive, and the rental process was smooth. Great customer service too!",
+        createdAt: "2024-03-05T09:15:00Z",
+        isVerifiedRental: true,
+        helpfulCount: 15
+    }
+]
+
 // Helper function to get hours (not exported, just for mock data)
 function subHours(date: Date, hours: number): Date {
     const newDate = new Date(date);

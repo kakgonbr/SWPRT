@@ -25,6 +25,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import NotFoundPage from './pages/NotFoundPage'
 import StaffDashboard from './pages/staff/StaffDashboard'
 import ForgotPasswordPage from './pages/auth/ForgotPassword.tsx'
+import { ReportIssueDialog } from './components/ReportIssueDialog.tsx'
 
 function App() {
     return (
