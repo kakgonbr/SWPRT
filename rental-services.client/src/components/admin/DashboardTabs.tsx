@@ -1,39 +1,50 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs'
-import OverviewTab from './OverviewTab'
+import { Users, Bike, Calendar, Heart } from 'lucide-react'
 import UsersTab from './UsersTab'
 import BikesTab from './BikesTab'
 import RentalsTab from './RentalsTab'
-
-import { type User } from '../../pages/admin/AdminDashboard'
+import FeedbackManagement from './FeedbackManagement'
 
 interface DashboardTabsProps {
-    onEditUser: (user: User) => void
+    onEditUser: (user: any) => void
 }
 
 export default function DashboardTabs({ onEditUser }: DashboardTabsProps) {
     return (
-        <Tabs defaultValue="overview" className="space-y-6">
-            <TabsList>
-                <TabsTrigger value="overview">Overview</TabsTrigger>
-                <TabsTrigger value="users">Users</TabsTrigger>
-                <TabsTrigger value="bikes">Bikes</TabsTrigger>
-                <TabsTrigger value="rentals">Rentals</TabsTrigger>
+        <Tabs defaultValue="users" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="users" className="flex items-center gap-2">
+                    <Users className="h-4 w-4" />
+                    Users
+                </TabsTrigger>
+                <TabsTrigger value="bikes" className="flex items-center gap-2">
+                    <Bike className="h-4 w-4" />
+                    Bikes
+                </TabsTrigger>
+                <TabsTrigger value="rentals" className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    Rentals
+                </TabsTrigger>
+                <TabsTrigger value="feedback" className="flex items-center gap-2">
+                    <Heart className="h-4 w-4" />
+                    Feedback
+                </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview" className="space-y-6">
-                <OverviewTab />
-            </TabsContent>
-
-            <TabsContent value="users">
+            <TabsContent value="users" className="mt-6">
                 <UsersTab onEditUser={onEditUser} />
             </TabsContent>
 
-            <TabsContent value="bikes">
+            <TabsContent value="bikes" className="mt-6">
                 <BikesTab />
             </TabsContent>
 
-            <TabsContent value="rentals">
+            <TabsContent value="rentals" className="mt-6">
                 <RentalsTab />
+            </TabsContent>
+
+            <TabsContent value="feedback" className="mt-6">
+                <FeedbackManagement />
             </TabsContent>
         </Tabs>
     )

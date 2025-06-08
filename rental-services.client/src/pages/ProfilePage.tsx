@@ -228,34 +228,28 @@ export default function ProfilePage() {
         }
     }
 
-    const handleIdConfirm = async () => {
-        if (!extractedIdData) return
-
+    const handleIdConfirm = async (editedData: ExtractedIdData) => {
         setIsSavingIdData(true)
 
         try {
-            // Update form data with extracted information
+            // Update form data with edited information
             setFormData(prev => ({
                 ...prev,
-                name: extractedIdData.fullName,
-                dateOfBirth: extractedIdData.dateOfBirth,
-                credentialIdNumber: extractedIdData.idNumber,
-                address: extractedIdData.address
+                name: editedData.fullName,
+                dateOfBirth: editedData.dateOfBirth,
+                credentialIdNumber: editedData.idNumber,
+                address: editedData.address
             }))
 
-            // In real implementation, save to API here
-            await new Promise(resolve => setTimeout(resolve, 2000)) // Simulate API call
+            // Save to backend API with edited data
+            // await saveIdDocumentData(editedData)
 
             toast({
-                title: "ID Document Verified Successfully",
-                description: "Your identity has been verified and your profile has been updated with the extracted information.",
+                title: "ID Document Verified",
+                description: "Your ID information has been successfully verified and saved.",
             })
 
-            // Close the review dialog
             setIsIdReviewOpen(false)
-
-            // Optionally refresh user data to get the new credentialIdImageUrl
-            // You might want to call a refresh function from your auth context here
 
         } catch (error) {
             console.error('Error saving ID data:', error)

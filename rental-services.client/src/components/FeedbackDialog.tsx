@@ -7,39 +7,33 @@ import {
     DialogTitle,
     DialogFooter,
 } from './ui/dialog'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from './ui/select'
 import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Textarea } from './ui/textarea'
 import { useToast } from '../hooks/use-toast'
-import { AlertTriangle } from 'lucide-react'
+import { Star, Heart } from 'lucide-react'
 
-interface ReportIssueDialogProps {
+interface FeedbackDialogProps {
     isOpen: boolean
     onClose: () => void
 }
 
-export function ReportIssueDialog({ isOpen, onClose }: ReportIssueDialogProps) {
-    const [issueType, setIssueType] = useState('')
+export function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps) {
+    const [title, setTitle] = useState('')
     const [description, setDescription] = useState('')
     const [screenshot, setScreenshot] = useState<File | null>(null)
+    const [systemRating, setSystemRating] = useState(0)
     const [isSubmitting, setIsSubmitting] = useState(false)
     const { toast } = useToast()
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        if (!issueType || !description.trim()) {
+        if (!title.trim() || !description.trim() || systemRating === 0) {
             toast({
                 title: "Missing Information",
-                description: "Please fill in the issue type and description.",
+                description: "Please fill in all required fields and provide a rating.",
                 variant: "destructive"
             })
             return
@@ -50,11 +44,10 @@ export function ReportIssueDialog({ isOpen, onClose }: ReportIssueDialogProps) {
         try {
             // Create FormData for file upload
             const formData = new FormData()
-            formData.append('issueType', issueType)
+            formData.append('title', title)
             formData.append('description', description)
+            formData.append('systemRating', systemRating.toString())
             formData.append('currentPage', window.location.pathname)
-            formData.append('url', window.location.href)
-            formData.append('userAgent', navigator.userAgent)
             formData.append('timestamp', new Date().toISOString())
 
             if (screenshot) {
@@ -62,7 +55,7 @@ export function ReportIssueDialog({ isOpen, onClose }: ReportIssueDialogProps) {
             }
 
             // Replace with your actual API endpoint
-            const response = await fetch('/api/support/report-issue', {
+            const response = await fetch('/api/support/feedback', {
                 method: 'POST',
                 body: formData,
                 headers: {
@@ -71,25 +64,26 @@ export function ReportIssueDialog({ isOpen, onClose }: ReportIssueDialogProps) {
             })
 
             if (!response.ok) {
-                throw new Error('Failed to submit report')
+                throw new Error('Failed to submit feedback')
             }
 
             toast({
-                title: "Issue Reported",
-                description: "Thank you for reporting this issue. Our team will investigate it.",
+                title: "Feedback Submitted",
+                description: "Thank you for your valuable feedback! We appreciate your input.",
             })
 
             // Reset form
-            setIssueType('')
+            setTitle('')
             setDescription('')
             setScreenshot(null)
+            setSystemRating(0)
             onClose()
 
         } catch (error) {
-            console.error('Error submitting report:', error)
+            console.error('Error submitting feedback:', error)
             toast({
                 title: "Submission Failed",
-                description: "Failed to submit your report. Please try again.",
+                description: "Failed to submit your feedback. Please try again.",
                 variant: "destructive"
             })
         } finally {
@@ -113,48 +107,74 @@ export function ReportIssueDialog({ isOpen, onClose }: ReportIssueDialogProps) {
         }
     }
 
+    const handleStarClick = (rating: number) => {
+        setSystemRating(rating)
+    }
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
-                        <AlertTriangle className="h-5 w-5 text-red-500" />
-                        Report an Issue
+                        <Heart className="h-5 w-5 text-red-500" />
+                        Share Your Feedback
                     </DialogTitle>
                     <DialogDescription>
-                        Report bugs, errors, or technical problems you've encountered.
+                        Help us improve VroomVroom by sharing your experience and suggestions.
                     </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
                     <div className="space-y-2">
-                        <Label htmlFor="issueType">Issue Type *</Label>
-                        <Select value={issueType} onValueChange={setIssueType}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select issue type" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="bug">Bug/Error</SelectItem>
-                                <SelectItem value="ui">UI/UX Problem</SelectItem>
-                                <SelectItem value="performance">Performance Issue</SelectItem>
-                                <SelectItem value="payment">Payment Problem</SelectItem>
-                                <SelectItem value="rental">Rental System Issue</SelectItem>
-                                <SelectItem value="account">Account Problem</SelectItem>
-                                <SelectItem value="security">Security Concern</SelectItem>
-                                <SelectItem value="other">Other Technical Issue</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <Label htmlFor="title">Title *</Label>
+                        <Input
+                            id="title"
+                            placeholder="Brief summary of your feedback"
+                            value={title}
+                            onChange={(e) => setTitle(e.target.value)}
+                        />
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="description">Problem Description *</Label>
+                        <Label htmlFor="description">Description *</Label>
                         <Textarea
                             id="description"
-                            placeholder="Describe the issue in detail... What happened? What did you expect to happen? When did it occur?"
+                            placeholder="Tell us what you think about our service, features, or overall experience..."
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                             rows={4}
                         />
+                    </div>
+
+                    <div className="space-y-2">
+                        <Label>System Rating *</Label>
+                        <div className="flex items-center gap-2">
+                            <div className="flex gap-1">
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <button
+                                        key={star}
+                                        type="button"
+                                        onClick={() => handleStarClick(star)}
+                                        className="p-1 hover:scale-110 transition-transform"
+                                    >
+                                        <Star
+                                            className={`w-6 h-6 ${star <= systemRating
+                                                    ? 'fill-yellow-400 text-yellow-400'
+                                                    : 'text-gray-300 hover:text-yellow-300'
+                                                }`}
+                                        />
+                                    </button>
+                                ))}
+                            </div>
+                            {systemRating > 0 && (
+                                <span className="text-sm text-muted-foreground ml-2">
+                                    {systemRating}/5 stars
+                                </span>
+                            )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                            Rate your overall experience with our system
+                        </p>
                     </div>
 
                     <div className="space-y-2">
@@ -170,9 +190,6 @@ export function ReportIssueDialog({ isOpen, onClose }: ReportIssueDialogProps) {
                                 Selected: {screenshot.name}
                             </p>
                         )}
-                        <p className="text-xs text-muted-foreground">
-                            Screenshots help us understand and fix the issue faster
-                        </p>
                     </div>
 
                     <DialogFooter>
@@ -186,9 +203,9 @@ export function ReportIssueDialog({ isOpen, onClose }: ReportIssueDialogProps) {
                         </Button>
                         <Button
                             type="submit"
-                            disabled={isSubmitting || !issueType || !description.trim()}
+                            disabled={isSubmitting || !title.trim() || !description.trim() || systemRating === 0}
                         >
-                            {isSubmitting ? 'Submitting...' : 'Report Issue'}
+                            {isSubmitting ? 'Submitting...' : 'Submit Feedback'}
                         </Button>
                     </DialogFooter>
                 </form>

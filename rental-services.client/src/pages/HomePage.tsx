@@ -1,15 +1,59 @@
 // src/pages/HomePage.tsx
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import React, { useState } from 'react'
-import { Search, Bike, MapPin, Star, Shield, Clock } from 'lucide-react'
+import { Search, Bike, MapPin, Star, Shield, Clock, Calendar, ArrowRight } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
+import { useToast } from '../hooks/use-toast'
 import { MOCK_BIKES } from '../lib/mock-data'
 
 export default function HomePage() {
     const [startDate, setStartDate] = useState('')
     const [endDate, setEndDate] = useState('')
+    const [location, setLocation] = useState('')
+    const navigate = useNavigate()
+    const { toast } = useToast()
     const featuredBikes = MOCK_BIKES.slice(0, 3)
+
+    const calculateDays = () => {
+        if (!startDate || !endDate) return 0
+        const start = new Date(startDate)
+        const end = new Date(endDate)
+        const diffTime = Math.abs(end.getTime() - start.getTime())
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    }
+
+    const handleSearchBikes = () => {
+        if (!startDate || !endDate) {
+            toast({
+                title: "Please select dates",
+                description: "Choose your rental start and end dates to continue.",
+                variant: "destructive"
+            })
+            return
+        }
+
+        if (new Date(startDate) >= new Date(endDate)) {
+            toast({
+                title: "Invalid dates",
+                description: "End date must be after start date.",
+                variant: "destructive"
+            })
+            return
+        }
+
+        // Navigate to bikes page with search parameters
+        const searchParams = new URLSearchParams({
+            startDate,
+            endDate,
+            ...(location && { location })
+        })
+        navigate(`/bikes?${searchParams.toString()}`)
+    }
+
+    const totalDays = calculateDays()
 
     return (
         <div className="min-h-screen">
@@ -23,45 +67,128 @@ export default function HomePage() {
                         Discover the freedom of the open road with our premium motorbike rentals.
                         From city scooters to adventure bikes, we have the perfect ride for every journey.
                     </p>
-                    {/* Rental Date Selection Section */}
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
-                        <div>
-                            <label className="block text-sm font-medium mb-1" htmlFor="start-date">Start Date</label>
-                            <input
-                                id="start-date"
-                                type="date"
-                                className="border rounded px-3 py-2"
-                                value={startDate}
-                                onChange={e => setStartDate(e.target.value)}
-                                min={new Date().toISOString().split('T')[0]}
-                            />
+
+                    {/* Enhanced Rental Booking Card */}
+                    <Card className="max-w-4xl mx-auto mb-8 shadow-xl bg-white/95 backdrop-blur-sm">
+                        <CardHeader className="text-center pb-4">
+                            <CardTitle className="text-2xl text-primary flex items-center justify-center gap-2">
+                                <Calendar className="w-6 h-6" />
+                                Plan Your Adventure
+                            </CardTitle>
+                            <CardDescription className="text-base">
+                                Choose your dates and location to find the perfect bike
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            {/* Date Selection Row */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="start-date" className="text-sm font-semibold">
+                                        Pickup Date
+                                    </Label>
+                                    <Input
+                                        id="start-date"
+                                        type="date"
+                                        value={startDate}
+                                        onChange={e => setStartDate(e.target.value)}
+                                        min={new Date().toISOString().split('T')[0]}
+                                        className="h-12 text-base"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="end-date" className="text-sm font-semibold">
+                                        Return Date
+                                    </Label>
+                                    <Input
+                                        id="end-date"
+                                        type="date"
+                                        value={endDate}
+                                        onChange={e => setEndDate(e.target.value)}
+                                        min={startDate || new Date().toISOString().split('T')[0]}
+                                        disabled={!startDate}
+                                        className="h-12 text-base"
+                                    />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="location" className="text-sm font-semibold">
+                                        Pickup Location (Optional)
+                                    </Label>
+                                    <Input
+                                        id="location"
+                                        type="text"
+                                        placeholder="Ho Chi Minh City, Hanoi..."
+                                        value={location}
+                                        onChange={e => setLocation(e.target.value)}
+                                        className="h-12 text-base"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Rental Summary */}
+                            {totalDays > 0 && (
+                                <div className="bg-primary/5 rounded-lg p-4 border border-primary/20">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-muted-foreground">Rental Duration:</span>
+                                        <span className="font-semibold text-primary">
+                                            {totalDays} day{totalDays !== 1 ? 's' : ''}
+                                        </span>
+                                    </div>
+                                    {location && (
+                                        <div className="flex items-center justify-between text-sm mt-1">
+                                            <span className="text-muted-foreground">Location:</span>
+                                            <span className="font-medium">{location}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Action Buttons */}
+                            <div className="flex flex-col sm:flex-row gap-3">
+                                <Button
+                                    size="lg"
+                                    onClick={handleSearchBikes}
+                                    className="flex-1 h-14 text-lg font-semibold"
+                                >
+                                    <Search className="w-5 h-5 mr-2" />
+                                    Find Available Bikes
+                                    <ArrowRight className="w-5 h-5 ml-2" />
+                                </Button>
+                                <Button
+                                    size="lg"
+                                    variant="outline"
+                                    asChild
+                                    className="flex-1 h-14 text-lg"
+                                >
+                                    <Link to="/location-finder">
+                                        <MapPin className="w-5 h-5 mr-2" />
+                                        View Locations
+                                    </Link>
+                                </Button>
+                            </div>
+
+                            {/* Quick Tips */}
+                            <div className="text-center">
+                                <p className="text-sm text-muted-foreground">
+                                    💡 <strong>Pro tip:</strong> Book 24+ hours in advance for the best selection and prices
+                                </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    {/* Quick Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-primary">100+</div>
+                            <div className="text-sm text-muted-foreground">Bikes Available</div>
                         </div>
-                        <div>
-                            <label className="block text-sm font-medium mb-1" htmlFor="end-date">End Date</label>
-                            <input
-                                id="end-date"
-                                type="date"
-                                className="border rounded px-3 py-2"
-                                value={endDate}
-                                onChange={e => setEndDate(e.target.value)}
-                                min={startDate || new Date().toISOString().split('T')[0]}
-                                disabled={!startDate}
-                            />
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-primary">15+</div>
+                            <div className="text-sm text-muted-foreground">Cities Covered</div>
                         </div>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                        <Button size="lg" asChild>
-                            <Link to="/bikes">
-                                <Search className="w-5 h-5 mr-2" />
-                                Browse Bikes
-                            </Link>
-                        </Button>
-                        <Button size="lg" variant="outline" asChild>
-                            <Link to="/location-finder">
-                                <MapPin className="w-5 h-5 mr-2" />
-                                Find Locations
-                            </Link>
-                        </Button>
+                        <div className="text-center">
+                            <div className="text-2xl font-bold text-primary">4.8★</div>
+                            <div className="text-sm text-muted-foreground">Customer Rating</div>
+                        </div>
                     </div>
                 </div>
             </section>

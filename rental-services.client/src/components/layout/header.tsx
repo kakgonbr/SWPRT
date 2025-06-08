@@ -9,13 +9,11 @@ import {
     User,
     LogOut,
     Calendar,
-    //@ts-ignore
     Settings,
     Shield,
     Menu,
-    //@ts-ignore
-    X,
-    AlertTriangle
+    AlertTriangle,
+    Heart
 } from 'lucide-react'
 import { Button } from '../ui/button'
 import {
@@ -31,7 +29,8 @@ import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet'
 import { useChatWidget } from '../../contexts/chat-widget-context'
 import { useAuth } from '../../contexts/auth-context'
 import { useIsMobile } from '../../hooks/use-mobile'
-import { ReportIssueDialog } from '../ReportIssueDialog' // Add this import
+import { ReportIssueDialog } from '../ReportIssueDialog'
+import { FeedbackDialog } from '../FeedbackDialog'
 
 export default function Header() {
     const { openChatWidget } = useChatWidget()
@@ -39,6 +38,7 @@ export default function Header() {
     const isMobile = useIsMobile()
     const [isSheetOpen, setIsSheetOpen] = useState(false)
     const [isReportIssueOpen, setIsReportIssueOpen] = useState(false)
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
 
     const handleLogout = () => {
         logout()
@@ -109,6 +109,18 @@ export default function Header() {
                             </Link>
                         </DropdownMenuItem>
 
+                        {/* Add Feedback and Report Issue to dropdown */}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setIsFeedbackOpen(true)}>
+                            <Heart className="mr-2 h-4 w-4" />
+                            <span>Give Feedback</span>
+                        </DropdownMenuItem>
+
+                        <DropdownMenuItem onClick={() => setIsReportIssueOpen(true)}>
+                            <AlertTriangle className="mr-2 h-4 w-4" />
+                            <span>Report Issue</span>
+                        </DropdownMenuItem>
+
                         {(user.role === 'admin') && (
                             <>
                                 <DropdownMenuSeparator />
@@ -165,10 +177,18 @@ export default function Header() {
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                 <Link to="/" className="flex items-center space-x-2">
                     <Bike className="h-8 w-8 text-primary" />
-                    <span className="font-bold text-xl text-primary">VroomVroom.click</span>
+                    <span className="font-bold text-xl text-primary">VroomVroom.vn</span>
                 </Link>
 
                 <div className="flex items-center space-x-4">
+                    {/* Desktop Navigation Links */}
+                    {!isMobile && (
+                        <nav className="hidden md:flex items-center space-x-6">
+                            <NavigationLinks />
+                        </nav>
+                    )}
+
+                    {/* Chat Support Button */}
                     <Button
                         variant="ghost"
                         size="icon"
@@ -178,6 +198,31 @@ export default function Header() {
                         <MessageSquare className="h-4 w-4" />
                         <span className="sr-only">Open chat support</span>
                     </Button>
+
+                    {/* Feedback and Report Buttons - Desktop Only - REMOVED !isAuthenticated condition */}
+                    {!isMobile && (
+                        <div className="flex items-center space-x-2">
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setIsFeedbackOpen(true)}
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                            >
+                                <Heart className="h-4 w-4 mr-1" />
+                                Feedback
+                            </Button>
+
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setIsReportIssueOpen(true)}
+                                className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            >
+                                <AlertTriangle className="h-4 w-4 mr-1" />
+                                Report
+                            </Button>
+                        </div>
+                    )}
 
                     {/* Desktop Auth */}
                     {!isMobile && <AuthButtons />}
@@ -197,6 +242,33 @@ export default function Header() {
                                         <NavigationLinks />
                                     </nav>
 
+                                    {/* Mobile Feedback/Report Buttons - REMOVED !isAuthenticated condition */}
+                                    <div className="flex flex-col space-y-2 border-t pt-4">
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => {
+                                                setIsFeedbackOpen(true)
+                                                setIsSheetOpen(false)
+                                            }}
+                                            className="justify-start text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                                        >
+                                            <Heart className="h-4 w-4 mr-2" />
+                                            Give Feedback
+                                        </Button>
+
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => {
+                                                setIsReportIssueOpen(true)
+                                                setIsSheetOpen(false)
+                                            }}
+                                            className="justify-start text-red-600 hover:text-red-700 hover:bg-red-50"
+                                        >
+                                            <AlertTriangle className="h-4 w-4 mr-2" />
+                                            Report Issue
+                                        </Button>
+                                    </div>
+
                                     <div className="flex flex-col space-y-4">
                                         <AuthButtons />
                                     </div>
@@ -204,24 +276,18 @@ export default function Header() {
                             </SheetContent>
                         </Sheet>
                     )}
-
-                    {/* Report Issue Button */}
-                    <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setIsReportIssueOpen(true)}
-                        className="fixed bottom-4 right-4 z-50 shadow-lg bg-red-500 hover:bg-red-600 text-white"
-                    >
-                        <AlertTriangle className="h-4 w-4 mr-2" />
-                        Report Issue
-                    </Button>
                 </div>
             </div>
 
-            {/* Add the ReportIssueDialog component */}
+            {/* Dialog components */}
             <ReportIssueDialog
                 isOpen={isReportIssueOpen}
                 onClose={() => setIsReportIssueOpen(false)}
+            />
+
+            <FeedbackDialog
+                isOpen={isFeedbackOpen}
+                onClose={() => setIsFeedbackOpen(false)}
             />
         </header>
     )

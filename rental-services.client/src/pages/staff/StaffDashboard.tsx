@@ -9,11 +9,12 @@ import {
     TabsTrigger,
 } from '../../components/ui/tabs'
 import { Badge } from '../../components/ui/badge'
-import { MessageCircle, Calendar } from 'lucide-react'
+import { MessageCircle, Calendar, AlertTriangle } from 'lucide-react'
 
 import StaffStatsCards from '../../components/staff/StaffStatsCards'
 import CustomerMessagesTab from '../../components/staff/CustomerMessagesTab'
 import RentalManagementTab from '../../components/staff/RentalManagementTab'
+import ReportsManagementTab from '../../components/staff/ReportsManagementTab'
 import ChatDialog from '../../components/staff/ChatDialog'
 import RentalApprovalDialog from '../../components/staff/RentalApprovalDialog'
 
@@ -41,6 +42,9 @@ export default function StaffDashboard() {
         activeRentals,
         pendingRentalsCount
     } = useStaffDashboard()
+
+    // Mock new reports count for demonstration
+    const newReportsCount = 2
 
     // Authentication check
     useEffect(() => {
@@ -84,7 +88,7 @@ export default function StaffDashboard() {
 
             {/* Main Content Tabs */}
             <Tabs defaultValue="messages" className="space-y-4">
-                <TabsList>
+                <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="messages" className="flex items-center gap-2">
                         <MessageCircle className="h-4 w-4" />
                         Customer Messages
@@ -103,6 +107,15 @@ export default function StaffDashboard() {
                             </Badge>
                         )}
                     </TabsTrigger>
+                    <TabsTrigger value="reports" className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        Issue Reports
+                        {newReportsCount > 0 && (
+                            <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs">
+                                {newReportsCount}
+                            </Badge>
+                        )}
+                    </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="messages" className="space-y-4">
@@ -118,6 +131,10 @@ export default function StaffDashboard() {
                         onOpenApproval={openApprovalDialog}
                         onRejectRental={handleRejectRental}
                     />
+                </TabsContent>
+
+                <TabsContent value="reports" className="space-y-4">
+                    <ReportsManagementTab />
                 </TabsContent>
             </Tabs>
 

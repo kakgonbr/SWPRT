@@ -8,9 +8,11 @@ import {
     DialogFooter,
 } from './ui/dialog'
 import { Button } from './ui/button'
+import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Card, CardContent } from './ui/card'
 import { Badge } from './ui/badge'
+import { Textarea } from './ui/textarea'
 import {
     CheckCircle,
     AlertTriangle,
@@ -18,7 +20,10 @@ import {
     Calendar,
     CreditCard,
     MapPin,
-    Eye
+    Eye,
+    Edit3,
+    Save,
+    X
 } from 'lucide-react'
 
 interface ExtractedIdData {
@@ -36,7 +41,7 @@ interface ExtractedIdData {
 interface IdReviewDialogProps {
     isOpen: boolean
     onClose: () => void
-    onConfirm: () => void
+    onConfirm: (editedData: ExtractedIdData) => void
     onReject: () => void
     extractedData: ExtractedIdData | null
     uploadedImageUrl: string | null
@@ -53,6 +58,15 @@ export default function IdReviewDialog({
     isProcessing = false
 }: IdReviewDialogProps) {
     const [showFullImage, setShowFullImage] = useState(false)
+    const [isEditing, setIsEditing] = useState(false)
+    const [editedData, setEditedData] = useState<ExtractedIdData | null>(null)
+
+    // Initialize edited data when extractedData changes
+    useEffect(() => {
+        if (extractedData) {
+            setEditedData({ ...extractedData })
+        }
+    }, [extractedData])
 
     // Debug logs
     useEffect(() => {
@@ -61,9 +75,6 @@ export default function IdReviewDialog({
         console.log('extractedData:', extractedData)
         console.log('uploadedImageUrl:', uploadedImageUrl)
     }, [isOpen, extractedData, uploadedImageUrl])
-
-    // Remove the early return that might be blocking the dialog
-    // if (!extractedData) return null
 
     const formatDate = (dateString: string) => {
         try {
@@ -78,6 +89,40 @@ export default function IdReviewDialog({
         }
     }
 
+    const formatDateForInput = (dateString: string) => {
+        try {
+            const date = new Date(dateString)
+            return date.toISOString().split('T')[0]
+        } catch {
+            return dateString
+        }
+    }
+
+    const handleInputChange = (field: keyof ExtractedIdData, value: string) => {
+        if (editedData) {
+            setEditedData(prev => prev ? { ...prev, [field]: value } : null)
+        }
+    }
+
+    const handleSaveEdit = () => {
+        setIsEditing(false)
+    }
+
+    const handleCancelEdit = () => {
+        if (extractedData) {
+            setEditedData({ ...extractedData })
+        }
+        setIsEditing(false)
+    }
+
+    const handleConfirm = () => {
+        if (editedData) {
+            onConfirm(editedData)
+        }
+    }
+
+    const displayData = editedData || extractedData
+
     return (
         <>
             <Dialog open={isOpen} onOpenChange={onClose}>
@@ -89,12 +134,12 @@ export default function IdReviewDialog({
                         </DialogTitle>
                         <DialogDescription>
                             Please review the information extracted from your ID document.
-                            Make sure all details are correct before confirming.
+                            You can edit any incorrect details before confirming.
                         </DialogDescription>
                     </DialogHeader>
 
                     {/* Add fallback content if extractedData is null */}
-                    {!extractedData ? (
+                    {!displayData ? (
                         <div className="p-8 text-center">
                             <p className="text-muted-foreground">Loading extracted information...</p>
                         </div>
@@ -146,102 +191,224 @@ export default function IdReviewDialog({
                                         </div>
                                     </CardContent>
                                 </Card>
+
+                                {/* Edit Instructions */}
+                                <Card className="bg-amber-50 border-amber-200">
+                                    <CardContent className="p-4">
+                                        <div className="flex items-start gap-3">
+                                            <Edit3 className="h-5 w-5 text-amber-600 mt-0.5" />
+                                            <div className="text-sm">
+                                                <p className="font-medium text-amber-800 mb-1">
+                                                    Found incorrect information?
+                                                </p>
+                                                <p className="text-amber-700">
+                                                    Click "Edit Information" to correct any details that don't match your ID document.
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </CardContent>
+                                </Card>
                             </div>
 
                             {/* Extracted Information */}
                             <div className="space-y-4">
-                                <div>
+                                <div className="flex items-center justify-between">
                                     <Label className="text-base font-medium">Extracted Information</Label>
-                                    <div className="mt-2 space-y-4">
-                                        <Card>
-                                            <CardContent className="p-4 space-y-4">
-                                                {/* Document Type */}
-                                                <div className="flex justify-between items-center">
-                                                    <span className="text-sm font-medium text-muted-foreground">Document Type</span>
-                                                    <Badge variant="outline">{extractedData.documentType}</Badge>
-                                                </div>
+                                    {!isEditing ? (
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setIsEditing(true)}
+                                        >
+                                            <Edit3 className="h-4 w-4 mr-1" />
+                                            Edit Information
+                                        </Button>
+                                    ) : (
+                                        <div className="flex gap-2">
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={handleCancelEdit}
+                                            >
+                                                <X className="h-4 w-4 mr-1" />
+                                                Cancel
+                                            </Button>
+                                            <Button
+                                                size="sm"
+                                                onClick={handleSaveEdit}
+                                            >
+                                                <Save className="h-4 w-4 mr-1" />
+                                                Save Changes
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
 
-                                                {/* Full Name */}
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <User className="h-4 w-4 text-muted-foreground" />
-                                                        <Label className="text-sm font-medium">Full Name</Label>
-                                                    </div>
+                                <div className="mt-2 space-y-4">
+                                    <Card>
+                                        <CardContent className="p-4 space-y-4">
+                                            {/* Document Type */}
+                                            <div className="flex justify-between items-center">
+                                                <span className="text-sm font-medium text-muted-foreground">Document Type</span>
+                                                <Badge variant="outline">{displayData.documentType}</Badge>
+                                            </div>
+
+                                            {/* Full Name */}
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2">
+                                                    <User className="h-4 w-4 text-muted-foreground" />
+                                                    <Label className="text-sm font-medium">Full Name</Label>
+                                                </div>
+                                                {isEditing ? (
+                                                    <Input
+                                                        value={displayData.fullName}
+                                                        onChange={(e) => handleInputChange('fullName', e.target.value)}
+                                                        className="text-lg font-semibold"
+                                                    />
+                                                ) : (
                                                     <p className="text-lg font-semibold bg-gray-50 p-3 rounded border">
-                                                        {extractedData.fullName}
+                                                        {displayData.fullName}
                                                     </p>
-                                                </div>
-
-                                                {/* ID Number */}
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <CreditCard className="h-4 w-4 text-muted-foreground" />
-                                                        <Label className="text-sm font-medium">ID Number</Label>
-                                                    </div>
-                                                    <p className="text-lg font-semibold bg-gray-50 p-3 rounded border font-mono">
-                                                        {extractedData.idNumber}
-                                                    </p>
-                                                </div>
-
-                                                {/* Date of Birth */}
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <Calendar className="h-4 w-4 text-muted-foreground" />
-                                                        <Label className="text-sm font-medium">Date of Birth</Label>
-                                                    </div>
-                                                    <p className="text-lg font-semibold bg-gray-50 p-3 rounded border">
-                                                        {formatDate(extractedData.dateOfBirth)}
-                                                    </p>
-                                                </div>
-
-                                                {/* Address */}
-                                                <div className="space-y-2">
-                                                    <div className="flex items-center gap-2">
-                                                        <MapPin className="h-4 w-4 text-muted-foreground" />
-                                                        <Label className="text-sm font-medium">Address</Label>
-                                                    </div>
-                                                    <p className="text-lg font-semibold bg-gray-50 p-3 rounded border">
-                                                        {extractedData.address}
-                                                    </p>
-                                                </div>
-
-                                                {/* Additional Information */}
-                                                {(extractedData.nationality || extractedData.placeOfBirth || extractedData.expiryDate) && (
-                                                    <div className="space-y-3 pt-2 border-t">
-                                                        <Label className="text-sm font-medium">Additional Information</Label>
-
-                                                        {extractedData.nationality && (
-                                                            <div className="flex justify-between">
-                                                                <span className="text-sm text-muted-foreground">Nationality</span>
-                                                                <span className="text-sm font-medium">{extractedData.nationality}</span>
-                                                            </div>
-                                                        )}
-
-                                                        {extractedData.placeOfBirth && (
-                                                            <div className="flex justify-between">
-                                                                <span className="text-sm text-muted-foreground">Place of Birth</span>
-                                                                <span className="text-sm font-medium">{extractedData.placeOfBirth}</span>
-                                                            </div>
-                                                        )}
-
-                                                        {extractedData.issueDate && (
-                                                            <div className="flex justify-between">
-                                                                <span className="text-sm text-muted-foreground">Issue Date</span>
-                                                                <span className="text-sm font-medium">{formatDate(extractedData.issueDate)}</span>
-                                                            </div>
-                                                        )}
-
-                                                        {extractedData.expiryDate && (
-                                                            <div className="flex justify-between">
-                                                                <span className="text-sm text-muted-foreground">Expiry Date</span>
-                                                                <span className="text-sm font-medium">{formatDate(extractedData.expiryDate)}</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
                                                 )}
-                                            </CardContent>
-                                        </Card>
-                                    </div>
+                                            </div>
+
+                                            {/* ID Number */}
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2">
+                                                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                                                    <Label className="text-sm font-medium">ID Number</Label>
+                                                </div>
+                                                {isEditing ? (
+                                                    <Input
+                                                        value={displayData.idNumber}
+                                                        onChange={(e) => handleInputChange('idNumber', e.target.value)}
+                                                        className="text-lg font-semibold font-mono"
+                                                    />
+                                                ) : (
+                                                    <p className="text-lg font-semibold bg-gray-50 p-3 rounded border font-mono">
+                                                        {displayData.idNumber}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* Date of Birth */}
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2">
+                                                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                                                    <Label className="text-sm font-medium">Date of Birth</Label>
+                                                </div>
+                                                {isEditing ? (
+                                                    <Input
+                                                        type="date"
+                                                        value={formatDateForInput(displayData.dateOfBirth)}
+                                                        onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                                                        className="text-lg font-semibold"
+                                                    />
+                                                ) : (
+                                                    <p className="text-lg font-semibold bg-gray-50 p-3 rounded border">
+                                                        {formatDate(displayData.dateOfBirth)}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* Address */}
+                                            <div className="space-y-2">
+                                                <div className="flex items-center gap-2">
+                                                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                                                    <Label className="text-sm font-medium">Address</Label>
+                                                </div>
+                                                {isEditing ? (
+                                                    <Textarea
+                                                        value={displayData.address}
+                                                        onChange={(e) => handleInputChange('address', e.target.value)}
+                                                        className="text-lg font-semibold resize-none"
+                                                        rows={3}
+                                                    />
+                                                ) : (
+                                                    <p className="text-lg font-semibold bg-gray-50 p-3 rounded border">
+                                                        {displayData.address}
+                                                    </p>
+                                                )}
+                                            </div>
+
+                                            {/* Additional Information */}
+                                            {(displayData.nationality || displayData.placeOfBirth || displayData.expiryDate) && (
+                                                <div className="space-y-3 pt-2 border-t">
+                                                    <Label className="text-sm font-medium">Additional Information</Label>
+
+                                                    {displayData.nationality && (
+                                                        <div className="space-y-2">
+                                                            <span className="text-sm text-muted-foreground">Nationality</span>
+                                                            {isEditing ? (
+                                                                <Input
+                                                                    value={displayData.nationality}
+                                                                    onChange={(e) => handleInputChange('nationality', e.target.value)}
+                                                                    className="text-sm font-medium"
+                                                                />
+                                                            ) : (
+                                                                <p className="text-sm font-medium bg-gray-50 p-2 rounded">
+                                                                    {displayData.nationality}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {displayData.placeOfBirth && (
+                                                        <div className="space-y-2">
+                                                            <span className="text-sm text-muted-foreground">Place of Birth</span>
+                                                            {isEditing ? (
+                                                                <Input
+                                                                    value={displayData.placeOfBirth}
+                                                                    onChange={(e) => handleInputChange('placeOfBirth', e.target.value)}
+                                                                    className="text-sm font-medium"
+                                                                />
+                                                            ) : (
+                                                                <p className="text-sm font-medium bg-gray-50 p-2 rounded">
+                                                                    {displayData.placeOfBirth}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {displayData.issueDate && (
+                                                        <div className="space-y-2">
+                                                            <span className="text-sm text-muted-foreground">Issue Date</span>
+                                                            {isEditing ? (
+                                                                <Input
+                                                                    type="date"
+                                                                    value={formatDateForInput(displayData.issueDate)}
+                                                                    onChange={(e) => handleInputChange('issueDate', e.target.value)}
+                                                                    className="text-sm font-medium"
+                                                                />
+                                                            ) : (
+                                                                <p className="text-sm font-medium bg-gray-50 p-2 rounded">
+                                                                    {formatDate(displayData.issueDate)}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
+
+                                                    {displayData.expiryDate && (
+                                                        <div className="space-y-2">
+                                                            <span className="text-sm text-muted-foreground">Expiry Date</span>
+                                                            {isEditing ? (
+                                                                <Input
+                                                                    type="date"
+                                                                    value={formatDateForInput(displayData.expiryDate)}
+                                                                    onChange={(e) => handleInputChange('expiryDate', e.target.value)}
+                                                                    className="text-sm font-medium"
+                                                                />
+                                                            ) : (
+                                                                <p className="text-sm font-medium bg-gray-50 p-2 rounded">
+                                                                    {formatDate(displayData.expiryDate)}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
                                 </div>
                             </div>
                         </div>
@@ -251,13 +418,13 @@ export default function IdReviewDialog({
                         <Button
                             variant="outline"
                             onClick={onReject}
-                            disabled={isProcessing}
+                            disabled={isProcessing || isEditing}
                         >
-                            Information is Incorrect
+                            Cancel & Re-upload
                         </Button>
                         <Button
-                            onClick={onConfirm}
-                            disabled={isProcessing || !extractedData}
+                            onClick={handleConfirm}
+                            disabled={isProcessing || !displayData || isEditing}
                             className="bg-green-600 hover:bg-green-700"
                         >
                             {isProcessing ? 'Saving...' : 'Confirm & Save Information'}
