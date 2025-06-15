@@ -15,6 +15,8 @@ public partial class Review
 
     public string? Comment { get; set; }
 
+    public bool IsVisible { get; set; }
+
     public virtual VehicleModel Model { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;

@@ -16,6 +16,8 @@ namespace rental_services.Server
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConsole();
             builder.Services.AddDbContext<RentalContext>(options =>
                 options.UseSqlServer(Environment.GetEnvironmentVariable("DATABASE_CONNECTION") ?? throw new InvalidOperationException("Environment Variable 'DATABASE_CONNECTION' not found.")));
             builder.Services.AddControllers();
