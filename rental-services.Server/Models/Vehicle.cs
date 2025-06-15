@@ -9,7 +9,7 @@ public partial class Vehicle
 
     public int ModelId { get; set; }
 
-    public string? Condition { get; set; }
+    public string Condition { get; set; } = null!;
 
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 

@@ -19,7 +19,11 @@ public partial class VehicleModel
 
     public string? ImageFile { get; set; }
 
-    public string? Description { get; set; }
+    public string Description { get; set; } = null!;
+
+    public int UpFrontPercentage { get; set; }
+
+    public bool IsAvailable { get; set; }
 
     public virtual Manufacturer Manufacturer { get; set; } = null!;
 
@@ -30,4 +34,8 @@ public partial class VehicleModel
     public virtual VehicleType VehicleType { get; set; } = null!;
 
     public virtual ICollection<Vehicle> Vehicles { get; set; } = new List<Vehicle>();
+
+    public virtual ICollection<Peripheral> Peripherals { get; set; } = new List<Peripheral>();
+
+    public virtual ICollection<Peripheral> PeripheralsNavigation { get; set; } = new List<Peripheral>();
 }
