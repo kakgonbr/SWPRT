@@ -13,7 +13,7 @@ public partial class User
 
     public string PasswordHash { get; set; } = null!;
 
-    public int Role { get; set; }
+    public string Role { get; set; } = null!;
 
     public string? FullName { get; set; }
 
@@ -25,9 +25,23 @@ public partial class User
 
     public DateOnly DateOfBirth { get; set; }
 
+    public bool IsActive { get; set; }
+
+    public string? GoogleuserId { get; set; }
+
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
+    public virtual ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
+
+    public virtual ICollection<Chat> ChatStaffs { get; set; } = new List<Chat>();
+
+    public virtual ICollection<Chat> ChatUsers { get; set; } = new List<Chat>();
+
     public virtual ICollection<DriverLicense> DriverLicenses { get; set; } = new List<DriverLicense>();
+
+    public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
+
+    public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
 
     public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
 }

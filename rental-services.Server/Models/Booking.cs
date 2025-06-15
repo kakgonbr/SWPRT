@@ -15,9 +15,7 @@ public partial class Booking
 
     public DateOnly EndDate { get; set; }
 
-    public int PreRentDuration { get; set; }
-
-    public int PostRentDuration { get; set; }
+    public string Status { get; set; } = null!;
 
     public virtual ICollection<Payment> Payments { get; set; } = new List<Payment>();
 
