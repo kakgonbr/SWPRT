@@ -1,4 +1,7 @@
 
+using Microsoft.EntityFrameworkCore;
+using rental_services.Server.Data;
+
 namespace rental_services.Server
 {
     public class Program
@@ -13,7 +16,8 @@ namespace rental_services.Server
             var builder = WebApplication.CreateBuilder(args);
 
             // Add services to the container.
-
+            builder.Services.AddDbContext<RentalContext>(options =>
+                options.UseSqlServer(Environment.GetEnvironmentVariable("DATABASE_CONNECTION") ?? throw new InvalidOperationException("Environment Variable 'DATABASE_CONNECTION' not found.")));
             builder.Services.AddControllers();
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
