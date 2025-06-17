@@ -9,6 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Separator } from '../../components/ui/separator'
 import { useToast } from '../../hooks/use-toast'
 import { useAuth } from '../../contexts/auth-context'
+import type {LoginRequest} from "../../contexts/auth-context";
 
 export default function LoginPage() {
     const navigate = useNavigate()
@@ -31,39 +32,41 @@ export default function LoginPage() {
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault()
-        setIsLoading(true)
-
+        e.preventDefault();
+        setIsLoading(true);
+        const data: LoginRequest = {
+            email: formData.email.trim(),
+            password: formData.password.trim()
+        }
         try {
-            const success = await login(formData.email, formData.password)
-
+            const success = await login(data);
             if (success) {
                 toast({
                     title: "Login Successful",
                     description: "Welcome back to VroomVroom!",
-                })
-                navigate('/')
+                });
+                navigate('/');
             } else {
                 toast({
                     title: "Login Failed",
                     description: "Invalid email or password. Please try again.",
                     variant: "destructive",
-                })
+                });
             }
         } catch (error) {
+            console.error('Login error:', error);
             toast({
                 title: "Error",
                 description: "An error occurred during login. Please try again.",
                 variant: "destructive",
-            })
+            });
         } finally {
-            setIsLoading(false)
+            setIsLoading(false);
         }
     }
 
     const handleGoogleLogin = async () => {
-        setIsGoogleLoading(true)
-
+        setIsGoogleLoading(true);
         try {
             // Option 1: Redirect to Google OAuth
             window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`
@@ -105,6 +108,7 @@ export default function LoginPage() {
     }
 
     // Demo credentials helper
+    // In auth0, it is renter@motorent.com - demo123456!
     const fillDemoCredentials = (userType: 'renter' | 'admin' | 'staff') => {
         const demoUsers = {
             renter: { email: 'renter@motorent.com', password: 'demo123' },

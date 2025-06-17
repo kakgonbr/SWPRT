@@ -14,7 +14,7 @@ public partial class RentalContext : DbContext
     public RentalContext(DbContextOptions<RentalContext> options)
         : base(options)
     {
-    }
+    }   
 
     public virtual DbSet<Booking> Bookings { get; set; }
 

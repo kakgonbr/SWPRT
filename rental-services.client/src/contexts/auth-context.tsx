@@ -1,24 +1,34 @@
 // src/contexts/auth-context.tsx
+
 //@ts-ignore
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
-import { MOCK_USERS } from '../lib/mock-data'
 import type { User } from '../lib/types'
+const API = import.meta.env.VITE_API_BASE_URL;
 
 interface AuthContextType {
-    user: User | null
-    isAuthenticated: boolean
-    login: (email: string, password: string) => Promise<boolean>
-    logout: () => void
-    register: (userData: RegisterData) => Promise<boolean>
-    loading: boolean
+    user: User | null,
+    isAuthenticated: boolean,
+    login: (data: LoginRequest) => Promise<LoginResponse>,
+    logout: () => void,
+    register: (data: SignupRequest) => Promise<any>,
+    loading: boolean,
 }
 
-interface RegisterData {
-    name: string
-    email: string
+export interface LoginRequest {
+    email: string,
     password: string
-    dateOfBirth: string
-    address: string
+}
+interface LoginResponse {
+    AccessToken: string,
+    ExpiresAt: Date,
+    User: User
+}
+
+export interface SignupRequest {
+    email: string,
+    password: string,
+    phone: string,
+    name: string
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -36,42 +46,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setLoading(false)
     }, [])
     //@ts-ignore
-    const login = async (email: string, password: string): Promise<boolean> => {
-        // Mock login - in real app this would be an API call
-        const foundUser = MOCK_USERS.find(u => u.email === email)
-
-        if (foundUser) {
-            // For demo purposes, any password works
-            const userWithoutSensitiveData = { ...foundUser }
-            setUser(userWithoutSensitiveData)
-            localStorage.setItem('user', JSON.stringify(userWithoutSensitiveData))
-            return true
+    const login = async (data: LoginRequest): Promise<LoginResponse> => {
+        const response = await fetch(`${API}/api/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            throw new Error('Login failed: ' + response.statusText);
         }
-
-        return false
+        return response.json();
     }
 
-    const register = async (userData: RegisterData): Promise<boolean> => {
-        // Mock registration - in real app this would be an API call
-        const newUser: User = {
-            id: `user${Date.now()}`,
-            email: userData.email,
-            name: userData.name,
-            role: 'renter',
-            avatarUrl: 'https://placehold.co/100x100.png',
-            lastLogin: new Date(),
-            feedbackCount: 0,
-            dateOfBirth: userData.dateOfBirth,
-            address: userData.address,
-            credentialIdNumber: '',
-            credentialIdImageUrl: undefined,
-            createdAt: new Date(),
-            status: true
+    const register = async (data: SignupRequest) => {
+        const response = await fetch(`${API}/api/auth/signup`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error('Sign up failed: ' + error.Message);
         }
-
-        setUser(newUser)
-        localStorage.setItem('user', JSON.stringify(newUser))
-        return true
+        return response.json();
     }
 
     const logout = () => {
