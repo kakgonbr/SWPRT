@@ -56,7 +56,7 @@ export default function RentalsPage() {
 
         // Filter rentals for current user
         setTimeout(() => {
-            const userRentals = MOCK_RENTALS.filter(r => r.userId === user?.id)
+            const userRentals = MOCK_RENTALS.filter(r => parseInt(r.userId) === user?.userId)
                 .sort((a, b) => b.orderDate.getTime() - a.orderDate.getTime())
 
             setRentals(userRentals)
@@ -387,8 +387,8 @@ export default function RentalsPage() {
                 onClose={() => setShowReportDialog(false)}
                 rental={rentalToReport}
                 userInfo={{
-                    id: user?.id || '',
-                    name: user?.name || '',
+                    id: String(user?.userId) || '',
+                    name: user?.fullName || '',
                     email: user?.email || ''
                 }}
             />

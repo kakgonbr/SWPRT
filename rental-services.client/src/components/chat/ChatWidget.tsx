@@ -209,7 +209,7 @@ export default function ChatWidget() {
                                     value={message}
                                     onChange={(e) => setMessage(e.target.value)}
                                     onKeyPress={handleKeyPress}
-                                    placeholder={user ? `Hi ${user.name.split(' ')[0]}, ask me anything...` : "Ask me anything..."}
+                                    placeholder={user ? `Hi ${user.fullName.split(' ')[0]}, ask me anything...` : "Ask me anything..."}
                                     className="flex-1"
                                 // size={isMobile ? "sm" : "default"}
                                 />

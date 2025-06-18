@@ -7,7 +7,7 @@ import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Separator } from '../../components/ui/separator'
-import { useAuth } from '../../contexts/auth-context'
+import {type SignupRequest, useAuth} from '../../contexts/auth-context'
 import { useToast } from '../../hooks/use-toast'
 
 export default function SignupPage() {
@@ -20,8 +20,7 @@ export default function SignupPage() {
         email: '',
         password: '',
         confirmPassword: '',
-        dateOfBirth: '',
-        address: ''
+        phone: ''
     })
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -103,14 +102,13 @@ export default function SignupPage() {
         }
 
         try {
-            const success = await register({
-                name: formData.name,
+            const data : SignupRequest = {
                 email: formData.email,
                 password: formData.password,
-                dateOfBirth: formData.dateOfBirth,
-                address: formData.address,
-            })
-
+                phone: formData.phone,
+                name: formData.name
+            };
+            const success = await register(data)
             if (success) {
                 toast({
                     title: "Account Created",
@@ -231,23 +229,10 @@ export default function SignupPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="dateOfBirth">Date of Birth</Label>
                                 <Input
-                                    id="dateOfBirth"
-                                    name="dateOfBirth"
-                                    type="date"
-                                    value={formData.dateOfBirth}
-                                    onChange={handleInputChange}
-                                    required
-                                />
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="address">Address</Label>
-                                <Input
-                                    id="address"
-                                    name="address"
+                                    id="phone"
+                                    name="phone"
                                     type="text"
-                                    placeholder="Enter your address"
-                                    value={formData.address}
+                                    value={formData.phone}
                                     onChange={handleInputChange}
                                     required
                                 />

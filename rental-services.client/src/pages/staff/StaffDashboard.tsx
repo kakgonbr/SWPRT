@@ -76,7 +76,7 @@ export default function StaffDashboard() {
             <div className="mb-8">
                 <h1 className="text-3xl font-bold mb-2">Staff Dashboard</h1>
                 <p className="text-muted-foreground">
-                    Welcome back, {user?.name}! Manage customers and support requests.
+                    Welcome back, {user?.fullName}! Manage customers and support requests.
                 </p>
             </div>
 

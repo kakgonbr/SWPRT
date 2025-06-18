@@ -366,3 +366,5 @@ FodyWeavers.xsd
 published/
 
 rental-services.client/.next
+
+.env

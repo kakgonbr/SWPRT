@@ -11,7 +11,7 @@ public partial class User
 
     public string PhoneNumber { get; set; } = null!;
 
-    public string PasswordHash { get; set; } = null!;
+    public string? PasswordHash { get; set; }
 
     public string Role { get; set; } = null!;
 
@@ -23,11 +23,13 @@ public partial class User
 
     public bool EmailConfirmed { get; set; }
 
-    public DateOnly DateOfBirth { get; set; }
+    public DateOnly? DateOfBirth { get; set; }
 
     public bool IsActive { get; set; }
 
     public string? GoogleuserId { get; set; }
+
+    public string Sub { get; set; } = null!;
 
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 

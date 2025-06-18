@@ -1,77 +1,130 @@
 // src/contexts/auth-context.tsx
+
 //@ts-ignore
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
-import { MOCK_USERS } from '../lib/mock-data'
-import type { User } from '../lib/types'
+const API = import.meta.env.VITE_API_BASE_URL;
 
 interface AuthContextType {
-    user: User | null
-    isAuthenticated: boolean
-    login: (email: string, password: string) => Promise<boolean>
-    logout: () => void
-    register: (userData: RegisterData) => Promise<boolean>
-    loading: boolean
+    user: UserDto | null,
+    isAuthenticated: boolean,
+    login: (data: LoginRequest) => Promise<LoginResponse>,
+    logout: () => void,
+    register: (data: SignupRequest) => Promise<any>,
+    loading: boolean,
 }
 
-interface RegisterData {
-    name: string
-    email: string
+interface UserDto {
+    userId: number,
+    email: string,
+    phoneNumber: string,
+    fullName: string,
+    address: string | null,
+    creationDate: Date,
+    emailConfirmed: boolean,
+    dateOfBirth: Date | null,
+    isActive: boolean,
+    role: string,
+    driverLicenses: DriverLicenseDto | null
+}
+
+interface DriverLicenseDto {
+    licenseId: string,
+    holderName: string,
+    dateOfIssue: Date
+}
+
+export interface LoginRequest {
+    email: string,
     password: string
-    dateOfBirth: string
-    address: string
+}
+interface LoginResponse {
+    accessToken: string,
+    refreshToken: string | null,
+    expiresAt: Date,
+    user: UserDto
+}
+
+export interface SignupRequest {
+    email: string,
+    password: string,
+    phone: string,
+    name: string
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null)
+    const [user, setUser] = useState<UserDto | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         // Check for stored user on app start
-        const storedUser = localStorage.getItem('user')
-        if (storedUser) {
-            setUser(JSON.parse(storedUser))
+        const rawToken = localStorage.getItem("token");
+        const rawUser = localStorage.getItem("user");
+        // If token exists but not the user, refreshes user data
+        if (rawToken && !rawUser) {
+            fetch(`${API}/api/auth/me`, {
+                headers: {
+                    Authorization: `Bearer ${rawToken}`
+                }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Refresh failed: ' + response.statusText);
+                    return response.json();
+                })
+                .then((user: UserDto) => {
+                    setUser(user);
+                    localStorage.setItem('user', JSON.stringify(user));
+                })
+                .catch((error) => {
+                    // Invalid token -> delete it
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    console.error("Error fetching user data:", error);
+                })
+                .finally(() => setLoading(false));
+        } else if (rawUser) {
+            // If user data exists in localStorage, set it directly
+            setUser(JSON.parse(rawUser));
+            setLoading(false);
+        } else {
+            // No user data or token, no session available
+            setLoading(false);
         }
-        setLoading(false)
-    }, [])
+    }, []);
     //@ts-ignore
-    const login = async (email: string, password: string): Promise<boolean> => {
-        // Mock login - in real app this would be an API call
-        const foundUser = MOCK_USERS.find(u => u.email === email)
-
-        if (foundUser) {
-            // For demo purposes, any password works
-            const userWithoutSensitiveData = { ...foundUser }
-            setUser(userWithoutSensitiveData)
-            localStorage.setItem('user', JSON.stringify(userWithoutSensitiveData))
-            return true
+    const login = async (data: LoginRequest): Promise<LoginResponse> => {
+        const response = await fetch(`${API}/api/auth/login`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            throw new Error('Login failed: ' + response.statusText);
         }
-
-        return false
+        const result : LoginResponse = await response.json();
+        // Persist user data and token
+        localStorage.setItem('token', result.accessToken);
+        setUser(result.user);
+        localStorage.setItem('user', JSON.stringify(result.user));
+        return result;
     }
 
-    const register = async (userData: RegisterData): Promise<boolean> => {
-        // Mock registration - in real app this would be an API call
-        const newUser: User = {
-            id: `user${Date.now()}`,
-            email: userData.email,
-            name: userData.name,
-            role: 'renter',
-            avatarUrl: 'https://placehold.co/100x100.png',
-            lastLogin: new Date(),
-            feedbackCount: 0,
-            dateOfBirth: userData.dateOfBirth,
-            address: userData.address,
-            credentialIdNumber: '',
-            credentialIdImageUrl: undefined,
-            createdAt: new Date(),
-            status: true
+    const register = async (data: SignupRequest) => {
+        const response = await fetch(`${API}/api/auth/signup`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error('Sign up failed: ' + error.Message);
         }
-
-        setUser(newUser)
-        localStorage.setItem('user', JSON.stringify(newUser))
-        return true
+        return response.json();
     }
 
     const logout = () => {
@@ -100,5 +153,5 @@ export function useAuth() {
     if (context === undefined) {
         throw new Error('useAuth must be used within an AuthProvider')
     }
-    return context
+    return context;
 }

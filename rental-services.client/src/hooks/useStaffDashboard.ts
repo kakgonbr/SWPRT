@@ -47,8 +47,8 @@ export const useStaffDashboard = () => {
         try {
             const staffReply: ConversationMessage = {
                 id: `reply-${Date.now()}`,
-                senderId: user?.id || 'staff-current',
-                senderName: user?.name || 'Staff Member',
+                senderId: String(user?.userId) || 'staff-current',
+                senderName: user?.fullName || 'Staff Member',
                 senderType: 'staff',
                 message: replyText,
                 timestamp: new Date().toISOString()

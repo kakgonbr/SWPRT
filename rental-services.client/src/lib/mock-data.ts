@@ -199,7 +199,7 @@ export const MOCK_RENTALS: Rental[] = [
     {
         id: 'rental1',
         bikeId: 'bike1',
-        userId: 'user1',
+        userId: '11',
         startDate: addDays(new Date(), -10),
         endDate: addDays(new Date(), -7),
         totalPrice: 45 * 3,

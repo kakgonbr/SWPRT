@@ -7,6 +7,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    env:
+      VITE_API_BASE_URL: ${{ secrets.VPS_DOMAIN }}
 
     steps:
     - uses: actions/checkout@v4

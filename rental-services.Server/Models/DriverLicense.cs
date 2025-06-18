@@ -9,7 +9,7 @@ public partial class DriverLicense
 
     public int LicenseTypeId { get; set; }
 
-    public string LicenseTypeCode { get; set; } = null!;
+    public string LicenseId { get; set; } = null!;
 
     public string HolderName { get; set; } = null!;
 

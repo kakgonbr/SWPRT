@@ -25,3 +25,6 @@ dist-ssr
 
 # Custom published folder
 published/
+
+# Environment files
+.env

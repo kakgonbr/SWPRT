@@ -21,7 +21,7 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
-import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar'
+import { Avatar, AvatarFallback } from '../components/ui/avatar'
 import { Separator } from '../components/ui/separator'
 import { Badge } from '../components/ui/badge'
 import { useAuth } from '../contexts/auth-context'
@@ -62,7 +62,7 @@ export default function ProfilePage() {
         email: '',
         dateOfBirth: '',
         address: '',
-        credentialIdNumber: '',
+        licenseId: '',
     })
 
     useEffect(() => {
@@ -75,11 +75,11 @@ export default function ProfilePage() {
 
         // Populate form with user data
         setFormData({
-            name: user.name,
+            name: user.fullName,
             email: user.email,
-            dateOfBirth: user.dateOfBirth || '',
+            dateOfBirth: String(user.dateOfBirth) || '',
             address: user.address || '',
-            credentialIdNumber: user.credentialIdNumber || '',
+            licenseId: user.driverLicenses?.licenseId || '',
         })
     }, [user, isAuthenticated, loading, navigate])
 
@@ -92,7 +92,7 @@ export default function ProfilePage() {
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         // Only prevent editing of ID number if ID document is verified
-        if (user?.credentialIdImageUrl && e.target.name === 'credentialIdNumber') {
+        if (e.target.name === 'licenseId') {
             toast({
                 title: "Field Locked",
                 description: "ID Number cannot be edited because it has been verified from your ID document.",
@@ -121,11 +121,11 @@ export default function ProfilePage() {
 
         // Reset form data
         setFormData({
-            name: user.name,
+            name: user.fullName,
             email: user.email,
-            dateOfBirth: user.dateOfBirth || '',
+            dateOfBirth: String(user.dateOfBirth) || '',
             address: user.address || '',
-            credentialIdNumber: user.credentialIdNumber || '',
+            licenseId: user.driverLicenses?.licenseId || '',
         })
         setIsEditing(false)
     }
@@ -237,7 +237,7 @@ export default function ProfilePage() {
                 ...prev,
                 name: editedData.fullName,
                 dateOfBirth: editedData.dateOfBirth,
-                credentialIdNumber: editedData.idNumber,
+                licenseId: editedData.idNumber,
                 address: editedData.address
             }))
 
@@ -281,7 +281,7 @@ export default function ProfilePage() {
 
     const isFieldLocked = (fieldName: string) => {
         // Only lock the ID number field when ID document is verified
-        return user?.credentialIdImageUrl && fieldName === 'credentialIdNumber'
+        return fieldName === 'licenseId'
     }
 
     if (loading) {
@@ -311,9 +311,9 @@ export default function ProfilePage() {
                     <CardHeader className="text-center">
                         <div className="relative mx-auto mb-4">
                             <Avatar className="h-24 w-24">
-                                <AvatarImage src={user.avatarUrl} alt={user.name} />
+                                {/*<AvatarImage src={user.avatarUrl} alt={user.name} />*/}
                                 <AvatarFallback className="text-xl">
-                                    {getInitials(user.name)}
+                                    {getInitials(user.fullName)}
                                 </AvatarFallback>
                             </Avatar>
                             <Button
@@ -324,7 +324,7 @@ export default function ProfilePage() {
                                 <Camera className="h-4 w-4" />
                             </Button>
                         </div>
-                        <CardTitle className="text-xl">{user.name}</CardTitle>
+                        <CardTitle className="text-xl">{user.fullName}</CardTitle>
                         <CardDescription>{user.email}</CardDescription>
                         <Badge variant={getRoleBadgeVariant(user.role)} className="w-fit mx-auto mt-2">
                             {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
@@ -333,20 +333,20 @@ export default function ProfilePage() {
                     <CardContent className="text-center space-y-4">
                         <div className="text-sm text-muted-foreground">
                             <p>Member since</p>
-                            <p className="font-medium">{format(user.createdAt, "MMMM yyyy")}</p>
+                            <p className="font-medium">{format(user.creationDate, "MMMM yyyy")}</p>
                         </div>
-                        <div className="text-sm text-muted-foreground">
-                            <p>Last login</p>
-                            {/* TODO: FIX THIS VALUE OF THE LAST LOGIN */}
-                            <p className="font-medium">{user.lastLogin
-                                ? format(new Date(user.lastLogin), "MMM d, yyyy")
-                                : "NEVER"}
-                            </p>
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                            <p>Feedback count</p>
-                            <p className="font-medium">{user.feedbackCount} reviews</p>
-                        </div>
+                        {/*<div className="text-sm text-muted-foreground">*/}
+                        {/*    <p>Last login</p>*/}
+                        {/*    /!* TODO: FIX THIS VALUE OF THE LAST LOGIN *!/*/}
+                        {/*    <p className="font-medium">{user.lastLogin*/}
+                        {/*        ? format(new Date(user.lastLogin), "MMM d, yyyy")*/}
+                        {/*        : "NEVER"}*/}
+                        {/*    </p>*/}
+                        {/*</div>*/}
+                        {/*<div className="text-sm text-muted-foreground">*/}
+                        {/*    <p>Feedback count</p>*/}
+                        {/*    <p className="font-medium">{user.feedbackCount} reviews</p>*/}
+                        {/*</div>*/}
                     </CardContent>
                 </Card>
 
@@ -430,22 +430,22 @@ export default function ProfilePage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="credentialIdNumber" className="flex items-center gap-2">
+                                <Label htmlFor="licenseId" className="flex items-center gap-2">
                                     ID Number
-                                    {isFieldLocked('credentialIdNumber') && <Lock className="h-3 w-3 text-muted-foreground" />}
+                                    {isFieldLocked('licenseId') && <Lock className="h-3 w-3 text-muted-foreground" />}
                                 </Label>
                                 <div className="relative">
                                     <CreditCard className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                     <Input
-                                        id="credentialIdNumber"
-                                        name="credentialIdNumber"
-                                        value={formData.credentialIdNumber}
+                                        id="licenseId"
+                                        name="licenseId"
+                                        value={formData.licenseId}
                                         onChange={handleInputChange}
-                                        disabled={!isEditing || !!isFieldLocked('credentialIdNumber')}
-                                        className={`pl-10 ${isFieldLocked('credentialIdNumber') ? 'bg-gray-50' : ''}`}
+                                        disabled={!isEditing || isFieldLocked('licenseId')}
+                                        className={`pl-10 ${isFieldLocked('licenseId') ? 'bg-gray-50' : ''}`}
                                     />
                                 </div>
-                                {isFieldLocked('credentialIdNumber') && (
+                                {isFieldLocked('licenseId') && (
                                     <p className="text-xs text-muted-foreground">Locked - Verified from ID document</p>
                                 )}
                             </div>
@@ -486,18 +486,18 @@ export default function ProfilePage() {
                         <div className="space-y-4">
                             <h3 className="text-lg font-semibold">Identity Verification</h3>
 
-                            {user.credentialIdImageUrl ? (
+                            {user.driverLicenses ? (
                                 // Show uploaded ID document
                                 <div className="space-y-4">
                                     <div className="space-y-2">
                                         <Label>Uploaded ID Document</Label>
                                         <div className="border rounded-lg p-4 bg-green-50">
                                             <div className="flex items-start gap-4">
-                                                <img
-                                                    src={user.credentialIdImageUrl.split('"')[0]}
-                                                    alt="ID Document"
-                                                    className="max-w-xs rounded border"
-                                                />
+                                                {/*<img*/}
+                                                {/*    src={user.credentialIdImageUrl.split('"')[0]}*/}
+                                                {/*    alt="ID Document"*/}
+                                                {/*    className="max-w-xs rounded border"*/}
+                                                {/*/>*/}
                                                 <div className="flex-1">
                                                     <div className="flex items-center gap-2 text-green-600 mb-2">
                                                         <CheckCircle className="h-5 w-5" />
