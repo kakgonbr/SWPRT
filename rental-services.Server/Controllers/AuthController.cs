@@ -50,7 +50,7 @@ public class AuthController : ControllerBase
             PhoneNumber = request.PhoneNumber,
             FullName = request.Name,
             CreationDate = DateOnly.FromDateTime(DateTime.UtcNow),
-            EmailConfirmed = false
+            EmailConfirmed = false,
         };
         newUser.PasswordHash = _hasher.HashPassword(newUser, request.Password);
         // Add the user to the database
@@ -58,6 +58,8 @@ public class AuthController : ControllerBase
         {
             _db.Users.Add(newUser);
             await _db.SaveChangesAsync();
+            newUser.Sub = newUser.UserId.ToString();
+            _db.SaveChanges();
         }
         catch (Exception e)
         {
