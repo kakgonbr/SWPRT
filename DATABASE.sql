@@ -15,15 +15,16 @@ CREATE TABLE Users
     UserId int PRIMARY KEY IDENTITY(1, 1),
     Email varchar(100) NOT NULL UNIQUE,
     PhoneNumber varchar(20) NOT NULL UNIQUE,
-    PasswordHash varchar(256) NOT NULL,
+    PasswordHash varchar(256),
     Role varchar(10) NOT NULL DEFAULT 'Customer',
     FullName nvarchar(256),
     Address nvarchar(256),
     CreationDate date NOT NULL DEFAULT GETDATE(),
     EmailConfirmed bit NOT NULL DEFAULT 0,
-    DateOfBirth date NOT NULL, -- not sure to store the date of birth, or just only allow 18+ customers to have accounts
+    DateOfBirth date, -- not sure to store the date of birth, or just only allow 18+ customers to have accounts
     IsActive bit NOT NULL DEFAULT 0,
     GoogleuserId varchar(256),
+    Sub varchar(256) NOT NULL UNIQUE DEFAULT '',
 
     CONSTRAINT ck_user_role CHECK (Role IN ('Customer', 'Staff', 'Admin'))
 )
@@ -38,7 +39,7 @@ CREATE TABLE DriverLicenses
 (
     UserId int NOT NULL,
     LicenseTypeId int NOT NULL,
-    LicenseTypeCode varchar(256) NOT NULL,
+    LicenseId varchar(256) NOT NULL,
     HolderName nvarchar(256) NOT NULL,
     DateOfIssue date NOT NULL,
 

@@ -2,11 +2,10 @@
 
 //@ts-ignore
 import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
-import type { User } from '../lib/types'
 const API = import.meta.env.VITE_API_BASE_URL;
 
 interface AuthContextType {
-    user: User | null,
+    user: UserDto | null,
     isAuthenticated: boolean,
     login: (data: LoginRequest) => Promise<LoginResponse>,
     logout: () => void,
@@ -14,14 +13,35 @@ interface AuthContextType {
     loading: boolean,
 }
 
+interface UserDto {
+    userId: number,
+    email: string,
+    phoneNumber: string,
+    fullName: string,
+    address: string | null,
+    creationDate: Date,
+    emailConfirmed: boolean,
+    dateOfBirth: Date | null,
+    isActive: boolean,
+    role: string,
+    driverLicenses: DriverLicenseDto | null
+}
+
+interface DriverLicenseDto {
+    licenseId: string,
+    holderName: string,
+    dateOfIssue: Date
+}
+
 export interface LoginRequest {
     email: string,
     password: string
 }
 interface LoginResponse {
-    AccessToken: string,
-    ExpiresAt: Date,
-    User: User
+    accessToken: string,
+    refreshToken: string | null,
+    expiresAt: Date,
+    user: UserDto
 }
 
 export interface SignupRequest {
@@ -34,17 +54,44 @@ export interface SignupRequest {
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<User | null>(null)
+    const [user, setUser] = useState<UserDto | null>(null)
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
         // Check for stored user on app start
-        const storedUser = localStorage.getItem('user')
-        if (storedUser) {
-            setUser(JSON.parse(storedUser))
+        const rawToken = localStorage.getItem("token");
+        const rawUser = localStorage.getItem("user");
+        // If token exists but not the user, refreshes user data
+        if (rawToken && !rawUser) {
+            fetch(`${API}/api/auth/me`, {
+                headers: {
+                    Authorization: `Bearer ${rawToken}`
+                }
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error('Refresh failed: ' + response.statusText);
+                    return response.json();
+                })
+                .then((user: UserDto) => {
+                    setUser(user);
+                    localStorage.setItem('user', JSON.stringify(user));
+                })
+                .catch((error) => {
+                    // Invalid token -> delete it
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    console.error("Error fetching user data:", error);
+                })
+                .finally(() => setLoading(false));
+        } else if (rawUser) {
+            // If user data exists in localStorage, set it directly
+            setUser(JSON.parse(rawUser));
+            setLoading(false);
+        } else {
+            // No user data or token, no session available
+            setLoading(false);
         }
-        setLoading(false)
-    }, [])
+    }, []);
     //@ts-ignore
     const login = async (data: LoginRequest): Promise<LoginResponse> => {
         const response = await fetch(`${API}/api/auth/login`, {
@@ -57,7 +104,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (!response.ok) {
             throw new Error('Login failed: ' + response.statusText);
         }
-        return response.json();
+        const result : LoginResponse = await response.json();
+        // Persist user data and token
+        localStorage.setItem('token', result.accessToken);
+        setUser(result.user);
+        localStorage.setItem('user', JSON.stringify(result.user));
+        return result;
     }
 
     const register = async (data: SignupRequest) => {
@@ -101,5 +153,5 @@ export function useAuth() {
     if (context === undefined) {
         throw new Error('useAuth must be used within an AuthProvider')
     }
-    return context
+    return context;
 }

@@ -9,7 +9,10 @@ public record UserDto(
     DateOnly CreationDate, 
     bool EmailConfirmed, 
     DateOnly? DateOfBirth,
-    bool IsActive
+    bool IsActive,
+    string Role,
+    // TODO: Change DriverLicenseDto? to IEnumerable<DriverLicenseDto>? if multiple licenses are allowed
+    DriverLicenseDto? DriverLicenses
 );
 
 public record LoginRequest(

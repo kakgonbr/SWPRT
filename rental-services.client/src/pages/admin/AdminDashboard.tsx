@@ -60,7 +60,7 @@ export default function AdminDashboard() {
                 <div>
                     <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
                     <p className="text-muted-foreground">
-                        Welcome back, {user?.name}! Manage your rental platform.
+                        Welcome back, {user?.fullName}! Manage your rental platform.
                     </p>
                 </div>
 

@@ -88,43 +88,56 @@ This project aims to simplify the complexities of rental service management whil
 ## Project Structure
 
 ```sh
-└── swrt-rental-services/
-    ├── .github
-    │   └── workflows
-    ├── DATABASE.sql
-    ├── README.md
-    ├── rental-services.Server
-    │   ├── CHANGELOG.md
-    │   ├── Controllers
-    │   ├── Data
-    │   ├── Models
-    │   ├── Program.cs
-    │   ├── Properties
-    │   ├── WeatherForecast.cs
-    │   ├── appsettings.Development.json
-    │   ├── appsettings.json
-    │   ├── rental-services.Server.csproj
-    │   └── rental-services.Server.http
-    ├── rental-services.Test
-    │   ├── UnitTest1.cs
-    │   └── rental-services.Test.csproj
-    ├── rental-services.client
-    │   ├── .gitignore
-    │   ├── README.md
-    │   ├── eslint.config.js
-    │   ├── index.html
-    │   ├── package-lock.json
-    │   ├── package.json
-    │   ├── postcss.config.js
-    │   ├── public
-    │   ├── rental-services.client.esproj
-    │   ├── src
-    │   ├── tailwind.config.js
-    │   ├── tsconfig.app.json
-    │   ├── tsconfig.json
-    │   ├── tsconfig.node.json
-    │   └── vite.config.ts
-    └── rental-services.sln
+rental-services.Server
+├─ Controllers
+│   ├─ ApiController.cs
+│   ├─ AuthController.cs
+│   └─ MotorbikeController.cs
+├─ Data
+│   ├─ RentalContext.cs
+│   └─ Migrations # For database migrations
+├─ Models
+│   ├─ DTOs
+│   │   └─ AuthRequestDTO.cs
+│   ├─ Booking.cs
+│   ├─ Chat.cs
+│   ├─ ChatMessage.cs
+│   ├─ DriverLicense.cs
+│   ├─ DriverLicenseType.cs
+│   ├─ Feedback.cs
+│   ├─ JwtSettings.cs
+│   ├─ Manufacturer.cs
+│   ├─ Payment.cs
+│   ├─ Peripheral.cs
+│   ├─ Report.cs
+│   ├─ ReportType.cs
+│   ├─ Review.cs
+│   ├─ Shop.cs
+│   ├─ User.cs
+│   ├─ Vehicle.cs
+│   ├─ VehicleModel.cs
+│   ├─ VehicleType.cs
+│   ├─ WebsiteSettings.cs
+│   └─ Announcement.cs         
+├─ Repositories
+│   ├─ IMotorbikeRepository.cs
+│   ├─ MotorbikeRepository.cs
+│   ├─ IWebsiteSettingsRepository.cs
+│   ├─ WebsiteSettingsRepository.cs
+│   └─ IAnnouncementRepository.cs
+├─ Services
+│   ├─ IMotorbikeService.cs
+│   ├─ MotorbikeService.cs
+│   ├─ IWebsiteSettingsService.cs
+│   ├─ WebsiteSettingsService.cs
+│   └─ IAnnouncementService.cs
+├─ ExternalServices
+│   ├─ IPaymentGateway.cs
+│   ├─ PaymentService.cs
+│   ├─ IEmailService.cs
+│   └─ EmailService.cs
+├─ Program.cs
+└─ appsettings.json
 ```
 
 ---

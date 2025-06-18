@@ -8,6 +8,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using rental_services.Server.Controllers;
 using rental_services.Server.Models;
+using rental_services.Server.Services;
+using rental_services.Server.Repositories;
 
 namespace rental_services.Server
 {
@@ -56,6 +58,10 @@ namespace rental_services.Server
             // Add EF Core with SQL Server
             builder.Services.AddDbContext<RentalContext>(options =>
                 options.UseSqlServer(Environment.GetEnvironmentVariable("DATABASE_CONNECTION") ?? throw new InvalidOperationException("Environment Variable 'DATABASE_CONNECTION' not found.")));
+            // Register services and repositories
+            builder.Services
+                .AddScoped<IUserRepository, UserRepository>()
+                .AddScoped<IUserService, UserService>();
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
             {

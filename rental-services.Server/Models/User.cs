@@ -15,7 +15,7 @@ public partial class User
 
     public string? PasswordHash { get; set; }
 
-    public string Role { get; set; } = "customer";
+    public string Role { get; set; } = "Customer";
 
     public string? FullName { get; set; }
 

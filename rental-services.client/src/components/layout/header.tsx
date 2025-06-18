@@ -24,7 +24,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '../ui/dropdown-menu'
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
+import { Avatar, AvatarFallback } from '../ui/avatar'
 import { Sheet, SheetContent, SheetTrigger } from '../ui/sheet'
 import { useChatWidget } from '../../contexts/chat-widget-context'
 import { useAuth } from '../../contexts/auth-context'
@@ -35,7 +35,7 @@ import ReportIssueDialog from '../customer/ReportIssueDialog'
 
 export default function Header() {
     const { openChatWidget } = useChatWidget()
-    const { user, isAuthenticated, logout } = useAuth()
+    const { user, logout } = useAuth()
     const isMobile = useIsMobile()
     const [isSheetOpen, setIsSheetOpen] = useState(false)
     // Bike issue report for header button
@@ -43,6 +43,7 @@ export default function Header() {
     // Website issue report for dropdown
     const [isWebsiteReportOpen, setIsWebsiteReportOpen] = useState(false)
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
+    console.log('----- User in header:', user);
 
     const handleLogout = () => {
         logout()
@@ -57,41 +58,22 @@ export default function Header() {
             .toUpperCase()
     }
 
-    const NavigationLinks = () => (
-        <>
-            <Link
-                to="/bikes"
-                className="text-foreground/80 hover:text-foreground transition-colors"
-                onClick={() => setIsSheetOpen(false)}
-            >
-                Browse Bikes
-            </Link>
-            <Link
-                to="/location-finder"
-                className="text-foreground/80 hover:text-foreground transition-colors"
-                onClick={() => setIsSheetOpen(false)}
-            >
-                Find Locations
-            </Link>
-        </>
-    )
-
     const AuthButtons = () => (
         <>
-            {isAuthenticated && user ? (
+            {user ? (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" className="relative h-9 w-9 rounded-full">
                             <Avatar className="h-9 w-9">
-                                <AvatarImage src={user.avatarUrl} alt={user.name} />
-                                <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                {/*<AvatarImage src={user.avatarUrl} alt={user.name} />*/}
+                                <AvatarFallback>{getInitials(user.fullName)}</AvatarFallback>
                             </Avatar>
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent className="w-56" align="end" forceMount>
                         <DropdownMenuLabel className="font-normal">
                             <div className="flex flex-col space-y-1">
-                                <p className="text-sm font-medium leading-none">{user.name}</p>
+                                <p className="text-sm font-medium leading-none">{user.fullName}</p>
                                 <p className="text-xs leading-none text-muted-foreground">
                                     {user.email}
                                 </p>
@@ -185,13 +167,6 @@ export default function Header() {
                 </Link>
 
                 <div className="flex items-center space-x-4">
-                    {/* Desktop Navigation Links */}
-                    {!isMobile && (
-                        <nav className="hidden md:flex items-center space-x-6">
-                            <NavigationLinks />
-                        </nav>
-                    )}
-
                     {/* Chat Support Button */}
                     <Button
                         variant="ghost"
@@ -243,10 +218,6 @@ export default function Header() {
                             </SheetTrigger>
                             <SheetContent side="right" className="w-[300px] sm:w-[400px]">
                                 <div className="flex flex-col space-y-6 mt-6">
-                                    <nav className="flex flex-col space-y-4">
-                                        <NavigationLinks />
-                                    </nav>
-
                                     {/* Mobile Feedback/Report Buttons */}
                                     <div className="flex flex-col space-y-2 border-t pt-4">
                                         <Button
@@ -310,8 +281,8 @@ export default function Header() {
                 onClose={() => setIsBikeReportOpen(false)}
                 rental={null} // No specific rental from header
                 userInfo={{
-                    id: user?.id || '',
-                    name: user?.name || '',
+                    id: String(user?.userId) || '',
+                    name: user?.fullName || '',
                     email: user?.email || ''
                 }}
             />
@@ -321,8 +292,8 @@ export default function Header() {
                 isOpen={isWebsiteReportOpen}
                 onClose={() => setIsWebsiteReportOpen(false)}
                 userInfo={{
-                    id: user?.id || '',
-                    name: user?.name || '',
+                    id: String(user?.userId) || '',
+                    name: user?.fullName || '',
                     email: user?.email || ''
                 }}
             />

@@ -45,7 +45,7 @@ export default function LoginPage() {
                     title: "Login Successful",
                     description: "Welcome back to VroomVroom!",
                 });
-                navigate('/');
+                navigate('/', {replace: true});
             } else {
                 toast({
                     title: "Login Failed",

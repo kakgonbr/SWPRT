@@ -10,6 +10,7 @@ using Microsoft.IdentityModel.Tokens;
 using rental_services.Server.Models;
 using rental_services.Server.Models.DTOs;
 using rental_services.Server.Data;
+using rental_services.Server.Services;
 
 namespace rental_services.Server.Controllers;
 
@@ -20,12 +21,14 @@ public class AuthController : ControllerBase
     private readonly JwtSettings _jwtSettings;
     private readonly IPasswordHasher<User> _hasher;
     private readonly RentalContext _db;
+    private readonly IUserService _userService;
 
-    public AuthController(IOptions<JwtSettings> jwtSettings, IPasswordHasher<User> hasher, RentalContext db)
+    public AuthController(IOptions<JwtSettings> jwtSettings, IPasswordHasher<User> hasher, RentalContext db, IUserService userService)
     {
         _jwtSettings = jwtSettings.Value;
         _hasher = hasher;
         _db = db;
+        _userService = userService;
     }
 
     /// <summary>
@@ -99,7 +102,13 @@ public class AuthController : ControllerBase
             existingUser.CreationDate,
             existingUser.EmailConfirmed,
             existingUser.DateOfBirth,
-            existingUser.IsActive
+            existingUser.IsActive,
+            existingUser.Role,
+            existingUser.DriverLicenses.Select(dl => new DriverLicenseDto(
+                dl.LicenseId, 
+                dl.HolderName,
+                dl.DateOfIssue
+            )).SingleOrDefault()
         );
         return Ok(new LoginResponse(accessToken, null, expires, userDto));
     }
@@ -113,6 +122,38 @@ public class AuthController : ControllerBase
     {
         return Ok(new {Message = "Refresh token revoked successfully."});
     }
+
+    /// <summary>
+    /// Refetches user information based on access token.
+    /// This is useful for refreshing user data without re-authenticating.
+    /// Use cases include refreshing pages or updating user profile information.
+    /// </summary>
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<IActionResult> Me()
+    {
+        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
+        var user = await _userService.GetUser(userId);
+        if (user == null) return NotFound(new {Message = "User not found"});
+        var dto = new UserDto(
+            user.UserId,
+            user.Email,
+            user.PhoneNumber,
+            user.FullName,
+            user.Address,
+            user.CreationDate,
+            user.EmailConfirmed,
+            user.DateOfBirth,
+            user.IsActive,
+            user.Role,
+            user.DriverLicenses.Select(dl => new DriverLicenseDto(
+                dl.LicenseId, 
+                dl.HolderName,
+                dl.DateOfIssue
+            )).SingleOrDefault()
+        );
+        return Ok(dto);
+    }
     
     /// <summary>
     /// Helper method to generate JWT token
@@ -121,7 +162,7 @@ public class AuthController : ControllerBase
     {
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub,   user.Sub),
+            new Claim(JwtRegisteredClaimNames.Sub,   user.UserId.ToString()),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(ClaimTypes.Role,               user.Role)
         };

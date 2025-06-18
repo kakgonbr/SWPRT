@@ -122,7 +122,7 @@ public partial class RentalContext : DbContext
             entity.HasKey(e => new { e.UserId, e.LicenseTypeId }).HasName("pk_drlc");
 
             entity.Property(e => e.HolderName).HasMaxLength(256);
-            entity.Property(e => e.LicenseTypeCode)
+            entity.Property(e => e.LicenseId)
                 .HasMaxLength(256)
                 .IsUnicode(false);
 
