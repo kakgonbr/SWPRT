@@ -50,7 +50,8 @@ public class AuthController : ControllerBase
             PhoneNumber = request.PhoneNumber,
             FullName = request.Name,
             CreationDate = DateOnly.FromDateTime(DateTime.UtcNow),
-            EmailConfirmed = false
+            EmailConfirmed = false,
+            Sub = Guid.NewGuid().ToString(), // Generate a unique identifier for the user
         };
         newUser.PasswordHash = _hasher.HashPassword(newUser, request.Password);
         // Add the user to the database
@@ -162,7 +163,7 @@ public class AuthController : ControllerBase
     {
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub,   user.UserId.ToString()),
+            new Claim(JwtRegisteredClaimNames.Sub,   user.Sub),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(ClaimTypes.Role,               user.Role)
         };
