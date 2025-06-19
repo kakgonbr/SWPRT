@@ -227,7 +227,7 @@ export default function SignupPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                                <Label htmlFor="phone">Phone number</Label>
                                 <Input
                                     id="phone"
                                     name="phone"

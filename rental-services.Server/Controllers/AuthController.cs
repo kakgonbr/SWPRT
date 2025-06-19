@@ -51,6 +51,7 @@ public class AuthController : ControllerBase
             FullName = request.Name,
             CreationDate = DateOnly.FromDateTime(DateTime.UtcNow),
             EmailConfirmed = false,
+            Sub = Guid.NewGuid().ToString(), // Generate a unique identifier for the user
         };
         newUser.PasswordHash = _hasher.HashPassword(newUser, request.Password);
         // Add the user to the database
@@ -58,8 +59,6 @@ public class AuthController : ControllerBase
         {
             _db.Users.Add(newUser);
             await _db.SaveChangesAsync();
-            newUser.Sub = newUser.UserId.ToString();
-            _db.SaveChanges();
         }
         catch (Exception e)
         {
@@ -164,7 +163,7 @@ public class AuthController : ControllerBase
     {
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub,   user.UserId.ToString()),
+            new Claim(JwtRegisteredClaimNames.Sub,   user.Sub),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
             new Claim(ClaimTypes.Role,               user.Role)
         };

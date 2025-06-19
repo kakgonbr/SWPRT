@@ -7,13 +7,15 @@ public partial class User
 {
     public int UserId { get; set; }
 
+    public string Sub { get; set; } = null!;
+
     public string Email { get; set; } = null!;
 
     public string PhoneNumber { get; set; } = null!;
 
     public string? PasswordHash { get; set; }
 
-    public string Role { get; set; } = null!;
+    public string Role { get; set; } = "Customer";
 
     public string? FullName { get; set; }
 
@@ -25,11 +27,9 @@ public partial class User
 
     public DateOnly? DateOfBirth { get; set; }
 
-    public bool IsActive { get; set; }
+    public bool IsActive { get; set; } = true;
 
     public string? GoogleuserId { get; set; }
-
-    public string Sub { get; set; } = null!;
 
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
