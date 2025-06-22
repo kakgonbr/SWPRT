@@ -82,7 +82,7 @@
 
             return true;
         }
-
+        
         public async Task<bool> AddVehicleModel(Models.DTOs.VehicleDetailsDTO vehicleModel)
         {
             Models.VehicleModel newModel = new();
@@ -90,6 +90,42 @@
             _mapper.Map(vehicleModel, newModel);
 
             return await _vehicleModelRepository.AddAsync(newModel) != 0;
+        }
+        
+        public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly startDate, DateOnly endDate, string? address)
+        {
+            var vehicleModels = await _vehicleModelRepository.GetAllEagerShopAsync();
+            var result = new List<Models.VehicleModel>();
+
+            foreach (var model in vehicleModels)
+            {
+                if (!string.IsNullOrEmpty(address) && !model.Shop.Address.Contains(address, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var vehicles = await _vehicleModelRepository.GetOfModelEagerBookingAsync(model.ModelId);
+                int availableCount = 0;
+                foreach (var vehicle in vehicles)
+                {
+                    bool isAvailable = true;
+                    foreach (var booking in vehicle.Bookings)
+                    {
+                        if (!(booking.EndDate < startDate || booking.StartDate > endDate))
+                        {
+                            isAvailable = false;
+                            break;
+                        }
+                    }
+                    if (isAvailable)
+                        availableCount++;
+                }
+                if (availableCount > 1)
+                {
+                    result.Add(model);
+                }
+            }
+            return _mapper.Map<List<Models.DTOs.VehicleModelDTO>>(result);
         }
     }
 }

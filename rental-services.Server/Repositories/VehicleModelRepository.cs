@@ -64,5 +64,15 @@ namespace rental_services.Server.Repositories
         {
             return await _rentalContext.Vehicles.Where(v => v.ModelId == modelId).ToListAsync();
         }
+
+        public async Task<List<Models.Vehicle>> GetOfModelEagerBookingAsync(int modelId)
+        {
+            return await _rentalContext.Vehicles.Where(v => v.ModelId == modelId).Include(v => v.Bookings).ToListAsync();
+        }
+
+        public async Task<List<Models.VehicleModel>> GetAllEagerShopAsync()
+        {
+            return await _rentalContext.VehicleModels.Include(v => v.Shop).ToListAsync();
+        }
     }
 }
