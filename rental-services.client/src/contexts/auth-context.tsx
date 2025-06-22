@@ -73,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     return response.json();
                 })
                 .then((user: UserDto) => {
+                    user.role = user.role.toLowerCase();
                     setUser(user);
                     localStorage.setItem('user', JSON.stringify(user));
                 })
