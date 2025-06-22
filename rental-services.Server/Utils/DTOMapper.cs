@@ -1,7 +1,6 @@
 ﻿using AutoMapper;
 using rental_services.Server.Models;
 using rental_services.Server.Models.DTOs;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace rental_services.Server.Utils
 {
@@ -37,7 +36,7 @@ namespace rental_services.Server.Utils
                     : 0
             ))
             .ForMember(dest => dest.VehicleType, opt => opt.MapFrom(
-                src => src.VehicleType.VehicleTypeName // adjust as needed
+                src => src.VehicleType.VehicleTypeName
             ))
             .ForMember(dest => dest.Shop, opt => opt.MapFrom(
                 src => src.Shop.Address
