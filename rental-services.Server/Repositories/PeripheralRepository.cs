@@ -26,31 +26,33 @@ namespace rental_services.Server.Repositories
             return await _rentalContext.Peripherals.FindAsync(id);
         }
 
-        public async Task AddAsync(Models.Peripheral product)
+        public async Task<int> AddAsync(Models.Peripheral product)
         {
             await _rentalContext.Peripherals.AddAsync(product);
-            await _rentalContext.SaveChangesAsync();
+            return await _rentalContext.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(Models.Peripheral product)
+        public async Task<int> UpdateAsync(Models.Peripheral product)
         {
             _rentalContext.Peripherals.Update(product);
-            await _rentalContext.SaveChangesAsync();
+            return await _rentalContext.SaveChangesAsync();
         }
 
-        public async Task SaveAsync()
+        public async Task<int> SaveAsync()
         {
-            await _rentalContext.SaveChangesAsync();
+            return await _rentalContext.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task<int> DeleteAsync(int id)
         {
             var product = await _rentalContext.Peripherals.FindAsync(id);
             if (product != null)
             {
                 _rentalContext.Peripherals.Remove(product);
-                await _rentalContext.SaveChangesAsync();
+                return await _rentalContext.SaveChangesAsync();
             }
+
+            return 0;
         }
 
         public Models.Peripheral AttachPeripheral(int peripheralId)

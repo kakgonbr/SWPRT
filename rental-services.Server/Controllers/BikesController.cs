@@ -16,7 +16,7 @@ public class BikesController : ControllerBase
         _bikeService = vehicleModelService;
     }
 
-    // GET /vehicles
+    // GET /bikes
     [HttpGet]
     public async Task<ActionResult<List<VehicleModelDTO>>> GetAll()
     {
@@ -24,7 +24,7 @@ public class BikesController : ControllerBase
         return Ok(models);
     }
 
-    // GET /vehicles/{id}
+    // GET /bikes/{id}
     [HttpGet("{id}")]
     public async Task<ActionResult<VehicleDetailsDTO>> GetById(int id)
     {
@@ -37,7 +37,6 @@ public class BikesController : ControllerBase
         return Ok(details);
     }
 
-
     // GET /vehicles/available?startDate=2024-06-01&endDate=2024-06-10&address=abc
     [HttpGet("available")]
     public async Task<ActionResult<List<VehicleModelDTO>>> GetAvailable(DateOnly startDate, DateOnly endDate, string? address = null)
@@ -46,7 +45,7 @@ public class BikesController : ControllerBase
         return Ok(availableModels);
     }
 
-    // POST /vehicles/{id}
+    // POST /bikes/{id}
     [HttpPost("{id}")]
     [Authorize(Roles = Utils.Config.Role.Admin)]
     public async Task<ActionResult<string>> EditVehicleModel(int id, [FromBody] VehicleDetailsDTO vehicleDetails)
@@ -54,5 +53,15 @@ public class BikesController : ControllerBase
         bool result = await _bikeService.UpdateVehicleModelAsync(vehicleDetails);
 
         return Ok(result ? "Updated." : "Failed to update.");
+    }
+
+    // POST /bikes
+    [HttpPost]
+    [Authorize(Roles = Utils.Config.Role.Admin)]
+    public async Task<ActionResult<string>> AddVehicleModel([FromBody] VehicleDetailsDTO vehicleDetails)
+    {
+        bool result = await _bikeService.UpdateVehicleModelAsync(vehicleDetails);
+
+        return Ok(result ? "Added." : "Failed to add.");
     }
 }
