@@ -93,7 +93,7 @@ namespace rental_services.Server
             app.UseAuthorization();
             app.UseRouting();
             //
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection(); // nginx handles https
             app.MapControllers();
             app.MapFallbackToFile("/index.html");
             app.Run();
