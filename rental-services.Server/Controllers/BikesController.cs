@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using rental_services.Server.Services;
 using rental_services.Server.Models.DTOs;
+using Microsoft.AspNetCore.Authorization;
 
 namespace rental_services.Server.Controllers;
 
@@ -36,11 +37,22 @@ public class BikesController : ControllerBase
         return Ok(details);
     }
 
+
     // GET /vehicles/available?startDate=2024-06-01&endDate=2024-06-10&address=abc
     [HttpGet("available")]
     public async Task<ActionResult<List<VehicleModelDTO>>> GetAvailable(DateOnly startDate, DateOnly endDate, string? address = null)
     {
         var availableModels = await _bikeService.GetAvailableModelsAsync(startDate, endDate, address);
         return Ok(availableModels);
+    }
+
+    // POST /vehicles/{id}
+    [HttpPost("{id}")]
+    [Authorize(Roles = Utils.Config.Role.Admin)]
+    public async Task<ActionResult<string>> EditVehicleModel(int id, [FromBody] VehicleDetailsDTO vehicleDetails)
+    {
+        bool result = await _bikeService.UpdateVehicleModelAsync(vehicleDetails);
+
+        return Ok(result ? "Updated." : "Failed to update.");
     }
 }
