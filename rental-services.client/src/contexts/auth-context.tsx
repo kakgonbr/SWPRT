@@ -108,9 +108,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result : LoginResponse = await response.json();
         // Persist user data and token
         localStorage.setItem('token', result.accessToken);
-        if (user != null) {
-            user.role = user.role.toLowerCase();
-        }
+        result.user.role = result.user.role.toLowerCase();
         setUser(result.user);
         localStorage.setItem('user', JSON.stringify(result.user));
         return result;
