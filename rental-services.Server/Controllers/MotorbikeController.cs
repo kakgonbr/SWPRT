@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using rental_services.Server.Data;
 
 namespace rental_services.Server.Controllers;
 
@@ -8,6 +9,13 @@ namespace rental_services.Server.Controllers;
 [Route("api/[controller]")]
 public class MotorbikeController : ControllerBase
 {
+    private Services.IBikeService _bikeService;
+
+    public MotorbikeController(Services.IBikeService bikeService)
+    {
+        _bikeService = bikeService;
+    }
+
     /// <summary>
     /// For admin: get all motorbikes
     /// </summary>
