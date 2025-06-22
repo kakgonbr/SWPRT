@@ -6,12 +6,12 @@
 
         public static void Advance(int days = 1)
         {
-            CurrentTime.AddDays(days);
+            CurrentTime = CurrentTime.AddDays(days);
         }
 
         public static void Back(int days = 1)
         {
-            CurrentTime.AddDays(-days);
+            CurrentTime = CurrentTime.AddDays(-days);
         }
 
         public static void Reset()
