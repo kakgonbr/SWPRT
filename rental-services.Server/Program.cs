@@ -96,9 +96,12 @@ namespace rental_services.Server
                 app.UseSwaggerUI();
             }
             // Use authentication and authorization
+            app.UseRouting();
+
+            app.UseCors("AllowLocalhost3000");
+
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseRouting();
             //
             //app.UseHttpsRedirection(); // nginx handles https
             app.MapControllers();

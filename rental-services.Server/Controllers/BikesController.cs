@@ -48,7 +48,7 @@ public class BikesController : ControllerBase
     // POST /bikes/{id}
     [HttpPost("{id}")]
     [Authorize(Roles = Utils.Config.Role.Admin)]
-    public async Task<ActionResult<string>> EditVehicleModel(int id, [FromBody] VehicleDetailsDTO vehicleDetails)
+    public async Task<ActionResult<string>> EditVehicleModel([FromBody] VehicleDetailsDTO vehicleDetails)
     {
         bool result = await _bikeService.UpdateVehicleModelAsync(vehicleDetails);
 
