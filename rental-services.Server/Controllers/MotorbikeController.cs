@@ -12,7 +12,7 @@ public class MotorbikeController : ControllerBase
     /// For admin: get all motorbikes
     /// </summary>
     [HttpGet("bikes/get")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Utils.Config.Role.Admin)]
     public IActionResult GetBikes()
     {
         return Ok(new {Message = "Bikes"});
@@ -21,7 +21,7 @@ public class MotorbikeController : ControllerBase
     /// For admin: add a new motorbike
     /// </summary>
     [HttpGet("bikes/add")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Utils.Config.Role.Admin)]
     public IActionResult AddBike()
     {
         return Ok(new {Message = "Add a Bike"});
