@@ -25,31 +25,33 @@ namespace rental_services.Server.Repositories
             return await _rentalContext.VehicleModels.FindAsync(id);
         }
 
-        public async Task AddAsync(Models.VehicleModel product)
+        public async Task<int> AddAsync(Models.VehicleModel product)
         {
             await _rentalContext.VehicleModels.AddAsync(product);
-            await _rentalContext.SaveChangesAsync();
+            return await _rentalContext.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(Models.VehicleModel product)
+        public async Task<int> UpdateAsync(Models.VehicleModel product)
         {
             _rentalContext.VehicleModels.Update(product);
-            await _rentalContext.SaveChangesAsync();
+            return await _rentalContext.SaveChangesAsync();
         }
 
-        public async Task SaveAsync()
+        public async Task<int> SaveAsync()
         {
-            await _rentalContext.SaveChangesAsync();
+            return await _rentalContext.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task<int> DeleteAsync(int id)
         {
             var product = await _rentalContext.VehicleModels.FindAsync(id);
             if (product != null)
             {
                 _rentalContext.VehicleModels.Remove(product);
-                await _rentalContext.SaveChangesAsync();
+                return await _rentalContext.SaveChangesAsync();
             }
+
+            return 0;
         }
 
         public async Task<List<Models.Vehicle>> GetOfModelAsync(Models.VehicleModel model)

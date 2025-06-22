@@ -82,5 +82,14 @@
 
             return true;
         }
+
+        public async Task<bool> AddVehicleModel(Models.DTOs.VehicleDetailsDTO vehicleModel)
+        {
+            Models.VehicleModel newModel = new();
+
+            _mapper.Map(vehicleModel, newModel);
+
+            return await _vehicleModelRepository.AddAsync(newModel) != 0;
+        }
     }
 }
