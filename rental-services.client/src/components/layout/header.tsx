@@ -107,7 +107,7 @@ export default function Header() {
                             <span>Report Website Issue</span>
                         </DropdownMenuItem>
 
-                        {(user.role === 'admin') && (
+                        {(user.role === 'Admin') && (
                             <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>
@@ -119,7 +119,7 @@ export default function Header() {
                             </>
                         )}
 
-                        {(user.role === 'staff') && (
+                        {(user.role === 'Staff') && (
                             <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>
