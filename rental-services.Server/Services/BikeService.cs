@@ -57,9 +57,9 @@
             return modelDTO;
         }
 
-        public async Task<bool> UpdateVehicleModelAsync(int modelId, Models.DTOs.VehicleDetailsDTO vehicleModel)
+        public async Task<bool> UpdateVehicleModelAsync(Models.DTOs.VehicleDetailsDTO vehicleModel)
         {
-            Models.VehicleModel? dbVehicleModel = await _vehicleModelRepository.GetByIdAsync(modelId);
+            Models.VehicleModel? dbVehicleModel = await _vehicleModelRepository.GetByIdAsync(vehicleModel.ModelId);
 
             if (dbVehicleModel is null)
             {
