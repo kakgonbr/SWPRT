@@ -85,7 +85,7 @@
 
         public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly startDate, DateOnly endDate, string? address)
         {
-            var vehicleModels = await _vehicleModelRepository.GetAllEagerAsync();
+            var vehicleModels = await _vehicleModelRepository.GetAllEagerShopAsync();
             var result = new List<Models.VehicleModel>();
 
             foreach (var model in vehicleModels)
@@ -95,7 +95,7 @@
                     continue;
                 }
 
-                var vehicles = await _vehicleModelRepository.GetOfModelEagerAsync(model.ModelId);
+                var vehicles = await _vehicleModelRepository.GetOfModelEagerBookingAsync(model.ModelId);
                 int availableCount = 0;
                 foreach (var vehicle in vehicles)
                 {
