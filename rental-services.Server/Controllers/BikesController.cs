@@ -48,8 +48,8 @@ public class BikesController : ControllerBase
         return Ok(availableModels);
     }
 
-    // POST /bikes/{id}
-    [HttpPost]
+    // PATCH /bikes/edit
+    [HttpPatch]
     [Authorize(Roles = Utils.Config.Role.Admin)]
     public async Task<ActionResult<string>> EditVehicleModel([FromBody] VehicleDetailsDTO vehicleDetails)
     {
