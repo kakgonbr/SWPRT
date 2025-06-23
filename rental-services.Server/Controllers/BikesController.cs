@@ -12,9 +12,9 @@ namespace rental_services.Server.Controllers;
 [Route("api/[controller]")]
 public class BikesController : ControllerBase
 {
-    private readonly BikeService _bikeService;
+    private readonly IBikeService _bikeService;
 
-    public BikesController(BikeService vehicleModelService)
+    public BikesController(IBikeService vehicleModelService)
     {
         _bikeService = vehicleModelService;
     }
