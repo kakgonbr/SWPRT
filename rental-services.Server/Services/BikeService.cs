@@ -108,7 +108,7 @@
 
             return true;
         }
-        
+
         public async Task<bool> AddVehicleModel(Models.DTOs.VehicleDetailsDTO vehicleModel)
         {
             Models.VehicleModel newModel = new();
@@ -117,7 +117,7 @@
 
             return await _vehicleModelRepository.AddAsync(newModel) != 0;
         }
-        
+
         public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly startDate, DateOnly endDate, string? address)
         {
             var vehicleModels = await _vehicleModelRepository.GetAllEagerShopAsync();
