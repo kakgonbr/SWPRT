@@ -138,7 +138,26 @@ namespace rental_services.Server.Services
 
             _mapper.Map(vehicleModel, newModel);
 
-            return await _vehicleModelRepository.AddAsync(newModel) != 0;
+            if (await _vehicleModelRepository.AddAsync(newModel) == 0)
+            {
+                return false;
+            }
+
+            if (vehicleModel.Peripherals is not null)
+            {
+                foreach (var pDto in vehicleModel.Peripherals)
+                {
+                    var dbPeripheral = await _peripheralRepository.GetByIdAsync(pDto.PeripheralId);
+                    if (dbPeripheral is null)
+                    {
+                        continue;
+                    }
+
+                    newModel.Peripherals.Add(dbPeripheral);
+                }
+            }
+
+            return await _vehicleModelRepository.SaveAsync() != 0;
         }
 
         public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly startDate, DateOnly endDate, string? address)
