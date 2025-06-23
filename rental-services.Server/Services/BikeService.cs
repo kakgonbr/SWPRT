@@ -35,6 +35,35 @@
             return await _vehicleModelRepository.GetOfModelAsync(modelId);
         }
 
+        public async Task<List<Models.DTOs.VehicleDTO>> GetDTOOfModelAsync(Models.VehicleModel model)
+        {
+            List<Models.Vehicle> vehicles = await GetOfModelAsync(model);
+
+            return _mapper.Map<List<Models.DTOs.VehicleDTO>>(vehicles);
+        }
+
+        public async Task<List<Models.DTOs.VehicleDTO>> GetDTOOfModelAsync(int modelId)
+        {
+            List<Models.Vehicle> vehicles = await GetOfModelAsync(modelId);
+
+            return _mapper.Map<List<Models.DTOs.VehicleDTO>>(vehicles);
+        }
+
+        public async Task<bool> UpdatePhysicalAsync(Models.DTOs.VehicleDTO vehicle)
+        {
+            Models.Vehicle? dbVehicle = await _vehicleRepository.GetByIdAsync(vehicle.VehicleId);
+
+            if (dbVehicle is null)
+            {
+                return false;
+            }
+
+            _mapper.Map(vehicle, dbVehicle);
+            await _vehicleRepository.SaveAsync();
+
+            return true;
+        }
+
         public async Task<List<Models.DTOs.VehicleModelDTO>> GetModelListAsync()
         {
             List<Models.VehicleModel> vehicleModels = await _vehicleModelRepository.GetAllAsync();
@@ -51,10 +80,7 @@
                 return null;
             }
 
-            Models.DTOs.VehicleDetailsDTO modelDTO = new();
-            _mapper.Map(model, modelDTO);
-
-            return modelDTO;
+            return _mapper.Map<Models.DTOs.VehicleDetailsDTO>(model);
         }
 
         public async Task<bool> UpdateVehicleModelAsync(Models.DTOs.VehicleDetailsDTO vehicleModel)

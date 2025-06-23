@@ -5,6 +5,9 @@ using Microsoft.AspNetCore.Authorization;
 
 namespace rental_services.Server.Controllers;
 
+/// <summary>
+/// For motorbike models, not individual physical bike
+/// </summary>
 [ApiController]
 [Route("api/[controller]")]
 public class BikesController : ControllerBase
