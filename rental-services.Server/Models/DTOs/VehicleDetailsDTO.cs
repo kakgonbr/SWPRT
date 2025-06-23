@@ -3,12 +3,12 @@
     // for viewing details
     public record VehicleDetailsDTO
     {
-        // for updating
+        // always present
         public int ModelId { get; set; }
+        // for updating
+        public int? VehicleTypeId { get; set; }
 
-        public int VehicleTypeId { get; set; }
-
-        public int ShopId { get; set; }
+        public int? ShopId { get; set; }
 
         // for both
         public string ModelName { get; set; } = null!;
@@ -28,14 +28,14 @@
         public IEnumerable<PeripheralDTO> Peripherals { get; set; } = null!;
 
         // for viewing
-        public string DisplayName { get; set; } = null!;
+        public string? DisplayName { get; set; } = null!;
 
-        public decimal Rating { get; set; }
+        public decimal? Rating { get; set; }
 
-        public string VehicleType { get; set; } = null!;
+        public string? VehicleType { get; set; } = null!;
 
-        public string Shop { get; set; } = null!;
+        public string? Shop { get; set; } = null!;
 
-        public int NumOfAvailable { get; set; }
+        public int? NumOfAvailable { get; set; }
     }
 }
