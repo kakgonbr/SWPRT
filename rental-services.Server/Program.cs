@@ -68,7 +68,8 @@ namespace rental_services.Server
                 .AddScoped<IVehicleModelRepository, VehicleModelRepository>()
                 .AddScoped<IVehicleRepository, VehicleRepository>()
                 .AddScoped<IPeripheralRepository, PeripheralRepository>()
-                .AddScoped<BikeService>();
+                .AddScoped<BikeService>()
+                .AddScoped<IOcrService, OcrService>();
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
             {
