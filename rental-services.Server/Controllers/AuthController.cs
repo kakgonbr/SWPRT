@@ -22,7 +22,7 @@ public class AuthController : ControllerBase
     private readonly IPasswordHasher<User> _hasher;
     private readonly RentalContext _db;
     private readonly IUserService _userService;
-
+    
     public AuthController(IOptions<JwtSettings> jwtSettings, IPasswordHasher<User> hasher, RentalContext db, IUserService userService)
     {
         _jwtSettings = jwtSettings.Value;
@@ -30,10 +30,14 @@ public class AuthController : ControllerBase
         _db = db;
         _userService = userService;
     }
-
+    
     /// <summary>
-    /// Signs up a new user with Auth0
+    /// Registers a new user in the system.
     /// </summary>
+    /// <param name="request">The <see cref="SignupRequest"/> containing the user's email, password, phone number, and name.</param>
+    /// <returns>Returns <see cref="IActionResult"/> with a success message if registration is successful, or a BadRequest with an error message if registration fails.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if the request is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the email already exists or a database error occurs.</exception>
     [HttpPost("signup")]
     public async Task<IActionResult> Signup([FromBody] SignupRequest request)
     {
@@ -72,9 +76,24 @@ public class AuthController : ControllerBase
     }
     
     /// <summary>
-    /// Logs a new user in with Auth0 and grants an access token and user DTO
-    /// /api/auth/login
+    /// Authenticates a user using their email and password, and issues a JWT access token along with user details.
     /// </summary>
+    /// <param name="request">
+    /// The <see cref="LoginRequest"/> containing the user's email and password.
+    /// </param>
+    /// <returns>
+    /// Returns <see cref="IActionResult"/> with a <see cref="LoginResponse"/> containing the access token, its expiration, and user information if authentication is successful.
+    /// Returns <see cref="UnauthorizedResult"/> with an error message if credentials are invalid.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown if the request is null.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown if a database error occurs during user lookup.
+    /// </exception>
+    /// <remarks>
+    /// Route: POST /api/auth/login
+    /// </remarks>
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -115,9 +134,13 @@ public class AuthController : ControllerBase
     }
     
     /// <summary>
-    /// Simply instructs client to drop the token; 
-    /// for stateless JWTs no server-side action is required
+    /// Handles user logout by instructing the client to remove the refresh token.
+    /// For stateless JWT authentication, no server-side action is required, but this endpoint can be used to acknowledge logout or revoke refresh tokens if implemented.
     /// </summary>
+    /// <param name="refreshToken">The refresh token to be revoked (if applicable).</param>
+    /// <returns>
+    /// Returns <see cref="OkObjectResult"/> with a message indicating the refresh token has been revoked successfully.
+    /// </returns>
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] string refreshToken)
     {
@@ -125,10 +148,17 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Refetches user information based on access token.
-    /// This is useful for refreshing user data without re-authenticating.
-    /// Use cases include refreshing pages or updating user profile information.
+    /// Retrieves the authenticated user's information based on the access token provided in the request.
+    /// This endpoint is useful for refreshing user data on the client side without requiring the user to re-authenticate.
+    /// Typical use cases include updating user profile information or refreshing session data after login.
     /// </summary>
+    /// <remarks>
+    /// Requires a valid JWT access token in the Authorization header.
+    /// </remarks>
+    /// <returns>
+    /// Returns <see cref="OkObjectResult"/> with a <see cref="UserDto"/> containing the user's details if the user is found.
+    /// Returns <see cref="NotFoundObjectResult"/> with an error message if the user does not exist.
+    /// </returns>
     [Authorize]
     [HttpGet("me")]
     public async Task<IActionResult> Me()
@@ -156,9 +186,17 @@ public class AuthController : ControllerBase
         return Ok(dto);
     }
     
-    /// <summary>
-    /// Helper method to generate JWT token
-    /// </summary>
+  /// <summary>
+  /// Generates a JWT access token for the specified user, embedding user claims such as subject, email, and role.
+  /// The token is signed using the configured secret key and includes issuer, audience, and expiration information.
+  /// </summary>
+  /// <param name="user">The <see cref="User"/> entity for whom the JWT token is generated.</param>
+  /// <param name="expiration">
+  /// When the method returns, contains the <see cref="DateTime"/> value representing the token's expiration time.
+  /// </param>
+  /// <returns>
+  /// A <see cref="string"/> containing the serialized JWT access token.
+  /// </returns>
     private string GenerateJwtToken(User user, out DateTime expiration)
     {
         var claims = new[]

@@ -16,7 +16,7 @@ interface AuthContextType {
 interface UserDto {
     userId: number,
     email: string,
-    phoneNumber: string,
+    phoneNumberNumber: string,
     fullName: string,
     address: string | null,
     creationDate: Date,
@@ -46,9 +46,9 @@ interface LoginResponse {
 
 export interface SignupRequest {
     email: string,
+    name: string,
     password: string,
-    phone: string,
-    name: string
+    phoneNumber: string,
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -102,7 +102,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             body: JSON.stringify(data)
         });
         if (!response.ok) {
-            throw new Error('Login failed: ' + response.statusText);
+            const error = await response.json();
+            throw new Error('Login failed: ' + error.Message);
         }
         const result : LoginResponse = await response.json();
         // Persist user data and token
