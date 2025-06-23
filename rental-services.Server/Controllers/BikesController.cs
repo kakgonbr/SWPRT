@@ -55,7 +55,7 @@ public class BikesController : ControllerBase
         return Ok(availableModels);
     }
 
-    // PATCH /bikes/edit
+    // PATCH /bikes
     [HttpPatch]
     [Authorize(Roles = Utils.Config.Role.Admin)]
     public async Task<ActionResult<string>> EditVehicleModel([FromBody] VehicleDetailsDTO vehicleDetails)
@@ -70,7 +70,7 @@ public class BikesController : ControllerBase
     [Authorize(Roles = Utils.Config.Role.Admin)]
     public async Task<ActionResult<string>> AddVehicleModel([FromBody] VehicleDetailsDTO vehicleDetails)
     {
-        bool result = await _bikeService.UpdateVehicleModelAsync(vehicleDetails);
+        bool result = await _bikeService.AddVehicleModel(vehicleDetails);
 
         return Ok(result ? "Added." : "Failed to add.");
     }
