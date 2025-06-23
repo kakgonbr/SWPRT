@@ -1,14 +1,10 @@
-﻿USE master
+USE master
 IF EXISTS(select * from sys.databases where name='SWP-PROTOTYPE')
 BEGIN
 ALTER DATABASE [SWP-PROTOTYPE]
 SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
 DROP DATABASE [SWP-PROTOTYPE]
 END;
-
-CREATE DATABASE [SWP-PROTOTYPE]
-USE [SWP-PROTOTYPE]
-
 
 CREATE TABLE Users
 (
@@ -240,6 +236,7 @@ VALUES
     ('john.smith@outlook.com', '0988123456', 'AQAAAAIAAYagAAAAEHgBObsBOeTlITPhVA01SAlv1EzRcNimdUs3gvGZmfoQF72Q9jphT2NlCIhQz/Sl6A==', 'Customer', N'John Smith', N'123 Bùi Viện, Quận 1, TP.HCM', '2025-05-15', 0, '1995-05-10', 0, 'user-pq5rt2kf'),
     ('thu.vo@yahoo.com', '0979123456', 'AQAAAAIAAYagAAAAEHgBObsBOeTlITPhVA01SAlv1EzRcNimdUs3gvGZmfoQF72Q9jphT2NlCIhQz/Sl6A==', 'Customer', N'Võ Thị Thu', N'56 Nguyễn Huệ, Hội An, Quảng Nam', '2025-06-01', 1, '1988-09-05', 1, 'user-8ldwgx9m');
 
+
 -- Insert into DriverLicenseTypes (2 rows: <125cc and 125+ cc)
 INSERT INTO DriverLicenseTypes (LicenseTypeCode)
 VALUES 
@@ -275,6 +272,7 @@ VALUES
     (N'Yamaha'),
     (N'Piaggio');
 
+
 -- Insert into Shops (2 rows)
 INSERT INTO Shops (Address, Status)
 VALUES 
@@ -301,6 +299,7 @@ VALUES
     (3, 2, N'CBR150R', 210000, 1, 'cbr150r.jpg', N'Fully faired sport bike.', 50, 1),
     (3, 2, N'MT-15', 215000, 2, 'mt15.jpg', N'Street fighter style.', 50, 1),
     (3, 2, N'Medley', 205000, 3, 'medley.jpg', N'Premium scooter with large wheels.', 50, 1);
+
 
 -- Insert into Vehicles (45 rows: 3 per model)
 INSERT INTO Vehicles (ModelId, Condition)
