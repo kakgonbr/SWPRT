@@ -1,4 +1,4 @@
-USE master
+﻿USE master
 IF EXISTS(select * from sys.databases where name='SWP-PROTOTYPE')
 BEGIN
 ALTER DATABASE [SWP-PROTOTYPE]
@@ -229,3 +229,175 @@ CREATE TABLE Reports
     CONSTRAINT fk_rep_user FOREIGN KEY (UserId) REFERENCES Users,
     CONSTRAINT fk_rep_type FOREIGN KEY (TypeId) REFERENCES ReportTypes
 )
+
+-- Insert into Users (10 rows)
+-- Pass: Abc@12345
+INSERT INTO Users (Email, PhoneNumber, PasswordHash, Role, FullName, Address, CreationDate, EmailConfirmed, DateOfBirth, IsActive, Sub)
+VALUES
+    ('admin@vroomvroom.vn', '0905123456', 'AQAAAAIAAYagAAAAEHgBObsBOeTlITPhVA01SAlv1EzRcNimdUs3gvGZmfoQF72Q9jphT2NlCIhQz/Sl6A==', 'Admin', N'Nguyễn Thị Hồng Nhung', N'12 Nguyễn Trãi, Quận 1, TP.HCM', '2025-01-01', 1, '1985-03-15', 1, 'user-xt7kpq2n'),
+    ('staff@vroomvroom.vn', '0916123456', 'AQAAAAIAAYagAAAAEHgBObsBOeTlITPhVA01SAlv1EzRcNimdUs3gvGZmfoQF72Q9jphT2NlCIhQz/Sl6A==', 'Staff', N'Đỗ Văn Tuấn', N'45 Trần Phú, Hải Châu, Đà Nẵng', '2025-01-02', 1, '1992-07-22', 1, 'user-4m9jwv8r'),
+    ('minh.nguyen@gmail.com', '0937123456', 'AQAAAAIAAYagAAAAEHgBObsBOeTlITPhVA01SAlv1EzRcNimdUs3gvGZmfoQF72Q9jphT2NlCIhQz/Sl6A==', 'Customer', N'Nguyễn Văn Minh', N'78 Lê Lợi, Ba Đình, Hà Nội', '2025-05-01', 0, '1990-11-30', 1, 'user-hz3cnb6y'),
+    ('john.smith@outlook.com', '0988123456', 'AQAAAAIAAYagAAAAEHgBObsBOeTlITPhVA01SAlv1EzRcNimdUs3gvGZmfoQF72Q9jphT2NlCIhQz/Sl6A==', 'Customer', N'John Smith', N'123 Bùi Viện, Quận 1, TP.HCM', '2025-05-15', 0, '1995-05-10', 0, 'user-pq5rt2kf'),
+    ('thu.vo@yahoo.com', '0979123456', 'AQAAAAIAAYagAAAAEHgBObsBOeTlITPhVA01SAlv1EzRcNimdUs3gvGZmfoQF72Q9jphT2NlCIhQz/Sl6A==', 'Customer', N'Võ Thị Thu', N'56 Nguyễn Huệ, Hội An, Quảng Nam', '2025-06-01', 1, '1988-09-05', 1, 'user-8ldwgx9m');
+
+-- Insert into DriverLicenseTypes (2 rows: <125cc and 125+ cc)
+INSERT INTO DriverLicenseTypes (LicenseTypeCode)
+VALUES 
+    ('A1'), -- <125cc
+    ('A2'); -- 125+ cc
+
+-- Insert into DriverLicenses (8 rows for customers)
+INSERT INTO DriverLicenses (UserId, LicenseTypeId, LicenseId, HolderName, DateOfIssue)
+VALUES
+    (3, 1, 'VN123456789', N'Nguyễn Văn Minh', '2020-06-01'),
+    (4, 1, 'VN987654321', N'Võ Thị Thu', '2021-03-15'),
+    (5, 2, 'IDP2025001', N'John Smith', '2025-01-01');
+
+-- Insert into VehicleTypes (3 rows)
+INSERT INTO VehicleTypes (VehicleTypeName, CylinderVolume_cm3)
+VALUES 
+    ('Motorbike <125cc', 110),
+    ('Motorbike 125-150cc', 135),
+    ('Motorbike 150-175cc', 160);
+
+-- Insert into LicenseTypeToVehicleType (4 rows)
+INSERT INTO LicenseTypeToVehicleType (LicenseTypeId, VehicleTypeId)
+VALUES 
+    (1, 1), -- A1 can drive <125cc
+    (2, 1), -- A2 can drive <125cc
+    (2, 2), -- A2 can drive 125-150cc
+    (2, 3); -- A2 can drive 150-175cc
+
+-- Insert into Manufacturers (3 rows)
+INSERT INTO Manufacturers (ManufacturerName)
+VALUES 
+    (N'Honda'),
+    (N'Yamaha'),
+    (N'Piaggio');
+
+-- Insert into Shops (2 rows)
+INSERT INTO Shops (Address, Status)
+VALUES 
+    (N'123 Đường Lê Lợi, Quận 1, TP.HCM', 'Open'),
+    (N'456 Đường Nguyễn Huệ, Quận 1, TP.HCM', 'Open');
+
+-- Insert into VehicleModels (15 rows: 5 per vehicle type)
+INSERT INTO VehicleModels (VehicleTypeId, ShopId, ModelName, RatePerDay, ManufacturerId, ImageFile, Description, UpFrontPercentage, IsAvailable)
+VALUES 
+    -- Shop 1: 8 models
+    (1, 1, N'Wave Alpha', 100000, 1, 'wave_alpha.jpg', N'Popular motorbike for daily use.', 50, 1),
+    (1, 1, N'Sirius', 120000, 2, 'sirius.jpg', N'Reliable and fuel-efficient.', 50, 1),
+    (1, 1, N'Blade', 105000, 1, 'blade.jpg', N'Affordable and durable.', 50, 1),
+    (2, 1, N'Winner X', 150000, 1, 'winner_x.jpg', N'Sporty underbone motorbike.', 50, 1),
+    (2, 1, N'Exciter', 160000, 2, 'exciter.jpg', N'Popular choice for young riders.', 50, 1),
+    (2, 1, N'Liberty', 145000, 3, 'liberty.jpg', N'Elegant Italian design.', 50, 1),
+    (3, 1, N'CB150R', 200000, 1, 'cb150r.jpg', N'Naked bike with sporty performance.', 50, 1),
+    (3, 1, N'R15', 220000, 2, 'r15.jpg', N'Sport bike with racing DNA.', 50, 1),
+    -- Shop 2: 7 models
+    (1, 2, N'Future', 110000, 1, 'future.jpg', N'Modern design with good performance.', 50, 1),
+    (1, 2, N'Jupiter', 115000, 2, 'jupiter.jpg', N'Sporty look with smooth ride.', 50, 1),
+    (2, 2, N'Air Blade', 140000, 1, 'air_blade.jpg', N'Stylish scooter with good performance.', 50, 1),
+    (2, 2, N'NVX', 155000, 2, 'nvx.jpg', N'Powerful scooter with modern features.', 50, 1),
+    (3, 2, N'CBR150R', 210000, 1, 'cbr150r.jpg', N'Fully faired sport bike.', 50, 1),
+    (3, 2, N'MT-15', 215000, 2, 'mt15.jpg', N'Street fighter style.', 50, 1),
+    (3, 2, N'Medley', 205000, 3, 'medley.jpg', N'Premium scooter with large wheels.', 50, 1);
+
+-- Insert into Vehicles (45 rows: 3 per model)
+INSERT INTO Vehicles (ModelId, Condition)
+VALUES 
+    (1, 'Normal'), (1, 'Normal'), (1, 'Normal'), -- Shop 1: 24 vehicles
+    (2, 'Normal'), (2, 'Normal'), (2, 'Normal'),
+    (3, 'Normal'), (3, 'Normal'), (3, 'Normal'),
+    (4, 'Normal'), (4, 'Normal'), (4, 'Normal'),
+    (5, 'Normal'), (5, 'Normal'), (5, 'Normal'),
+    (6, 'Normal'), (6, 'Normal'), (6, 'Normal'),
+    (7, 'Normal'), (7, 'Normal'), (7, 'Normal'),
+    (8, 'Normal'), (8, 'Normal'), (8, 'Normal'),
+    (9, 'Normal'), (9, 'Normal'), (9, 'Normal'), -- Shop 2: 21 vehicles
+    (10, 'Normal'), (10, 'Normal'), (10, 'Normal'),
+    (11, 'Normal'), (11, 'Normal'), (11, 'Normal'),
+    (12, 'Normal'), (12, 'Normal'), (12, 'Normal'),
+    (13, 'Normal'), (13, 'Normal'), (13, 'Normal'),
+    (14, 'Normal'), (14, 'Normal'), (14, 'Normal'),
+    (15, 'Normal'), (15, 'Normal'), (15, 'Normal');
+
+INSERT INTO Reviews (UserId, ModelId, Rate, Comment, IsVisible)
+VALUES
+    (3, 2, 3, N'Good bike, but noisy.', 0),
+    (4, 3, 4, N'Xe bền, giá hợp lý.', 1),
+    (5, 1, 4, N'Nice scooter for city.', 1);
+
+-- Insert into Bookings (20 rows: 10 per shop)
+INSERT INTO Bookings (UserId, VehicleId, StartDate, EndDate, Status)
+VALUES
+    (3, 4, '2025-05-15', '2025-07-10', 'Active'),
+    (4, 7, '2025-06-01', '2025-06-02', 'Active'),
+    (5, 8, '2025-06-05', '2025-06-30', 'Pending')
+
+-- Insert into Payments (20 rows: 1 per booking)
+INSERT INTO Payments (BookingId, AmountPaid, PaymentDate)
+VALUES 
+	(1, 600000, '2025-06-03'), 
+	(2, 600000, '2025-06-04'),
+    (3, 580000, '2025-06-05')
+
+-- Insert into Peripherals (10 rows)
+INSERT INTO Peripherals (Name, RatePerDay)
+VALUES 
+    (N'Helmet', 10000), (N'Gloves', 5000), (N'Jacket', 15000), (N'Raincoat', 10000),
+    (N'Phone Holder', 5000), (N'GPS Device', 20000), (N'First Aid Kit', 5000), (N'Tool Kit', 10000),
+    (N'Spare Tire', 15000), (N'Lock', 5000);
+
+-- Insert into AvailableModelPeripherals (3-4 peripherals per model, sample for brevity)
+INSERT INTO AvailableModelPeripherals (PeripheralId, ModelId)
+VALUES 
+    (1, 1), (2, 1), (3, 1), (4, 1), -- Model 1
+    (1, 2), (2, 2), (5, 2), (6, 2) -- Model 2
+    -- Similar for other models
+
+-- Insert into BookingPeripherals (sample, assuming schema error, should be BookingId)
+-- Proceeding with ModelId as per schema
+INSERT INTO BookingPeripherals (PeripheralId, ModelId)
+VALUES 
+    (1, 1), (2, 1), (3, 1), -- Model 1 in bookings
+    (1, 2), (2, 2), (5, 2); -- Model 2 in bookings
+
+-- Insert into Chats (10 rows: 1 per user)
+INSERT INTO Chats (UserId, StaffId, Status, Priority, OpenTime, Subject)
+VALUES
+    (3, 2, 'Unresolved', 'High', '2025-05-15 11:00:00', N'Bike breakdown'),
+    (4, 2, 'Resolved', 'Low', '2025-06-01 12:00:00', N'Đổi xe'),
+    (5, 2, 'Resolved', 'Medium', '2025-06-10 13:00:00', N'Check license');
+
+-- Insert into ChatMessages (sample for brevity)
+INSERT INTO ChatMessages (ChatId, SenderId, Content)
+VALUES
+    (1, 3, N'Help! Bike stopped on Nguyen Trai.'),
+    (1, 3, N'We’ll send a mechanic now.'),
+    (2, 1, N'Xe này cũ, đổi xe khác được không?'),
+    (3, 2, N'Can you check my license status?');
+
+	--select * from ChatMessages
+
+-- Insert into Feedbacks (10 rows: 1 per user)
+INSERT INTO Feedbacks (UserId, Title, Body, ImagePath)
+VALUES 
+    (3, N'Good experience', N'Easy to book bikes.', 'feedback3.jpg'),
+    (4, N'Fast service', N'Quick responses from staff.', 'feedback4.jpg'),
+    (5, N'Nice bikes', N'Great selection of motorbikes.', 'feedback5.jpg')
+
+	-- select * from Users
+
+-- Insert into ReportTypes (3 rows)
+INSERT INTO ReportTypes (Description)
+VALUES 
+    (N'Vehicle Issue'),
+    (N'Payment Issue'),
+    (N'Other');
+
+-- Insert into Reports (sample rows)
+INSERT INTO Reports (UserId, TypeId, Title, Body, ImagePath)
+VALUES 
+    (3, 1, N'Vehicle not starting', N'The motorbike I rented won’t start.', 'report1.jpg'),
+    (4, 2, N'Overcharged', N'I was charged more than agreed.', 'report2.jpg'),
+    (5, 3, N'Delivery delay', N'Bike was delivered late.', 'report3.jpg');

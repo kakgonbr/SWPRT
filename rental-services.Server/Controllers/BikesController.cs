@@ -49,7 +49,7 @@ public class BikesController : ControllerBase
     }
 
     // POST /bikes/{id}
-    [HttpPost("{id}")]
+    [HttpPost]
     [Authorize(Roles = Utils.Config.Role.Admin)]
     public async Task<ActionResult<string>> EditVehicleModel([FromBody] VehicleDetailsDTO vehicleDetails)
     {
