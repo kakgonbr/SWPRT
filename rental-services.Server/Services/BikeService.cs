@@ -1,4 +1,6 @@
-﻿namespace rental_services.Server.Services
+﻿using rental_services.Server.Models;
+
+namespace rental_services.Server.Services
 {
     public class BikeService : IBikeService
     {
@@ -100,13 +102,34 @@
             {
                 foreach (var pDto in vehicleModel.Peripherals)
                 {
-                    dbVehicleModel.Peripherals.Add(_peripheralRepository.AttachPeripheral(pDto.PeripheralId));
+                    var dbPeripheral = await _peripheralRepository.GetByIdAsync(pDto.PeripheralId);
+                    if (dbPeripheral is null)
+                    {
+                        continue;
+                    }
+
+                    dbVehicleModel.Peripherals.Add(dbPeripheral);
                 }
             }
 
             await _vehicleModelRepository.SaveAsync();
 
             return true;
+        }
+
+        public async Task<bool> DeleteVehicleModel(int modelId)
+        {
+            Models.VehicleModel? dbVehicleModel = await _vehicleModelRepository.GetByIdAsync(modelId);
+
+            if (dbVehicleModel is null)
+            {
+                return false;
+            }
+
+            dbVehicleModel.IsAvailable = false;
+            
+
+            return await _vehicleModelRepository.SaveAsync() != 0;
         }
 
         public async Task<bool> AddVehicleModel(Models.DTOs.VehicleDetailsDTO vehicleModel)

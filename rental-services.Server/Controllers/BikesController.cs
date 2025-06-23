@@ -40,6 +40,13 @@ public class BikesController : ControllerBase
         return Ok(details);
     }
 
+    [HttpDelete("{id}")]
+    [Authorize(Roles = Utils.Config.Role.Admin)]
+    public async Task<ActionResult<string>> DeleteBike(int id)
+    {
+        return await _bikeService.DeleteVehicleModel(id) ? Ok("Deleted.") : Ok("Failed to delete.");
+    }
+
     // GET /vehicles/available?startDate=2024-06-01&endDate=2024-06-10&address=abc
     [HttpGet("available")]
     public async Task<ActionResult<List<VehicleModelDTO>>> GetAvailable(DateOnly startDate, DateOnly endDate, string? address = null)

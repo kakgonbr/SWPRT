@@ -6,6 +6,7 @@ namespace rental_services.Server.Services
     public interface IBikeService
     {
         Task<bool> AddVehicleModel(VehicleDetailsDTO vehicleModel);
+        Task<bool> DeleteVehicleModel(int modelId);
         Task<List<VehicleModelDTO>> GetAvailableModelsAsync(DateOnly startDate, DateOnly endDate, string? address);
         Task<List<VehicleDTO>> GetDTOOfModelAsync(int modelId);
         Task<List<VehicleDTO>> GetDTOOfModelAsync(VehicleModel model);
