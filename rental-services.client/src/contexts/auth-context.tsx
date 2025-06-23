@@ -73,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     return response.json();
                 })
                 .then((user: UserDto) => {
+                    user.role = user.role.toLowerCase();
                     setUser(user);
                     localStorage.setItem('user', JSON.stringify(user));
                 })
@@ -108,6 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const result : LoginResponse = await response.json();
         // Persist user data and token
         localStorage.setItem('token', result.accessToken);
+        result.user.role = result.user.role.toLowerCase();
         setUser(result.user);
         localStorage.setItem('user', JSON.stringify(result.user));
         return result;
@@ -131,6 +133,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = () => {
         setUser(null)
         localStorage.removeItem('user')
+        localStorage.removeItem('token')
     }
 
     const value = {

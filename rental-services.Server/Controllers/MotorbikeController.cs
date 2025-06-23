@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using rental_services.Server.Data;
 
 namespace rental_services.Server.Controllers;
 
@@ -8,11 +9,18 @@ namespace rental_services.Server.Controllers;
 [Route("api/[controller]")]
 public class MotorbikeController : ControllerBase
 {
+    private Services.IBikeService _bikeService;
+
+    public MotorbikeController(Services.IBikeService bikeService)
+    {
+        _bikeService = bikeService;
+    }
+
     /// <summary>
     /// For admin: get all motorbikes
     /// </summary>
     [HttpGet("bikes/get")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Utils.Config.Role.Admin)]
     public IActionResult GetBikes()
     {
         return Ok(new {Message = "Bikes"});
@@ -21,7 +29,7 @@ public class MotorbikeController : ControllerBase
     /// For admin: add a new motorbike
     /// </summary>
     [HttpGet("bikes/add")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = Utils.Config.Role.Admin)]
     public IActionResult AddBike()
     {
         return Ok(new {Message = "Add a Bike"});

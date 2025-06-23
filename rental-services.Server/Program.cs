@@ -23,6 +23,9 @@ namespace rental_services.Server
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            // automapper
+            builder.Services.AddAutoMapper(typeof(Utils.DTOMapper));
+
             // Bind JWT config
             string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new InvalidOperationException("Environment Variable 'JWT_KEY' not found.");
             string jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? throw new InvalidOperationException("Environment Variable 'JWT_ISSUER' not found.");
@@ -61,7 +64,11 @@ namespace rental_services.Server
             // Register services and repositories
             builder.Services
                 .AddScoped<IUserRepository, UserRepository>()
-                .AddScoped<IUserService, UserService>();
+                .AddScoped<IUserService, UserService>()
+                .AddScoped<IVehicleModelRepository, VehicleModelRepository>()
+                .AddScoped<IVehicleRepository, VehicleRepository>()
+                .AddScoped<IPeripheralRepository, PeripheralRepository>()
+                .AddScoped<IBikeService, BikeService>();
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
             {
@@ -89,11 +96,14 @@ namespace rental_services.Server
                 app.UseSwaggerUI();
             }
             // Use authentication and authorization
+            app.UseRouting();
+
+            app.UseCors("AllowLocalhost3000");
+
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseRouting();
             //
-            app.UseHttpsRedirection();
+            //app.UseHttpsRedirection(); // nginx handles https
             app.MapControllers();
             app.MapFallbackToFile("/index.html");
             app.Run();

@@ -119,7 +119,7 @@ export default function Header() {
                             </>
                         )}
 
-                        {(user.role === 'staff') && (
+                        {(user.role === 'Staff') && (
                             <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>
