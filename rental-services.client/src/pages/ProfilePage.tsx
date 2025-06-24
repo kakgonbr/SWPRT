@@ -296,6 +296,7 @@ export default function ProfilePage() {
         );
       }
 
+      //@ts-ignore
       const result = await response.json();
 
       // Update form data with confirmed information
