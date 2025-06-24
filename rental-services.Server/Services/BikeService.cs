@@ -1,4 +1,8 @@
-﻿namespace rental_services.Server.Services
+using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
+using rental_services.Server.Models;
+using rental_services.Server.Models.DTOs;
+
+namespace rental_services.Server.Services
 {
     public class BikeService : IBikeService
     {
@@ -6,13 +10,15 @@
         private Repositories.IVehicleRepository _vehicleRepository;
         private Repositories.IPeripheralRepository _peripheralRepository;
         private AutoMapper.IMapper _mapper;
+        private readonly ILogger<BikeService> _logger;
 
-        public BikeService(Repositories.IVehicleModelRepository vehicleModelRepository, Repositories.IVehicleRepository vehicleRepository, AutoMapper.IMapper mapper, Repositories.IPeripheralRepository peripheralRepository)
+        public BikeService(Repositories.IVehicleModelRepository vehicleModelRepository, Repositories.IVehicleRepository vehicleRepository, AutoMapper.IMapper mapper, Repositories.IPeripheralRepository peripheralRepository, ILogger<BikeService> logger)
         {
             _vehicleModelRepository = vehicleModelRepository;
             _vehicleRepository = vehicleRepository;
             _mapper = mapper;
             _peripheralRepository = peripheralRepository;
+            _logger = logger;
         }
 
         public async Task<List<Models.VehicleModel>> GetVehicleModelsAsync()
@@ -100,7 +106,13 @@
             {
                 foreach (var pDto in vehicleModel.Peripherals)
                 {
-                    dbVehicleModel.Peripherals.Add(_peripheralRepository.AttachPeripheral(pDto.PeripheralId));
+                    var dbPeripheral = await _peripheralRepository.GetByIdAsync(pDto.PeripheralId);
+                    if (dbPeripheral is null)
+                    {
+                        continue;
+                    }
+
+                    dbVehicleModel.Peripherals.Add(dbPeripheral);
                 }
             }
 
@@ -109,18 +121,56 @@
             return true;
         }
 
+        public async Task<bool> DeleteVehicleModel(int modelId)
+        {
+            Models.VehicleModel? dbVehicleModel = await _vehicleModelRepository.GetByIdAsync(modelId);
+
+            if (dbVehicleModel is null)
+            {
+                return false;
+            }
+
+            dbVehicleModel.IsAvailable = false;
+
+
+            return await _vehicleModelRepository.SaveAsync() != 0;
+        }
+
         public async Task<bool> AddVehicleModel(Models.DTOs.VehicleDetailsDTO vehicleModel)
         {
             Models.VehicleModel newModel = new();
 
             _mapper.Map(vehicleModel, newModel);
 
-            return await _vehicleModelRepository.AddAsync(newModel) != 0;
+            if (await _vehicleModelRepository.AddAsync(newModel) == 0)
+            {
+                return false;
+            }
+
+            if (vehicleModel.Peripherals is not null)
+            {
+                foreach (var pDto in vehicleModel.Peripherals)
+                {
+                    var dbPeripheral = await _peripheralRepository.GetByIdAsync(pDto.PeripheralId);
+                    if (dbPeripheral is null)
+                    {
+                        continue;
+                    }
+
+                    newModel.Peripherals.Add(dbPeripheral);
+                }
+            }
+
+            return await _vehicleModelRepository.SaveAsync() != 0;
         }
 
-        public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly startDate, DateOnly endDate, string? address)
+        public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly? startDate, DateOnly? endDate, string? address)
         {
             var vehicleModels = await _vehicleModelRepository.GetAllEagerShopAsync();
+            foreach (var model in vehicleModels)
+            {
+                _logger.LogInformation("Model: {ModelId}, Shop: {ShopAddress}", model.ModelId, model.Shop.Address);
+            }   
             var result = new List<Models.VehicleModel>();
 
             foreach (var model in vehicleModels)
@@ -151,7 +201,58 @@
                     result.Add(model);
                 }
             }
+            foreach (var model in result)
+            {
+                _logger.LogInformation("Available Model: {ModelId}, Shop: {ShopAddress}", model.ModelId, model.Shop.Address);
+            }
             return _mapper.Map<List<Models.DTOs.VehicleModelDTO>>(result);
+        }
+
+        public async Task<bool> AddPhysicalAsync(int modelId, Models.DTOs.VehicleDTO vehicle)
+        {
+            Models.Vehicle dbVehicle = _mapper.Map<Models.Vehicle>(vehicle);
+            dbVehicle.ModelId = modelId;
+
+            return await _vehicleRepository.AddAsync(dbVehicle) != 0;
+        }
+
+        public async Task<bool> DeletePhysicalAsync(int id)
+        {
+            return await _vehicleRepository.DeleteAsync(id) != 0;
+        }
+        
+        public List<VehicleModelDTO> FilterModelByVehicleType(List<VehicleModelDTO> vehicleModels, string? type)
+        {
+            if (string.IsNullOrEmpty(type))
+            {
+                return vehicleModels;
+            }
+            return vehicleModels
+                .Where(vm => vm.VehicleType.Equals(type, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        public List<VehicleModelDTO> FilterModelByShop(List<VehicleModelDTO> vehicleModels, string? shop)
+        {
+            if (string.IsNullOrEmpty(shop))
+            {
+                return vehicleModels;
+            }
+            return vehicleModels
+                .Where(vm => vm.Shop.Equals(shop, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        public List<VehicleModelDTO> FilterModelBySearchTerm(List<VehicleModelDTO> vehicleModels, string? searchTerm)
+        {
+            if (string.IsNullOrEmpty(searchTerm))
+            {
+                return vehicleModels;
+            }
+            return vehicleModels
+                .Where(vm => vm.DisplayName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                             vm.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();  
         }
     }
 }
