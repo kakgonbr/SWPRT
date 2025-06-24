@@ -65,7 +65,7 @@ export default function BikesPage() {
         const bikesArray = Array.isArray(bikes) ? bikes : []
         const filtered = bikesArray
             .filter(bike => {
-            const matchesSearch = bike.modelName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                const matchesSearch = bike.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 bike.description?.toLowerCase().includes(searchTerm.toLowerCase())
             const matchesType = selectedType === 'all' || bike.vehicleType === selectedType
             const matchesLocation = selectedLocation === 'all' || bike.shop === selectedLocation
@@ -84,7 +84,7 @@ export default function BikesPage() {
                 //     return (b.rating ?? 0) - (a.rating ?? 0)
                 case 'name':
                 default:
-                    return a.modelName.localeCompare(b.modelName);
+                    return a.displayName.localeCompare(b.displayName);
             }
         })
 
@@ -96,7 +96,7 @@ export default function BikesPage() {
             <div className="aspect-video relative">
                 <img
                     src={bikes.imageFile?.split('"')[0]}
-                    alt={bikes.modelName}
+                    alt={bikes.displayName}
                     className="w-full h-full object-cover"
                 />
                 {!bikes.isAvailable && (
@@ -108,7 +108,7 @@ export default function BikesPage() {
             <CardHeader>
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle className="text-lg">{bikes.modelName}</CardTitle>
+                        <CardTitle className="text-lg">{bikes.displayName}</CardTitle>
                         <CardDescription className="flex items-center mt-1">
                             <Badge variant="outline" className="mr-2">{bikes.vehicleType}</Badge>
                             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 mr-1"/>
