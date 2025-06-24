@@ -164,7 +164,7 @@ namespace rental_services.Server.Services
             return await _vehicleModelRepository.SaveAsync() != 0;
         }
 
-        public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly startDate, DateOnly endDate, string? address)
+        public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly? startDate, DateOnly? endDate, string? address)
         {
             var vehicleModels = await _vehicleModelRepository.GetAllEagerShopAsync();
             foreach (var model in vehicleModels)

@@ -9,7 +9,7 @@ namespace rental_services.Server.Services
         Task<bool> AddVehicleModel(VehicleDetailsDTO vehicleModel);
         Task<bool> DeletePhysicalAsync(int id);
         Task<bool> DeleteVehicleModel(int modelId);
-        Task<List<VehicleModelDTO>> GetAvailableModelsAsync(DateOnly startDate, DateOnly endDate, string? address);
+        Task<List<VehicleModelDTO>> GetAvailableModelsAsync(DateOnly? startDate, DateOnly? endDate, string? address);
         Task<List<VehicleDTO>> GetDTOOfModelAsync(int modelId);
         Task<List<VehicleDTO>> GetDTOOfModelAsync(VehicleModel model);
         Task<List<VehicleModelDTO>> GetModelListAsync();
