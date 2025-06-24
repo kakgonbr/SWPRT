@@ -83,6 +83,7 @@ namespace rental_services.Server.Repositories
                 .Where(vm => vm.IsAvailable)
                 .Include(vm => vm.Shop)
                 .Include(vm => vm.VehicleType)
+                .Include(vm => vm.Manufacturer)
                 .ToListAsync();
         }
     }
