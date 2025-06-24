@@ -112,7 +112,9 @@ namespace rental_services.Server.Controllers
     try
     {
         var client = new HttpClient();
-        var request = new HttpRequestMessage(HttpMethod.Post, "https://api.imgbb.com/1/upload?key=372784f04023537bfb9603af3f3a1810");
+        string imgbbApiKey = Environment.GetEnvironmentVariable("IMGBB_API_KEY") ?? throw new InvalidOperationException("Environment Variable 'IMGBB_API_KEY' not found.");\
+        string requestUrl = "https://api.imgbb.com/1/upload?key=" + imgbbApiKey; 
+        var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
         var streamContent = new StreamContent(image.OpenReadStream());
         streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(image.ContentType);
         request.Content = new MultipartFormDataContent();
