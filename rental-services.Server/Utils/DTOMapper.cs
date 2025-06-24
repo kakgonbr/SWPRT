@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.IdentityModel.Tokens;
 using rental_services.Server.Models;
 using rental_services.Server.Models.DTOs;
 
@@ -41,12 +42,15 @@ namespace rental_services.Server.Utils
             .ForMember(dest => dest.Shop, opt => opt.MapFrom(
                 src => src.Shop.Address
             ))
-            .ForMember(dest => dest.Peripherals, opt => opt.MapFrom(
-                src => src.Peripherals.Select(p => new PeripheralDTO
-                {
-                    PeripheralId = p.PeripheralId,
-                    Name = p.Name
-                })
+            //.ForMember(dest => dest.Peripherals, opt => opt.MapFrom(
+            //    src => src.Peripherals.Select(p => new PeripheralDTO
+            //    {
+            //        PeripheralId = p.PeripheralId,
+            //        Name = p.Name
+            //    })
+            //))
+            .ForMember(dest => dest.NumOfAvailable, opt => opt.MapFrom(
+                src => src.Vehicles.IsNullOrEmpty() ? 0 : src.Vehicles.Count
             ));
 
             // admin detailed view to database
@@ -58,6 +62,14 @@ namespace rental_services.Server.Utils
             .ForMember(dest => dest.Shop, opt => opt.Ignore())
             .ForMember(dest => dest.VehicleType, opt => opt.Ignore())
             .ForMember(dest => dest.PeripheralsNavigation, opt => opt.Ignore());
+
+            // back and forth
+            CreateMap<Vehicle, VehicleDTO>();
+            CreateMap<VehicleDTO, Vehicle>()
+            .ForMember(dest => dest.ModelId, opt => opt.Ignore());
+
+            CreateMap<Peripheral, PeripheralDTO>();
+            CreateMap<PeripheralDTO, Peripheral>();
         }
     }
 }

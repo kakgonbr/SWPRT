@@ -17,12 +17,19 @@ namespace rental_services.Server.Repositories
         /// <returns></returns>
         public async Task<List<Models.VehicleModel>> GetAllAsync()
         {
-            return await _rentalContext.VehicleModels.ToListAsync();
+            return await _rentalContext.VehicleModels
+                .Include(vm => vm.Manufacturer)
+                .Include(vm => vm.Shop)
+                .ToListAsync();
         }
 
         public async Task<Models.VehicleModel?> GetByIdAsync(int id)
         {
-            return await _rentalContext.VehicleModels.FindAsync(id);
+            return await _rentalContext.VehicleModels
+                .Include(vm => vm.Manufacturer)
+                .Include(vm => vm.Peripherals)
+                .Include(vm => vm.Shop)
+                .SingleOrDefaultAsync(vm => vm.ModelId == id);
         }
 
         public async Task<int> AddAsync(Models.VehicleModel product)
@@ -72,7 +79,7 @@ namespace rental_services.Server.Repositories
 
         public async Task<List<Models.VehicleModel>> GetAllEagerShopAsync()
         {
-            return await _rentalContext.VehicleModels.Include(v => v.Shop).ToListAsync();
+            return await _rentalContext.VehicleModels.Where(vm => vm.IsAvailable).Include(v => v.Shop).ToListAsync();
         }
     }
 }
