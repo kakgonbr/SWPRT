@@ -1,6 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
-
-namespace rental_services.Server.Services
+﻿namespace rental_services.Server.Services
 {
     public class BikeService : IBikeService
     {
