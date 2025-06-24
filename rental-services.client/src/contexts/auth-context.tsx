@@ -8,7 +8,7 @@ import React, {
   useEffect,
   type ReactNode,
 } from "react";
-const API = "http://localhost:5125";
+const API = "import.meta.env.VITE_API_BASE_URL";
 
 interface AuthContextType {
   user: UserDto | null;
