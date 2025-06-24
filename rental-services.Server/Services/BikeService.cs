@@ -1,4 +1,7 @@
-﻿namespace rental_services.Server.Services
+using rental_services.Server.Models;
+using rental_services.Server.Models.DTOs;
+
+namespace rental_services.Server.Services
 {
     public class BikeService : IBikeService
     {
@@ -125,7 +128,7 @@
             }
 
             dbVehicleModel.IsAvailable = false;
-            
+
 
             return await _vehicleModelRepository.SaveAsync() != 0;
         }
@@ -205,6 +208,40 @@
         public async Task<bool> DeletePhysicalAsync(int id)
         {
             return await _vehicleRepository.DeleteAsync(id) != 0;
+        }
+        
+        public List<VehicleModelDTO> FilterModelByVehicleType(List<VehicleModelDTO> vehicleModels, string? type)
+        {
+            if (string.IsNullOrEmpty(type))
+            {
+                return vehicleModels;
+            }
+            return vehicleModels
+                .Where(vm => vm.VehicleType.Equals(type, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        public List<VehicleModelDTO> FilterModelByShop(List<VehicleModelDTO> vehicleModels, string? shop)
+        {
+            if (string.IsNullOrEmpty(shop))
+            {
+                return vehicleModels;
+            }
+            return vehicleModels
+                .Where(vm => vm.Shop.Equals(shop, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        public List<VehicleModelDTO> FilterModelBySearchTerm(List<VehicleModelDTO> vehicleModels, string? searchTerm)
+        {
+            if (string.IsNullOrEmpty(searchTerm))
+            {
+                return vehicleModels;
+            }
+            return vehicleModels
+                .Where(vm => vm.DisplayName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                             vm.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();  
         }
     }
 }

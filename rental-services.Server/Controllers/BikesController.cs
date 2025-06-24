@@ -48,7 +48,7 @@ public class BikesController : ControllerBase
         return await _bikeService.DeleteVehicleModel(id) ? Ok("Deleted.") : BadRequest("Failed to delete.");
     }
 
-    // GET /vehicles/available?startDate=2024-06-01&endDate=2024-06-10&address=abc
+    // GET /bikes/available?startDate=2024-06-01&endDate=2024-06-10&address=abc
     [HttpGet("available")]
     public async Task<ActionResult<List<VehicleModelDTO>>> GetAvailable(DateOnly startDate, DateOnly endDate, string? address = null)
     {
@@ -104,5 +104,26 @@ public class BikesController : ControllerBase
     public async Task<ActionResult<string>> DeletePhysicalVehicle(int id)
     {
         return await _bikeService.DeletePhysicalAsync(id) ? Ok("Deleted.") : BadRequest("Failed.");
+    }
+
+    // GET /bikes/filter/type
+    [HttpGet("filter/type")]
+    public ActionResult<List<VehicleModelDTO>> FilterByVehicleType(List<VehicleModelDTO> vehicleModels, string? type)
+    {
+        return Ok(_bikeService.FilterModelByVehicleType(vehicleModels, type));
+    }
+
+    // GET /bikes/filter/shop
+    [HttpGet("filter/shop")]
+    public ActionResult<List<VehicleModelDTO>> FilterByShop(List<VehicleModelDTO> vehicleModels, string? shop)
+    {
+        return Ok(_bikeService.FilterModelByShop(vehicleModels, shop));
+    }
+
+    // GET /bikes/filter/search
+    [HttpGet("filter/search")]
+    public ActionResult<List<VehicleModelDTO>> FilterBySearchTerm(List<VehicleModelDTO> vehicleModels, string? searchTerm)
+    {
+        return Ok(_bikeService.FilterModelBySearchTerm(vehicleModels, searchTerm));
     }
 }
