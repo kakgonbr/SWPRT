@@ -52,12 +52,17 @@ public class BikesController : ControllerBase
     [HttpGet("available")]
     public async Task<ActionResult<List<VehicleModelDTO>>> GetAvailable(DateOnly? startDate, DateOnly? endDate, string? address = null)
     {
-        if (startDate == null || endDate == null)
-            return BadRequest("Start date and end date are required.");
-        var availableModels = await _bikeService.GetAvailableModelsAsync(startDate, endDate, address);
-        if (availableModels == null)
-            return NotFound("No available models found for the given date range and address.");
-        return Ok(availableModels);
+        try
+        {
+            var availableModels = await _bikeService.GetAvailableModelsAsync(startDate, endDate, address);
+            if (availableModels == null)
+                return NotFound("No available models found for the given date range and address.");
+            return Ok(availableModels);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     // PATCH /bikes
