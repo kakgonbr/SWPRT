@@ -16,6 +16,22 @@ export interface User {
     createdAt: Date; // Added to track user sign-up date
 }
 
+export interface VehicleModelDTO {
+    modelId: number;
+    vehicleTypeId: number;
+    shopId: number;
+    modelName: string;
+    ratePerDay: number;
+    manufacturerId: number;
+    imageFile?: string;
+    description: string;
+    upFrontPercentage: number; //deposit money when place a rental
+    isAvailable: boolean;   
+    rating: number;
+    vehicleType: string;
+    shop: string;
+}
+
 export interface Bike {
     availableLocations: any;
     id: string
