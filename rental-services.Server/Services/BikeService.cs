@@ -10,13 +10,15 @@ namespace rental_services.Server.Services
         private Repositories.IVehicleRepository _vehicleRepository;
         private Repositories.IPeripheralRepository _peripheralRepository;
         private AutoMapper.IMapper _mapper;
+        private readonly ILogger<BikeService> _logger;
 
-        public BikeService(Repositories.IVehicleModelRepository vehicleModelRepository, Repositories.IVehicleRepository vehicleRepository, AutoMapper.IMapper mapper, Repositories.IPeripheralRepository peripheralRepository)
+        public BikeService(Repositories.IVehicleModelRepository vehicleModelRepository, Repositories.IVehicleRepository vehicleRepository, AutoMapper.IMapper mapper, Repositories.IPeripheralRepository peripheralRepository, ILogger<BikeService> logger)
         {
             _vehicleModelRepository = vehicleModelRepository;
             _vehicleRepository = vehicleRepository;
             _mapper = mapper;
             _peripheralRepository = peripheralRepository;
+            _logger = logger;
         }
 
         public async Task<List<Models.VehicleModel>> GetVehicleModelsAsync()
@@ -165,6 +167,10 @@ namespace rental_services.Server.Services
         public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly startDate, DateOnly endDate, string? address)
         {
             var vehicleModels = await _vehicleModelRepository.GetAllEagerShopAsync();
+            foreach (var model in vehicleModels)
+            {
+                _logger.LogInformation("Model: {ModelId}, Shop: {ShopAddress}", model.ModelId, model.Shop.Address);
+            }   
             var result = new List<Models.VehicleModel>();
 
             foreach (var model in vehicleModels)
@@ -194,6 +200,10 @@ namespace rental_services.Server.Services
                 {
                     result.Add(model);
                 }
+            }
+            foreach (var model in result)
+            {
+                _logger.LogInformation("Available Model: {ModelId}, Shop: {ShopAddress}", model.ModelId, model.Shop.Address);
             }
             return _mapper.Map<List<Models.DTOs.VehicleModelDTO>>(result);
         }
