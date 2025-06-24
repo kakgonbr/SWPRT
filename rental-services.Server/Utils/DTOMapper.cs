@@ -42,13 +42,13 @@ namespace rental_services.Server.Utils
             .ForMember(dest => dest.Shop, opt => opt.MapFrom(
                 src => src.Shop.Address
             ))
-            .ForMember(dest => dest.Peripherals, opt => opt.MapFrom(
-                src => src.Peripherals.Select(p => new PeripheralDTO
-                {
-                    PeripheralId = p.PeripheralId,
-                    Name = p.Name
-                })
-            ))
+            //.ForMember(dest => dest.Peripherals, opt => opt.MapFrom(
+            //    src => src.Peripherals.Select(p => new PeripheralDTO
+            //    {
+            //        PeripheralId = p.PeripheralId,
+            //        Name = p.Name
+            //    })
+            //))
             .ForMember(dest => dest.NumOfAvailable, opt => opt.MapFrom(
                 src => src.Vehicles.IsNullOrEmpty() ? 0 : src.Vehicles.Count
             ));
@@ -67,6 +67,9 @@ namespace rental_services.Server.Utils
             CreateMap<Vehicle, VehicleDTO>();
             CreateMap<VehicleDTO, Vehicle>()
             .ForMember(dest => dest.ModelId, opt => opt.Ignore());
+
+            CreateMap<Peripheral, PeripheralDTO>();
+            CreateMap<PeripheralDTO, Peripheral>();
         }
     }
 }

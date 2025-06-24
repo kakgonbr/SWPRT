@@ -4,8 +4,8 @@
     {
         public int VehicleId { get; set; }
 
-        public int ModelId { get; set; }
+        public int? ModelId { get; set; }
 
-        public string Condition { get; set; } = null!;
+        public string? Condition { get; set; } = null!;
     }
 }

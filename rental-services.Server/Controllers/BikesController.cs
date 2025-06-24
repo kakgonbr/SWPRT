@@ -12,9 +12,9 @@ namespace rental_services.Server.Controllers;
 [Route("api/[controller]")]
 public class BikesController : ControllerBase
 {
-    private readonly BikeService _bikeService;
+    private readonly IBikeService _bikeService;
 
-    public BikesController(BikeService vehicleModelService)
+    public BikesController(IBikeService vehicleModelService)
     {
         _bikeService = vehicleModelService;
     }
@@ -39,21 +39,24 @@ public class BikesController : ControllerBase
 
         return Ok(details);
     }
-    
-    // GET /bikes/available?startDate=2024-06-01&endDate=2024-06-10&address=abc
+
+    [HttpDelete("{id}")]
+    [Authorize(Roles = Utils.Config.Role.Admin)]
+    public async Task<ActionResult<string>> DeleteBike(int id)
+    {
+        return await _bikeService.DeleteVehicleModel(id) ? Ok("Deleted.") : Ok("Failed to delete.");
+    }
+
+    // GET /vehicles/available?startDate=2024-06-01&endDate=2024-06-10&address=abc
     [HttpGet("available")]
-    public async Task<ActionResult<List<VehicleModelDTO>>> GetAvailable(
-        DateOnly startDate,
-        DateOnly endDate,
-        string? address = null
-    )
+    public async Task<ActionResult<List<VehicleModelDTO>>> GetAvailable(DateOnly startDate, DateOnly endDate, string? address = null)
     {
         var availableModels = await _bikeService.GetAvailableModelsAsync(startDate, endDate, address);
         return Ok(availableModels);
     }
 
-    // POST /bikes/{id}
-    [HttpPost("{id}")]
+    // PATCH /bikes
+    [HttpPatch]
     [Authorize(Roles = Utils.Config.Role.Admin)]
     public async Task<ActionResult<string>> EditVehicleModel([FromBody] VehicleDetailsDTO vehicleDetails)
     {
@@ -67,7 +70,7 @@ public class BikesController : ControllerBase
     [Authorize(Roles = Utils.Config.Role.Admin)]
     public async Task<ActionResult<string>> AddVehicleModel([FromBody] VehicleDetailsDTO vehicleDetails)
     {
-        bool result = await _bikeService.UpdateVehicleModelAsync(vehicleDetails);
+        bool result = await _bikeService.AddVehicleModel(vehicleDetails);
 
         return Ok(result ? "Added." : "Failed to add.");
     }

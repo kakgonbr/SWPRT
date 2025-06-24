@@ -1,8 +1,10 @@
-
-
-CREATE DATABASE [RentalService]
-USE [RentalService]
-
+USE master
+IF EXISTS(select * from sys.databases where name='SWP-PROTOTYPE')
+BEGIN
+ALTER DATABASE [SWP-PROTOTYPE]
+SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
+DROP DATABASE [SWP-PROTOTYPE]
+END;
 
 CREATE TABLE Users
 (
@@ -224,16 +226,16 @@ CREATE TABLE Reports
     CONSTRAINT fk_rep_type FOREIGN KEY (TypeId) REFERENCES ReportTypes
 )
 
-USE [RentalService]
-
 -- Insert into Users (10 rows)
+-- Pass: Abc@12345
 INSERT INTO Users (Email, PhoneNumber, PasswordHash, Role, FullName, Address, CreationDate, EmailConfirmed, DateOfBirth, IsActive, Sub)
 VALUES
-    ('admin@vroomvroom.vn', '0905123456', 'hashed_password1', 'Admin', N'Nguyễn Thị Hồng Nhung', N'12 Nguyễn Trãi, Quận 1, TP.HCM', '2025-01-01', 1, '1985-03-15', 1, 'user-xt7kpq2n'),
-    ('staff@vroomvroom.vn', '0916123456', 'hashed_password2', 'Staff', N'Đỗ Văn Tuấn', N'45 Trần Phú, Hải Châu, Đà Nẵng', '2025-01-02', 1, '1992-07-22', 1, 'user-4m9jwv8r'),
-    ('minh.nguyen@gmail.com', '0937123456', 'hashed_password3', 'Customer', N'Nguyễn Văn Minh', N'78 Lê Lợi, Ba Đình, Hà Nội', '2025-05-01', 0, '1990-11-30', 1, 'user-hz3cnb6y'),
-    ('john.smith@outlook.com', '0988123456', 'hashed_password4', 'Customer', N'John Smith', N'123 Bùi Viện, Quận 1, TP.HCM', '2025-05-15', 0, '1995-05-10', 0, 'user-pq5rt2kf'),
-    ('thu.vo@yahoo.com', '0979123456', 'hashed_password5', 'Customer', N'Võ Thị Thu', N'56 Nguyễn Huệ, Hội An, Quảng Nam', '2025-06-01', 1, '1988-09-05', 1, 'user-8ldwgx9m');
+    ('admin@vroomvroom.vn', '0905123456', 'AQAAAAIAAYagAAAAEHgBObsBOeTlITPhVA01SAlv1EzRcNimdUs3gvGZmfoQF72Q9jphT2NlCIhQz/Sl6A==', 'Admin', N'Nguyễn Thị Hồng Nhung', N'12 Nguyễn Trãi, Quận 1, TP.HCM', '2025-01-01', 1, '1985-03-15', 1, 'user-xt7kpq2n'),
+    ('staff@vroomvroom.vn', '0916123456', 'AQAAAAIAAYagAAAAEHgBObsBOeTlITPhVA01SAlv1EzRcNimdUs3gvGZmfoQF72Q9jphT2NlCIhQz/Sl6A==', 'Staff', N'Đỗ Văn Tuấn', N'45 Trần Phú, Hải Châu, Đà Nẵng', '2025-01-02', 1, '1992-07-22', 1, 'user-4m9jwv8r'),
+    ('minh.nguyen@gmail.com', '0937123456', 'AQAAAAIAAYagAAAAEHgBObsBOeTlITPhVA01SAlv1EzRcNimdUs3gvGZmfoQF72Q9jphT2NlCIhQz/Sl6A==', 'Customer', N'Nguyễn Văn Minh', N'78 Lê Lợi, Ba Đình, Hà Nội', '2025-05-01', 0, '1990-11-30', 1, 'user-hz3cnb6y'),
+    ('john.smith@outlook.com', '0988123456', 'AQAAAAIAAYagAAAAEHgBObsBOeTlITPhVA01SAlv1EzRcNimdUs3gvGZmfoQF72Q9jphT2NlCIhQz/Sl6A==', 'Customer', N'John Smith', N'123 Bùi Viện, Quận 1, TP.HCM', '2025-05-15', 0, '1995-05-10', 0, 'user-pq5rt2kf'),
+    ('thu.vo@yahoo.com', '0979123456', 'AQAAAAIAAYagAAAAEHgBObsBOeTlITPhVA01SAlv1EzRcNimdUs3gvGZmfoQF72Q9jphT2NlCIhQz/Sl6A==', 'Customer', N'Võ Thị Thu', N'56 Nguyễn Huệ, Hội An, Quảng Nam', '2025-06-01', 1, '1988-09-05', 1, 'user-8ldwgx9m');
+
 
 -- Insert into DriverLicenseTypes (2 rows: <125cc and 125+ cc)
 INSERT INTO DriverLicenseTypes (LicenseTypeCode)
@@ -266,9 +268,10 @@ VALUES
 -- Insert into Manufacturers (3 rows)
 INSERT INTO Manufacturers (ManufacturerName)
 VALUES 
-    (N'Honda Vietnam'),
-    (N'Yamaha Vietnam'),
-    (N'Piaggio Vietnam');
+    (N'Honda'),
+    (N'Yamaha'),
+    (N'Piaggio');
+
 
 -- Insert into Shops (2 rows)
 INSERT INTO Shops (Address, Status)
@@ -280,22 +283,23 @@ VALUES
 INSERT INTO VehicleModels (VehicleTypeId, ShopId, ModelName, RatePerDay, ManufacturerId, ImageFile, Description, UpFrontPercentage, IsAvailable)
 VALUES 
     -- Shop 1: 8 models
-    (1, 1, N'Honda Wave Alpha', 100000, 1, 'wave_alpha.jpg', N'Popular motorbike for daily use.', 50, 1),
-    (1, 1, N'Yamaha Sirius', 120000, 2, 'sirius.jpg', N'Reliable and fuel-efficient.', 50, 1),
-    (1, 1, N'Honda Blade', 105000, 1, 'blade.jpg', N'Affordable and durable.', 50, 1),
-    (2, 1, N'Honda Winner X', 150000, 1, 'winner_x.jpg', N'Sporty underbone motorbike.', 50, 1),
-    (2, 1, N'Yamaha Exciter', 160000, 2, 'exciter.jpg', N'Popular choice for young riders.', 50, 1),
-    (2, 1, N'Piaggio Liberty', 145000, 3, 'liberty.jpg', N'Elegant Italian design.', 50, 1),
-    (3, 1, N'Honda CB150R', 200000, 1, 'cb150r.jpg', N'Naked bike with sporty performance.', 50, 1),
-    (3, 1, N'Yamaha R15', 220000, 2, 'r15.jpg', N'Sport bike with racing DNA.', 50, 1),
+    (1, 1, N'Wave Alpha', 100000, 1, 'wave_alpha.jpg', N'Popular motorbike for daily use.', 50, 1),
+    (1, 1, N'Sirius', 120000, 2, 'sirius.jpg', N'Reliable and fuel-efficient.', 50, 1),
+    (1, 1, N'Blade', 105000, 1, 'blade.jpg', N'Affordable and durable.', 50, 1),
+    (2, 1, N'Winner X', 150000, 1, 'winner_x.jpg', N'Sporty underbone motorbike.', 50, 1),
+    (2, 1, N'Exciter', 160000, 2, 'exciter.jpg', N'Popular choice for young riders.', 50, 1),
+    (2, 1, N'Liberty', 145000, 3, 'liberty.jpg', N'Elegant Italian design.', 50, 1),
+    (3, 1, N'CB150R', 200000, 1, 'cb150r.jpg', N'Naked bike with sporty performance.', 50, 1),
+    (3, 1, N'R15', 220000, 2, 'r15.jpg', N'Sport bike with racing DNA.', 50, 1),
     -- Shop 2: 7 models
-    (1, 2, N'Honda Future', 110000, 1, 'future.jpg', N'Modern design with good performance.', 50, 1),
-    (1, 2, N'Yamaha Jupiter', 115000, 2, 'jupiter.jpg', N'Sporty look with smooth ride.', 50, 1),
-    (2, 2, N'Honda Air Blade', 140000, 1, 'air_blade.jpg', N'Stylish scooter with good performance.', 50, 1),
-    (2, 2, N'Yamaha NVX', 155000, 2, 'nvx.jpg', N'Powerful scooter with modern features.', 50, 1),
-    (3, 2, N'Honda CBR150R', 210000, 1, 'cbr150r.jpg', N'Fully faired sport bike.', 50, 1),
-    (3, 2, N'Yamaha MT-15', 215000, 2, 'mt15.jpg', N'Street fighter style.', 50, 1),
-    (3, 2, N'Piaggio Medley', 205000, 3, 'medley.jpg', N'Premium scooter with large wheels.', 50, 1);
+    (1, 2, N'Future', 110000, 1, 'future.jpg', N'Modern design with good performance.', 50, 1),
+    (1, 2, N'Jupiter', 115000, 2, 'jupiter.jpg', N'Sporty look with smooth ride.', 50, 1),
+    (2, 2, N'Air Blade', 140000, 1, 'air_blade.jpg', N'Stylish scooter with good performance.', 50, 1),
+    (2, 2, N'NVX', 155000, 2, 'nvx.jpg', N'Powerful scooter with modern features.', 50, 1),
+    (3, 2, N'CBR150R', 210000, 1, 'cbr150r.jpg', N'Fully faired sport bike.', 50, 1),
+    (3, 2, N'MT-15', 215000, 2, 'mt15.jpg', N'Street fighter style.', 50, 1),
+    (3, 2, N'Medley', 205000, 3, 'medley.jpg', N'Premium scooter with large wheels.', 50, 1);
+
 
 -- Insert into Vehicles (45 rows: 3 per model)
 INSERT INTO Vehicles (ModelId, Condition)

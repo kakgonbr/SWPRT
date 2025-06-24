@@ -1,4 +1,6 @@
-﻿namespace rental_services.Server.Services
+﻿using rental_services.Server.Models;
+
+namespace rental_services.Server.Services
 {
     public class BikeService : IBikeService
     {
@@ -100,7 +102,13 @@
             {
                 foreach (var pDto in vehicleModel.Peripherals)
                 {
-                    dbVehicleModel.Peripherals.Add(_peripheralRepository.AttachPeripheral(pDto.PeripheralId));
+                    var dbPeripheral = await _peripheralRepository.GetByIdAsync(pDto.PeripheralId);
+                    if (dbPeripheral is null)
+                    {
+                        continue;
+                    }
+
+                    dbVehicleModel.Peripherals.Add(dbPeripheral);
                 }
             }
 
@@ -108,16 +116,50 @@
 
             return true;
         }
-        
+
+        public async Task<bool> DeleteVehicleModel(int modelId)
+        {
+            Models.VehicleModel? dbVehicleModel = await _vehicleModelRepository.GetByIdAsync(modelId);
+
+            if (dbVehicleModel is null)
+            {
+                return false;
+            }
+
+            dbVehicleModel.IsAvailable = false;
+            
+
+            return await _vehicleModelRepository.SaveAsync() != 0;
+        }
+
         public async Task<bool> AddVehicleModel(Models.DTOs.VehicleDetailsDTO vehicleModel)
         {
             Models.VehicleModel newModel = new();
 
             _mapper.Map(vehicleModel, newModel);
 
-            return await _vehicleModelRepository.AddAsync(newModel) != 0;
+            if (await _vehicleModelRepository.AddAsync(newModel) == 0)
+            {
+                return false;
+            }
+
+            if (vehicleModel.Peripherals is not null)
+            {
+                foreach (var pDto in vehicleModel.Peripherals)
+                {
+                    var dbPeripheral = await _peripheralRepository.GetByIdAsync(pDto.PeripheralId);
+                    if (dbPeripheral is null)
+                    {
+                        continue;
+                    }
+
+                    newModel.Peripherals.Add(dbPeripheral);
+                }
+            }
+
+            return await _vehicleModelRepository.SaveAsync() != 0;
         }
-        
+
         public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly startDate, DateOnly endDate, string? address)
         {
             var vehicleModels = await _vehicleModelRepository.GetAllEagerShopAsync();
