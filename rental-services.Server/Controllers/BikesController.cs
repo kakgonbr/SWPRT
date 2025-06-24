@@ -77,21 +77,21 @@ public class BikesController : ControllerBase
 
     // GET /bikes/filter/type
     [HttpGet("filter/type")]
-    public ActionResult<List<VehicleModelDTO>> FilterByVehicleType(List<VehicleModelDTO> vehicleModels, string type)
+    public ActionResult<List<VehicleModelDTO>> FilterByVehicleType(List<VehicleModelDTO> vehicleModels, string? type)
     {
         return Ok(_bikeService.FilterModelByVehicleType(vehicleModels, type));
     }
 
     // GET /bikes/filter/shop
     [HttpGet("filter/shop")]
-    public ActionResult<List<VehicleModelDTO>> FilterByShop(List<VehicleModelDTO> vehicleModels, string shop)
+    public ActionResult<List<VehicleModelDTO>> FilterByShop(List<VehicleModelDTO> vehicleModels, string? shop)
     {
         return Ok(_bikeService.FilterModelByShop(vehicleModels, shop));
     }
 
     // GET /bikes/filter/search
     [HttpGet("filter/search")]
-    public ActionResult<List<VehicleModelDTO>> FilterBySearchTerm(List<VehicleModelDTO> vehicleModels, string searchTerm)
+    public ActionResult<List<VehicleModelDTO>> FilterBySearchTerm(List<VehicleModelDTO> vehicleModels, string? searchTerm)
     {
         return Ok(_bikeService.FilterModelBySearchTerm(vehicleModels, searchTerm));
     }

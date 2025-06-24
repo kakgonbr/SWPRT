@@ -197,7 +197,7 @@ namespace rental_services.Server.Services
             return _mapper.Map<List<Models.DTOs.VehicleModelDTO>>(result);
         }
 
-        public List<VehicleModelDTO> FilterModelByVehicleType(List<VehicleModelDTO> vehicleModels, string type)
+        public List<VehicleModelDTO> FilterModelByVehicleType(List<VehicleModelDTO> vehicleModels, string? type)
         {
             if (string.IsNullOrEmpty(type))
             {
@@ -208,7 +208,7 @@ namespace rental_services.Server.Services
                 .ToList();
         }
 
-        public List<VehicleModelDTO> FilterModelByShop(List<VehicleModelDTO> vehicleModels, string shop)
+        public List<VehicleModelDTO> FilterModelByShop(List<VehicleModelDTO> vehicleModels, string? shop)
         {
             if (string.IsNullOrEmpty(shop))
             {
@@ -219,7 +219,7 @@ namespace rental_services.Server.Services
                 .ToList();
         }
 
-        public List<VehicleModelDTO> FilterModelBySearchTerm(List<VehicleModelDTO> vehicleModels, string searchTerm)
+        public List<VehicleModelDTO> FilterModelBySearchTerm(List<VehicleModelDTO> vehicleModels, string? searchTerm)
         {
             if (string.IsNullOrEmpty(searchTerm))
             {
