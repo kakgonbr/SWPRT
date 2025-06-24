@@ -5,7 +5,7 @@
     {
         public int ModelId { get; set; }
 
-        public string DisplayName { get; set; } = null!;
+        public string ModelName { get; set; } = null!;
 
         public string Description { get; set; } = null!;
 

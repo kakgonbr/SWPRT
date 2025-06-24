@@ -18,13 +18,10 @@ export interface User {
 
 export interface VehicleModelDTO {
     modelId: number;
-    vehicleTypeId: number;
-    shopId: number;
-    modelName: string;
-    ratePerDay: number;
-    manufacturerId: number;
-    imageFile?: string;
+    displayName: string;
     description: string;
+    ratePerDay: number;
+    imageFile?: string;
     upFrontPercentage: number; //deposit money when place a rental
     isAvailable: boolean;   
     rating: number;

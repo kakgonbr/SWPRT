@@ -11,7 +11,7 @@ export const bikeApi = {
     },
 
     getBikeById: async (id: number): Promise<VehicleModelDTO[]> => {
-        const response = await axios.get(`${BASE_API_URL}/Bikes/${id}`);
+        const response = await axios.get(`${BASE_API_URL}/bikes/${id}`);
         return response.data;
     },
 
@@ -25,8 +25,7 @@ export const bikeApi = {
             params.address = address;
         }
 
-        const searchParams = new URLSearchParams(params);
-        const response: VehicleModelDTO[] = await axios.get(`${BASE_API_URL}/Bikes/available/`, { params: searchParams });
-        return response;
+        const response = await axios.get(`/api/bikes/available`, { params: params });
+        return response.data;
     }
 }

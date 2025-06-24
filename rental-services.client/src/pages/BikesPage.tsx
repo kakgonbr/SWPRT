@@ -1,15 +1,15 @@
 // src/pages/BikesPage.tsx
-import { useState, useMemo, useEffect } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { Search, MapPin, Star } from 'lucide-react'
-import { Bike as BikeIcon } from 'lucide-react'
-import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
-import { Badge } from '../components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
-import type { VehicleModelDTO } from '../lib/types'
-import { bikeApi } from "../lib/api.ts";
+import {useState, useMemo, useEffect} from 'react'
+import {Link, useSearchParams} from 'react-router-dom'
+import {Search, MapPin, Star} from 'lucide-react'
+import {Bike as BikeIcon} from 'lucide-react'
+import {Button} from '../components/ui/button'
+import {Input} from '../components/ui/input'
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '../components/ui/card'
+import {Badge} from '../components/ui/badge'
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '../components/ui/select'
+import type {VehicleModelDTO} from '../lib/types'
+import {bikeApi} from "../lib/api.ts";
 
 export default function BikesPage() {
     const [searchParams] = useSearchParams();
@@ -36,9 +36,10 @@ export default function BikesPage() {
                 //customer must type in start date and end date to be allowed to see bike list
                 //TODO: add parameters to getAvailable method when this method updated
                 const data = await bikeApi.getAvailableBike(
-                    String(startDate!),
-                    String(endDate!),
-                    location || undefined);
+                    String(startDate),
+                    String(endDate),
+                    location || undefined
+                );
                 setBikes(data);
             } catch (error) {
                 console.error('Error fetching bikes:', error);
@@ -47,8 +48,12 @@ export default function BikesPage() {
                 setLoading(false);
             }
         }
+
         fetchBikeModels();
     }, [startDate, endDate, location]);
+
+    console.log(bikes)
+
 
     //// Get unique types and locations for filters
     //const bikeTypes = Array.from(new Set(MOCK_BIKES.map(bike => bike.type)))
@@ -56,7 +61,10 @@ export default function BikesPage() {
 
     // Filter and sort bikes
     const filteredBikes = useMemo(() => {
-        const filtered = bikes.filter(bike => {
+        console.log(Array.isArray(bikes))
+        const bikesArray = Array.isArray(bikes) ? bikes : []
+        const filtered = bikesArray
+            .filter(bike => {
             const matchesSearch = bike.modelName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 bike.description?.toLowerCase().includes(searchTerm.toLowerCase())
             const matchesType = selectedType === 'all' || bike.vehicleType === selectedType
@@ -83,7 +91,7 @@ export default function BikesPage() {
         return filtered
     }, [bikes, searchTerm, selectedType, selectedLocation, sortBy])
 
-    const BikeCard = ({ bikes }: { bikes: VehicleModelDTO }) => (
+    const BikeCard = ({bikes}: { bikes: VehicleModelDTO }) => (
         <Card className="overflow-hidden hover:shadow-lg transition-shadow">
             <div className="aspect-video relative">
                 <img
@@ -103,7 +111,7 @@ export default function BikesPage() {
                         <CardTitle className="text-lg">{bikes.modelName}</CardTitle>
                         <CardDescription className="flex items-center mt-1">
                             <Badge variant="outline" className="mr-2">{bikes.vehicleType}</Badge>
-                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 mr-1" />
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 mr-1"/>
                             {bikes.rating}
                         </CardDescription>
                     </div>
@@ -115,7 +123,7 @@ export default function BikesPage() {
             </CardHeader>
             <CardContent>
                 <div className="flex items-center text-sm text-muted-foreground mb-3">
-                    <MapPin className="w-4 h-4 mr-1" />
+                    <MapPin className="w-4 h-4 mr-1"/>
                     {bikes.shop}
                 </div>
                 <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
@@ -124,7 +132,7 @@ export default function BikesPage() {
                 <div className="flex gap-2">
                     <Button className="flex-1" asChild disabled={!bikes.isAvailable}>
                         <Link to={`/bikes/${bikes.modelId}`}>
-                            <BikeIcon className="w-4 h-4 mr-2" />
+                            <BikeIcon className="w-4 h-4 mr-2"/>
                             {bikes.isAvailable ? 'View Details' : 'Unavailable'}
                         </Link>
                     </Button>
@@ -146,7 +154,7 @@ export default function BikesPage() {
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 <div className="relative">
                     <Search
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4"/>
                     <Input
                         placeholder="Search bikes..."
                         value={searchTerm}
@@ -157,7 +165,7 @@ export default function BikesPage() {
 
                 <Select value={selectedType} onValueChange={setSelectedType}>
                     <SelectTrigger>
-                        <SelectValue placeholder="All Types" />
+                        <SelectValue placeholder="All Types"/>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Types</SelectItem>
@@ -169,7 +177,7 @@ export default function BikesPage() {
 
                 <Select value={selectedLocation} onValueChange={setSelectedLocation}>
                     <SelectTrigger>
-                        <SelectValue placeholder="All Locations" />
+                        <SelectValue placeholder="All Locations"/>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Locations</SelectItem>
@@ -181,7 +189,7 @@ export default function BikesPage() {
 
                 <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger>
-                        <SelectValue placeholder="Sort by" />
+                        <SelectValue placeholder="Sort by"/>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="name">Name A-Z</SelectItem>
@@ -201,7 +209,7 @@ export default function BikesPage() {
                     </div>
                 ) : (
                     <p className="text-muted-foreground">
-                        Showing {filteredBikes.length} of {bikes.length} bikes
+                        Showing {bikes.length} of {bikes.length} bikes
                     </p>
                 )}
             </div>
@@ -240,20 +248,19 @@ export default function BikesPage() {
             {filteredBikes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredBikes.map(bike => (
-                        <BikeCard key={bike.modelId} bikes={bike} />
+                        <BikeCard key={bike.modelId} bikes={bike}/>
                     ))}
                 </div>
             ) : (
                 <div className="text-center py-12">
-                    <BikeIcon className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                    <BikeIcon className="w-16 h-16 mx-auto text-muted-foreground mb-4"/>
                     <h3 className="text-lg font-semibold mb-2">No bikes found</h3>
                     <p className="text-muted-foreground">
                         Try adjusting your search criteria
                     </p>
                 </div>
             )}
-
-
+            
         </div>
     )
 }
