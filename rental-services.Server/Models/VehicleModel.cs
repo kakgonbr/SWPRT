@@ -12,9 +12,8 @@ public partial class VehicleModel
     public int ShopId { get; set; }
 
     public string ModelName { get; set; } = null!;
-
+    
     public long RatePerDay { get; set; }
-
     public int ManufacturerId { get; set; }
 
     public string? ImageFile { get; set; }
