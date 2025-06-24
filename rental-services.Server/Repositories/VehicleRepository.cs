@@ -4,7 +4,7 @@ namespace rental_services.Server.Repositories
 {
     public class VehicleRepository : IVehicleRepository
     {
-        private Data.RentalContext _rentalContext;
+        private readonly Data.RentalContext _rentalContext;
 
         public VehicleRepository(Data.RentalContext rentalContext)
         {
