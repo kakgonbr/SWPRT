@@ -126,7 +126,7 @@ public partial class RentalContext : DbContext
                 .HasMaxLength(256)
                 .IsUnicode(false);
             entity.Property(e => e.ImageLicenseUrl)
-                .HasMaxLength(50)
+                .HasMaxLength(256)
                 .IsUnicode(true)
                 .IsRequired(false);
 
