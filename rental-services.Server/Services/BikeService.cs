@@ -1,4 +1,4 @@
-﻿using rental_services.Server.Models;
+﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 
 namespace rental_services.Server.Services
 {
@@ -194,6 +194,19 @@ namespace rental_services.Server.Services
                 }
             }
             return _mapper.Map<List<Models.DTOs.VehicleModelDTO>>(result);
+        }
+
+        public async Task<bool> AddPhysicalAsync(int modelId, Models.DTOs.VehicleDTO vehicle)
+        {
+            Models.Vehicle dbVehicle = _mapper.Map<Models.Vehicle>(vehicle);
+            dbVehicle.ModelId = modelId;
+
+            return await _vehicleRepository.AddAsync(dbVehicle) != 0;
+        }
+
+        public async Task<bool> DeletePhysicalAsync(int id)
+        {
+            return await _vehicleRepository.DeleteAsync(id) != 0;
         }
     }
 }
