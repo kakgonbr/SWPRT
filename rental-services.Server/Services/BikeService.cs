@@ -169,14 +169,12 @@ namespace rental_services.Server.Services
         public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly? startDate,
             DateOnly? endDate, string? address)
         {
-            var vehicleModels = await _vehicleModelRepository.GetAllEagerShopAsync();
-            foreach (var model in vehicleModels)
-            {
-                _logger.LogInformation("Model: {ModelId}, Shop: {ShopAddress}", model.ModelId, model.Shop.Address);
+            if (startDate == null || endDate == null || startDate.Value > endDate.Value)
+{
+                throw new ArgumentException("Start date cannot be after end date or one of them are null");
             }
-
+            var vehicleModels = await _vehicleModelRepository.GetAllEagerShopTypeAsync();
             var result = new List<Models.VehicleModel>();
-
             foreach (var model in vehicleModels)
             {
                 if (!string.IsNullOrEmpty(address) &&
@@ -207,12 +205,6 @@ namespace rental_services.Server.Services
                 {
                     result.Add(model);
                 }
-            }
-
-            foreach (var model in result)
-            {
-                _logger.LogInformation("Available Model: {ModelId}, Shop: {ShopAddress}", model.ModelId,
-                    model.Shop.Address);
             }
 
             return _mapper.Map<List<Models.DTOs.VehicleModelDTO>>(result);
