@@ -42,5 +42,13 @@ namespace rental_services.Server.Controllers
 
             return await _rentalService.GetOfUserAsync(dbUser.UserId);
         }
+
+        // POST /rentals
+        [HttpPost]
+        [Authorize(Policy = "AdminOrStaff")]
+        public async Task<ActionResult<string>> UpdateRentalStatus([FromBody] Models.DTOs.BookingStatusDTO rentalStatus)
+        {
+            return await _rentalService.UpdateStatusAsync(rentalStatus.Id, rentalStatus.Status) ? Ok("Updated.") : BadRequest("Failed.");
+        }
     }
 }
