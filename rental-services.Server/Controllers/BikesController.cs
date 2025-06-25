@@ -48,12 +48,21 @@ public class BikesController : ControllerBase
         return await _bikeService.DeleteVehicleModel(id) ? Ok("Deleted.") : BadRequest("Failed to delete.");
     }
 
-    // GET /bikes/available?startDate=2024-06-01&endDate=2024-06-10&address=abc
+    // GET /bikes/available?startDate=2024-06-01&endDate=2024-06-10&address=abc&searchTerm=honda
     [HttpGet("available")]
-    public async Task<ActionResult<List<VehicleModelDTO>>> GetAvailable(DateOnly startDate, DateOnly endDate, string? address = null)
+    public async Task<ActionResult<List<VehicleModelDTO>>> GetAvailable(DateOnly? startDate, DateOnly? endDate, string? address = null, string? searchTerm = null)
     {
-        var availableModels = await _bikeService.GetAvailableModelsAsync(startDate, endDate, address);
-        return Ok(availableModels);
+        try
+        {
+            var availableModels = await _bikeService.GetAvailableModelsAsync(startDate, endDate, address, searchTerm);
+            if (availableModels == null)
+                return NotFound("No available models found for the given date range and address.");
+            return Ok(availableModels);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     // PATCH /bikes
@@ -120,10 +129,4 @@ public class BikesController : ControllerBase
         return Ok(_bikeService.FilterModelByShop(vehicleModels, shop));
     }
 
-    // GET /bikes/filter/search
-    [HttpGet("filter/search")]
-    public ActionResult<List<VehicleModelDTO>> FilterBySearchTerm(List<VehicleModelDTO> vehicleModels, string? searchTerm)
-    {
-        return Ok(_bikeService.FilterModelBySearchTerm(vehicleModels, searchTerm));
-    }
 }

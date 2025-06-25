@@ -125,6 +125,10 @@ public partial class RentalContext : DbContext
             entity.Property(e => e.LicenseId)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+            entity.Property(e => e.ImageLicenseUrl)
+                .HasMaxLength(256)
+                .IsUnicode(true)
+                .IsRequired(false);
 
             entity.HasOne(d => d.LicenseType).WithMany(p => p.DriverLicenses)
                 .HasForeignKey(d => d.LicenseTypeId)

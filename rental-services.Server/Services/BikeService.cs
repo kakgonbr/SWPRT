@@ -9,13 +9,15 @@ namespace rental_services.Server.Services
         private Repositories.IVehicleRepository _vehicleRepository;
         private Repositories.IPeripheralRepository _peripheralRepository;
         private AutoMapper.IMapper _mapper;
+        private readonly ILogger<BikeService> _logger;
 
-        public BikeService(Repositories.IVehicleModelRepository vehicleModelRepository, Repositories.IVehicleRepository vehicleRepository, AutoMapper.IMapper mapper, Repositories.IPeripheralRepository peripheralRepository)
+        public BikeService(Repositories.IVehicleModelRepository vehicleModelRepository, Repositories.IVehicleRepository vehicleRepository, AutoMapper.IMapper mapper, Repositories.IPeripheralRepository peripheralRepository, ILogger<BikeService> logger)
         {
             _vehicleModelRepository = vehicleModelRepository;
             _vehicleRepository = vehicleRepository;
             _mapper = mapper;
             _peripheralRepository = peripheralRepository;
+            _logger = logger;
         }
 
         public async Task<List<Models.VehicleModel>> GetVehicleModelsAsync()
@@ -161,11 +163,22 @@ namespace rental_services.Server.Services
             return await _vehicleModelRepository.SaveAsync() != 0;
         }
 
-        public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly startDate, DateOnly endDate, string? address)
+        public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly? startDate, DateOnly? endDate, string? address, string? searchTerm)
         {
-            var vehicleModels = await _vehicleModelRepository.GetAllEagerShopAsync();
-            var result = new List<Models.VehicleModel>();
-
+            if (startDate == null || endDate == null || startDate.Value > endDate.Value)
+            {
+                throw new ArgumentException("Start date cannot be after end date or one of them are null");
+            }
+            List<VehicleModel> vehicleModels;
+            if (string.IsNullOrEmpty(searchTerm))
+            {
+                vehicleModels = await _vehicleModelRepository.GetAllEagerShopTypeAsync();
+            }
+            else
+            {
+                vehicleModels = await _vehicleModelRepository.GetAllEagerShopTypeAsync(searchTerm);
+            }
+            var result = new List<VehicleModel>();
             foreach (var model in vehicleModels)
             {
                 if (!string.IsNullOrEmpty(address) && !model.Shop.Address.Contains(address, StringComparison.OrdinalIgnoreCase))
@@ -231,18 +244,6 @@ namespace rental_services.Server.Services
             return vehicleModels
                 .Where(vm => vm.Shop.Equals(shop, StringComparison.OrdinalIgnoreCase))
                 .ToList();
-        }
-
-        public List<VehicleModelDTO> FilterModelBySearchTerm(List<VehicleModelDTO> vehicleModels, string? searchTerm)
-        {
-            if (string.IsNullOrEmpty(searchTerm))
-            {
-                return vehicleModels;
-            }
-            return vehicleModels
-                .Where(vm => vm.DisplayName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                             vm.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-                .ToList();  
         }
     }
 }
