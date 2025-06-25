@@ -86,5 +86,16 @@ namespace rental_services.Server.Repositories
                 .Include(vm => vm.Manufacturer)
                 .ToListAsync();
         }
+
+        public async Task<List<Models.VehicleModel>> GetAllEagerShopTypeAsync(string searchTerm)
+        {
+            return await _rentalContext.VehicleModels
+                .Where(vm => vm.IsAvailable)
+                .Where(vm => vm.ModelName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || vm.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .Include(vm => vm.Shop)
+                .Include(vm => vm.VehicleType)
+                .Include(vm => vm.Manufacturer)
+                .ToListAsync();
+        }
     }
 }
