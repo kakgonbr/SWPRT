@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.IdentityModel.Tokens;
 using rental_services.Server.Models;
 using rental_services.Server.Models.DTOs;
 
@@ -41,12 +42,15 @@ namespace rental_services.Server.Utils
             .ForMember(dest => dest.Shop, opt => opt.MapFrom(
                 src => src.Shop.Address
             ))
-            .ForMember(dest => dest.Peripherals, opt => opt.MapFrom(
-                src => src.Peripherals.Select(p => new PeripheralDTO
-                {
-                    PeripheralId = p.PeripheralId,
-                    Name = p.Name
-                })
+            //.ForMember(dest => dest.Peripherals, opt => opt.MapFrom(
+            //    src => src.Peripherals.Select(p => new PeripheralDTO
+            //    {
+            //        PeripheralId = p.PeripheralId,
+            //        Name = p.Name
+            //    })
+            //))
+            .ForMember(dest => dest.NumOfAvailable, opt => opt.MapFrom(
+                src => src.Vehicles.IsNullOrEmpty() ? 0 : src.Vehicles.Count
             ));
 
             // admin detailed view to database
@@ -58,6 +62,43 @@ namespace rental_services.Server.Utils
             .ForMember(dest => dest.Shop, opt => opt.Ignore())
             .ForMember(dest => dest.VehicleType, opt => opt.Ignore())
             .ForMember(dest => dest.PeripheralsNavigation, opt => opt.Ignore());
+
+            // back and forth
+            CreateMap<Vehicle, VehicleDTO>();
+            CreateMap<VehicleDTO, Vehicle>()
+            .ForMember(dest => dest.ModelId, opt => opt.Ignore());
+
+            CreateMap<Peripheral, PeripheralDTO>();
+            CreateMap<PeripheralDTO, Peripheral>();
+
+            // rental
+            // database to view
+            // to eagerly load: user, vehicle, model (from vehicle), manufacturer (from model), payments
+            CreateMap<Booking, BookingDTO>()
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(
+                src => src.BookingId.ToString()
+            ))
+            .ForMember(dest => dest.BikeName, opt => opt.MapFrom(
+                src => $"{src.Vehicle.Model.Manufacturer.ManufacturerName} {src.Vehicle.Model.ModelName}"
+            ))
+            .ForMember(dest => dest.BikeImageUrl, opt => opt.MapFrom(
+                src => src.Vehicle.Model.ImageFile
+            ))
+            .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(
+                src => src.User.PhoneNumber
+            ))
+            .ForMember(dest => dest.OrderDate, opt => opt.MapFrom(
+                src => src.Payments.FirstOrDefault() == null ? null : (DateOnly?)src.Payments.FirstOrDefault().PaymentDate
+            ))
+            .ForMember(dest => dest.PricePerDay, opt => opt.MapFrom(
+                src => src.Vehicle.Model.RatePerDay
+            ))
+            .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(
+                src => src.User.FullName
+            ))
+            .ForMember(dest => dest.CustomerEmail, opt => opt.MapFrom(
+                src => src.User.Email
+            ));
         }
     }
 }

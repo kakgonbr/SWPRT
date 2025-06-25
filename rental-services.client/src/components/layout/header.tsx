@@ -107,7 +107,7 @@ export default function Header() {
                             <span>Report Website Issue</span>
                         </DropdownMenuItem>
 
-                        {(user.role === 'Admin') && (
+                        {(user.role === 'admin') && (
                             <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>

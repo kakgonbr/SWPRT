@@ -1,4 +1,5 @@
-﻿using rental_services.Server.Data;
+﻿using Microsoft.EntityFrameworkCore;
+using rental_services.Server.Data;
 using rental_services.Server.Models;
 
 namespace rental_services.Server.Repositories;
@@ -17,9 +18,9 @@ public class UserRepository : IUserRepository
         return await _db.Users.FindAsync(id);
     }
 
-    public User GetBySub(string sub)
+    public async Task<User?> GetBySub(string sub)
     {
-        return _db.Users.FirstOrDefault(u => u.Sub == sub);
+        return await _db.Users.SingleOrDefaultAsync(u => u.Sub.Equals(sub));
     }
 
     public void Add(User user)

@@ -4,12 +4,11 @@ namespace rental_services.Server.Repositories
 {
     public interface IPeripheralRepository
     {
-        Task AddAsync(Peripheral product);
-        Peripheral AttachPeripheral(int peripheralId);
-        Task DeleteAsync(int id);
+        Task<int> AddAsync(Peripheral vehicle);
+        Task<int> DeleteAsync(int id);
         Task<List<Peripheral>> GetAllAsync();
         Task<Peripheral?> GetByIdAsync(int id);
-        Task SaveAsync();
-        Task UpdateAsync(Peripheral product);
+        Task<int> SaveAsync();
+        Task<int> UpdateAsync(Peripheral vehicle);
     }
 }

@@ -17,39 +17,48 @@ namespace rental_services.Server.Repositories
         /// <returns></returns>
         public async Task<List<Models.VehicleModel>> GetAllAsync()
         {
-            return await _rentalContext.VehicleModels.ToListAsync();
+            return await _rentalContext.VehicleModels
+                .Include(vm => vm.Manufacturer)
+                .Include(vm => vm.Shop)
+                .ToListAsync();
         }
 
         public async Task<Models.VehicleModel?> GetByIdAsync(int id)
         {
-            return await _rentalContext.VehicleModels.FindAsync(id);
+            return await _rentalContext.VehicleModels
+                .Include(vm => vm.Manufacturer)
+                .Include(vm => vm.Peripherals)
+                .Include(vm => vm.Shop)
+                .SingleOrDefaultAsync(vm => vm.ModelId == id);
         }
 
-        public async Task AddAsync(Models.VehicleModel product)
+        public async Task<int> AddAsync(Models.VehicleModel vehicleModel)
         {
-            await _rentalContext.VehicleModels.AddAsync(product);
-            await _rentalContext.SaveChangesAsync();
+            await _rentalContext.VehicleModels.AddAsync(vehicleModel);
+            return await _rentalContext.SaveChangesAsync();
         }
 
-        public async Task UpdateAsync(Models.VehicleModel product)
+        public async Task<int> UpdateAsync(Models.VehicleModel vehicleModel)
         {
-            _rentalContext.VehicleModels.Update(product);
-            await _rentalContext.SaveChangesAsync();
+            _rentalContext.VehicleModels.Update(vehicleModel);
+            return await _rentalContext.SaveChangesAsync();
         }
 
-        public async Task SaveAsync()
+        public async Task<int> SaveAsync()
         {
-            await _rentalContext.SaveChangesAsync();
+            return await _rentalContext.SaveChangesAsync();
         }
 
-        public async Task DeleteAsync(int id)
+        public async Task<int> DeleteAsync(int id)
         {
-            var product = await _rentalContext.VehicleModels.FindAsync(id);
-            if (product != null)
+            var vehicleModel = await _rentalContext.VehicleModels.FindAsync(id);
+            if (vehicleModel != null)
             {
-                _rentalContext.VehicleModels.Remove(product);
-                await _rentalContext.SaveChangesAsync();
+                _rentalContext.VehicleModels.Remove(vehicleModel);
+                return await _rentalContext.SaveChangesAsync();
             }
+
+            return 0;
         }
 
         public async Task<List<Models.Vehicle>> GetOfModelAsync(Models.VehicleModel model)
@@ -61,6 +70,32 @@ namespace rental_services.Server.Repositories
         public async Task<List<Models.Vehicle>> GetOfModelAsync(int modelId)
         {
             return await _rentalContext.Vehicles.Where(v => v.ModelId == modelId).ToListAsync();
+        }
+
+        public async Task<List<Models.Vehicle>> GetOfModelEagerBookingAsync(int modelId)
+        {
+            return await _rentalContext.Vehicles.Where(v => v.ModelId == modelId).Include(v => v.Bookings).ToListAsync();
+        }
+
+        public async Task<List<Models.VehicleModel>> GetAllEagerShopTypeAsync()
+        {
+            return await _rentalContext.VehicleModels
+                .Where(vm => vm.IsAvailable)
+                .Include(vm => vm.Shop)
+                .Include(vm => vm.VehicleType)
+                .Include(vm => vm.Manufacturer)
+                .ToListAsync();
+        }
+
+        public async Task<List<Models.VehicleModel>> GetAllEagerShopTypeAsync(string searchTerm)
+        {
+            return await _rentalContext.VehicleModels
+                .Where(vm => vm.IsAvailable)
+                .Where(vm => vm.ModelName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || vm.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .Include(vm => vm.Shop)
+                .Include(vm => vm.VehicleType)
+                .Include(vm => vm.Manufacturer)
+                .ToListAsync();
         }
     }
 }

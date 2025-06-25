@@ -52,7 +52,12 @@ namespace rental_services.Server
                     };
                 });
             // TODO: Add policies later for AddAuthorization()
-            builder.Services.AddAuthorization(); 
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("AdminOrStaff", policy =>
+                policy.RequireRole("Admin", "Staff"));
+            }
+            );
             // Add passsword hasher
             builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
             // Add services to the container.
@@ -68,7 +73,11 @@ namespace rental_services.Server
                 .AddScoped<IVehicleModelRepository, VehicleModelRepository>()
                 .AddScoped<IVehicleRepository, VehicleRepository>()
                 .AddScoped<IPeripheralRepository, PeripheralRepository>()
-                .AddScoped<BikeService>();
+                .AddScoped<IBikeService, BikeService>()
+                .AddScoped<IBookingRepository, BookingRepository>()
+                .AddScoped<IRentalService, RentalService>()
+                .AddScoped<IOcrService, OcrService>();
+          
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
             {
@@ -96,9 +105,12 @@ namespace rental_services.Server
                 app.UseSwaggerUI();
             }
             // Use authentication and authorization
+            app.UseRouting();
+
+            app.UseCors("AllowLocalhost3000");
+
             app.UseAuthentication();
             app.UseAuthorization();
-            app.UseRouting();
             //
             //app.UseHttpsRedirection(); // nginx handles https
             app.MapControllers();
