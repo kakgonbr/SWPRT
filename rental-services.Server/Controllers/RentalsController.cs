@@ -10,11 +10,13 @@ namespace rental_services.Server.Controllers
     {
         private readonly Services.IRentalService _rentalService;
         private readonly Services.IUserService _userService;
+        private readonly ILogger<RentalsController> _logger;
 
-        public RentalsController(Services.IRentalService rentalService, Services.IUserService userService)
+        public RentalsController(ILogger<RentalsController> logger, Services.IRentalService rentalService, Services.IUserService userService)
         {
             _rentalService = rentalService;
             _userService = userService;
+            _logger = logger;
         }
 
         // GET /rentals
@@ -30,8 +32,8 @@ namespace rental_services.Server.Controllers
         [Authorize]
         public async Task<ActionResult<List<Models.DTOs.BookingDTO>>> GetByUser(int id)
         {
-            string? sub = User.FindFirstValue("sub");
-            Models.User? dbUser;
+            string? sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            Models.User? dbUser = null;
 
             if (sub is null || (dbUser = await _userService.GetUserBySubAsync(sub)) is null || dbUser.UserId != id)
             {
@@ -39,6 +41,14 @@ namespace rental_services.Server.Controllers
             }
 
             return await _rentalService.GetOfUserAsync(dbUser.UserId);
+        }
+
+        // POST /rentals
+        [HttpPost]
+        [Authorize(Policy = "AdminOrStaff")]
+        public async Task<ActionResult<string>> UpdateRentalStatus([FromBody] Models.DTOs.BookingStatusDTO rentalStatus)
+        {
+            return await _rentalService.UpdateStatusAsync(rentalStatus.Id, rentalStatus.Status) ? Ok("Updated.") : BadRequest("Failed.");
         }
     }
 }

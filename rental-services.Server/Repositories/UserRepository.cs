@@ -20,7 +20,7 @@ public class UserRepository : IUserRepository
 
     public async Task<User?> GetBySub(string sub)
     {
-        return await _db.Users.SingleOrDefaultAsync(u => u.Sub == sub);
+        return await _db.Users.SingleOrDefaultAsync(u => u.Sub.Equals(sub));
     }
 
     public void Add(User user)
