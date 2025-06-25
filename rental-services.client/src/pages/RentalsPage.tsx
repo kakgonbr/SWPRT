@@ -57,7 +57,7 @@ export default function RentalsPage() {
         // Filter rentals for current user
         setTimeout(() => {
             const userRentals = MOCK_RENTALS.filter(r => parseInt(r.userId) === user?.userId)
-                .sort((a, b) => b.orderDate.getTime() - a.orderDate.getTime())
+                .sort((a, b) => a.orderDate && b.orderDate ? b.orderDate.getTime() - a.orderDate.getTime() : 0)
 
             setRentals(userRentals)
             setIsLoading(false)
@@ -178,7 +178,7 @@ export default function RentalsPage() {
                         {rental.bikeName}
                     </CardTitle>
                     <p className="text-xs text-muted-foreground mb-2">
-                        Order Placed: {format(rental.orderDate, "PPP")}
+                        {rental.orderDate ? "Order Placed:" + format(rental.orderDate, "PPP") : "Not paid"}
                     </p>
                     <p className="text-sm text-foreground/80 mb-1">
                         <CalendarClock className="inline w-4 h-4 mr-1.5 text-muted-foreground" />
