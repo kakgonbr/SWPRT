@@ -75,7 +75,7 @@ namespace rental_services.Server
                 .AddScoped<IPeripheralRepository, PeripheralRepository>()
                 .AddScoped<IBikeService, BikeService>()
                 .AddScoped<IBookingRepository, BookingRepository>()
-                .AddScoped<IRentalService, RentalService>();
+                .AddScoped<IRentalService, RentalService>()
                 .AddScoped<IOcrService, OcrService>();
           
             builder.Services.AddControllers();
