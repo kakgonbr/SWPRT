@@ -5,7 +5,7 @@ namespace rental_services.Server.Repositories;
 public interface IUserRepository
 {
     Task<User> GetById(int id);
-    User GetBySub(string sub);
+    Task<User?> GetBySub(string sub);
     void Add(User user);
     void Update(User user);
     void Delete(int id);

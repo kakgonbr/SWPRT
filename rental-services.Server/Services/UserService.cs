@@ -18,6 +18,11 @@ public class UserService : IUserService
         return await _userRepository.GetById(id);
     }
 
+    public async Task<User?> GetUserBySubAsync(string sub)
+    {
+        return await _userRepository.GetBySub(sub);
+    }
+
     public void CreateUser(User user)
     {
         // Possible business validation goes here

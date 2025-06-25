@@ -201,6 +201,7 @@ namespace rental_services.Server.Services
         {
             Models.Vehicle dbVehicle = _mapper.Map<Models.Vehicle>(vehicle);
             dbVehicle.ModelId = modelId;
+            dbVehicle.VehicleId = 0;
 
             return await _vehicleRepository.AddAsync(dbVehicle) != 0;
         }
