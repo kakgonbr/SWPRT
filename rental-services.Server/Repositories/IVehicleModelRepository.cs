@@ -14,5 +14,6 @@ namespace rental_services.Server.Repositories
         Task<int> UpdateAsync(VehicleModel product);
         Task<List<Vehicle>> GetOfModelEagerBookingAsync(int modelId);
         Task<List<VehicleModel>> GetAllEagerShopTypeAsync();
+        Task<List<VehicleModel>> GetAllEagerShopTypeAsync(string searchTerm);
     }
 }
