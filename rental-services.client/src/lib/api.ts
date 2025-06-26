@@ -15,17 +15,21 @@ export const bikeApi = {
         return response.data;
     },
 
-    getAvailableBike: async (startDate: string, endDate: string, address?: string): Promise<VehicleModelDTO[]> => {
+    getAvailableBike: async (startDate: string, endDate: string, address?: string, searchTerm?: string): Promise<VehicleModelDTO[]> => {
         const params: Record<string, string> = {
             startDate,
-            endDate
+            endDate,
         }
 
         if (address !== undefined) {
             params.address = address;
         }
+        
+        if (searchTerm !== undefined) {
+            params.searchTerm = searchTerm;
+        }
 
-        const response = await axios.get(`/api/bikes/available`, { params: params });
+        const response = await axios.get(`/api/bikes/available`, {params: params});
         return response.data;
     }
 }

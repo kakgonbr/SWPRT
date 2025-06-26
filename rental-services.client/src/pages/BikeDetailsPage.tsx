@@ -1,5 +1,5 @@
 // src/pages/BikeDetailsPage.tsx
-import {useParams, Link} from 'react-router-dom'
+import {useParams, Link, useNavigate} from 'react-router-dom'
 //@ts-ignore
 
 import {ArrowLeft, Star, MapPin, Calendar, Users, Fuel, Gauge} from 'lucide-react'
@@ -17,6 +17,7 @@ import {bikeApi} from "../lib/api.ts";
 export default function BikeDetailsPage() {
     const {id} = useParams<{ id: string }>();
     const [bike, setBike] = useState<VehicleModelDTO>();
+    const navigate = useNavigate();
 
     useEffect(() => {
         // @ts-ignore
@@ -24,13 +25,22 @@ export default function BikeDetailsPage() {
             if (!id) return;
             try {
                 const bikeId = parseInt(id, 10);
+                if (isNaN(bikeId)) {
+                    console.log("this is not a bike id");
+                    return;
+                }
                 const data = await bikeApi.getBikeById(bikeId);
                 setBike(data);
             } catch (error) {
                 console.error(`Error fetching bike details: `, error);
             }
         }
-    })
+        getVehicleModelDetailById();
+    }, [id]);
+
+    const handleGoBack = () => {
+        navigate(-1);
+    };
 
 
     // Get reviews for this bike
@@ -53,11 +63,9 @@ export default function BikeDetailsPage() {
     return (
         <div className="container mx-auto px-4 py-8">
             {/* Back Button */}
-            <Button variant="ghost" className="mb-6" asChild>
-                <Link to="/bikes">
-                    <ArrowLeft className="w-4 h-4 mr-2"/>
-                    Back to Bikes
-                </Link>
+            <Button variant="ghost" className="mb-6" onClick={handleGoBack}>
+                <ArrowLeft className="w-4 h-4 mr-2"/>
+                Back to Bikes
             </Button>
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

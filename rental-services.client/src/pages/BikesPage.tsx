@@ -13,7 +13,6 @@ import {bikeApi} from "../lib/api.ts";
 
 export default function BikesPage() {
     const [searchParams] = useSearchParams();
-    // @ts-ignore
     const [searchTerm, setSearchTerm] = useState('')
     const [searchInputValue, setSearchInputValue] = useState('')
     const [selectedType, setSelectedType] = useState<string>('all')
@@ -45,7 +44,7 @@ export default function BikesPage() {
                     String(startDate),
                     String(endDate),
                     location || undefined,
-                    // searchTerm || undefined
+                    searchTerm || undefined
                 );
                 setBikes(data);
             } catch (error) {
