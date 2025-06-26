@@ -114,7 +114,7 @@ namespace rental_services.Server
             //
             //app.UseHttpsRedirection(); // nginx handles https
             app.MapControllers();
-            app.MapFallbackToFile("/index.html");
+            app.MapFallbackToFile("wwwroot/index.html");
             app.Run();
         }
     }

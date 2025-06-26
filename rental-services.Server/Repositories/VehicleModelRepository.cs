@@ -71,10 +71,18 @@ namespace rental_services.Server.Repositories
         {
             return await _rentalContext.Vehicles.Where(v => v.ModelId == modelId).ToListAsync();
         }
-
+        
+        /// <summary>
+        /// return vehicle list follow the vehicle model id
+        /// </summary>
+        /// <param name="modelId"></param>
+        /// <returns></returns>
         public async Task<List<Models.Vehicle>> GetOfModelEagerBookingAsync(int modelId)
         {
-            return await _rentalContext.Vehicles.Where(v => v.ModelId == modelId).Include(v => v.Bookings).ToListAsync();
+            return await _rentalContext.Vehicles
+                .Where(v => v.ModelId == modelId)
+                .Include(v => v.Bookings)
+                .ToListAsync();
         }
 
         public async Task<List<Models.VehicleModel>> GetAllEagerShopTypeAsync()
