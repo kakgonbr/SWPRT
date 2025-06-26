@@ -60,7 +60,7 @@ export interface Rental {
     endDate: Date;
     totalPrice: number;
     options: string[];
-    status: 'Upcoming' | 'Active' | 'Completed' | 'Cancelled';
+    status: 'Awaiting Payment' | 'Upcoming' | 'Active' | 'Completed' | 'Cancelled';
     bikeName: string;
     bikeImageUrl: string;
     orderDate: Date;

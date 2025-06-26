@@ -25,15 +25,15 @@ namespace rental_services.Server.Repositories
             return await _rentalContext.Vehicles.FindAsync(id);
         }
 
-        public async Task<int> AddAsync(Models.Vehicle product)
+        public async Task<int> AddAsync(Models.Vehicle vehicle)
         {
-            await _rentalContext.Vehicles.AddAsync(product);
+            await _rentalContext.Vehicles.AddAsync(vehicle);
             return await _rentalContext.SaveChangesAsync();
         }
 
-        public async Task<int> UpdateAsync(Models.Vehicle product)
+        public async Task<int> UpdateAsync(Models.Vehicle vehicle)
         {
-            _rentalContext.Vehicles.Update(product);
+            _rentalContext.Vehicles.Update(vehicle);
             return await _rentalContext.SaveChangesAsync();
         }
 
@@ -44,10 +44,10 @@ namespace rental_services.Server.Repositories
 
         public async Task<int> DeleteAsync(int id)
         {
-            var product = await _rentalContext.Vehicles.FindAsync(id);
-            if (product != null)
+            var vehicle = await _rentalContext.Vehicles.FindAsync(id);
+            if (vehicle != null)
             {
-                _rentalContext.Vehicles.Remove(product);
+                _rentalContext.Vehicles.Remove(vehicle);
                 return await _rentalContext.SaveChangesAsync();
             }
 

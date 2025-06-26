@@ -1,4 +1,4 @@
-import { Calendar, MapPin, Phone, FileText, DollarSign, X } from 'lucide-react'
+import { Calendar, MapPin, Phone, FileText, DollarSign, X, Mail } from 'lucide-react'
 import {
     Dialog,
     DialogContent,
@@ -26,7 +26,8 @@ export default function RentalDetailsDialog({
     if (!rental) return null
 
     const totalDays = differenceInDays(rental.endDate, rental.startDate) + 1
-    const pricePerDay = rental.pricePerDay || rental.totalPrice / totalDays
+    const pricePerDay = rental.pricePerDay ?? 0;
+    const totalPrice = pricePerDay * totalDays;
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -38,15 +39,15 @@ export default function RentalDetailsDialog({
         }
     }
 
-    const getPaymentStatusColor = (status?: string) => {
-        switch (status) {
-            case 'Paid': return 'default'
-            case 'Pending': return 'outline'
-            case 'Failed': return 'destructive'
-            case 'Refunded': return 'secondary'
-            default: return 'outline'
-        }
-    }
+    //const getPaymentStatusColor = (status?: string) => {
+    //    switch (status) {
+    //        case 'Paid': return 'default'
+    //        case 'Pending': return 'outline'
+    //        case 'Failed': return 'destructive'
+    //        case 'Refunded': return 'secondary'
+    //        default: return 'outline'
+    //    }
+    //}
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -97,14 +98,14 @@ export default function RentalDetailsDialog({
                         <h3 className="text-lg font-semibold mb-3">Customer Information</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                {/* <div className="flex items-center space-x-2">
+                                 <div className="flex items-center space-x-2">
                                     <span className="font-medium">Name:</span>
                                     <span>{rental.customerName}</span>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                     <Mail className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-sm">{rental.customerEmail}</span>
-                                </div> */}
+                                </div> 
                                 {rental.customerPhone && (
                                     <div className="flex items-center space-x-2">
                                         <Phone className="h-4 w-4 text-muted-foreground" />
@@ -213,7 +214,7 @@ export default function RentalDetailsDialog({
                                 <div className="space-y-2">
                                     <div className="flex justify-between font-semibold text-lg">
                                         <span>Total Amount:</span>
-                                        <span>${rental.totalPrice.toFixed(2)}</span>
+                                        <span>${totalPrice.toFixed(2)}</span>
                                     </div>
                                     {rental.paymentMethod && (
                                         <div className="flex justify-between">
@@ -223,7 +224,7 @@ export default function RentalDetailsDialog({
                                     )}
                                     <div className="flex justify-between">
                                         <span>Order Date:</span>
-                                        <span>{format(rental.orderDate, 'MMM d, yyyy')}</span>
+                                        <span>{rental.orderDate ? format(rental.orderDate, 'MMM d, yyyy') : 'Not paid'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -242,14 +243,14 @@ export default function RentalDetailsDialog({
                                     {rental.status}
                                 </Badge>
                             </div>
-                            {rental.paymentStatus && (
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground mb-1">Payment Status</p>
-                                    <Badge variant={getPaymentStatusColor(rental.paymentStatus)}>
-                                        {rental.paymentStatus}
-                                    </Badge>
-                                </div>
-                            )}
+                            {/*{rental.paymentStatus && (*/}
+                            {/*    <div>*/}
+                            {/*        <p className="text-sm font-medium text-muted-foreground mb-1">Payment Status</p>*/}
+                            {/*        <Badge variant={getPaymentStatusColor(rental.paymentStatus)}>*/}
+                            {/*            {rental.paymentStatus}*/}
+                            {/*        </Badge>*/}
+                            {/*    </div>*/}
+                            {/*)}*/}
                         </div>
                     </div>
 

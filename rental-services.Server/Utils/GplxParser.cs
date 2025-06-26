@@ -30,10 +30,25 @@ using rental_services.Server.Models.DTOs;
             };
         }
 
+       
         private string? ParseFullName()
         {
-            var nameLine = _lines.FirstOrDefault(l => l.Contains("Họ và tên") || l.Contains("Full name"));
-            return nameLine?.Split(':').LastOrDefault()?.Trim();
+            var nameLine = _lines.FirstOrDefault(l => l.Contains("Họ tên") || l.Contains("Họ và tên") || l.Contains("Full name"));
+            if (string.IsNullOrEmpty(nameLine)) return null;
+
+            // Tìm vị trí nhãn
+            var idx = nameLine.IndexOf("Full name");
+            if (idx == -1) idx = nameLine.IndexOf("Họ tên");
+            if (idx == -1) idx = nameLine.IndexOf("Họ và tên");
+            if (idx == -1) return null;
+
+            // Lấy phần sau nhãn (bỏ luôn dấu : nếu có)
+            var afterLabel = nameLine.Substring(idx);
+            afterLabel = afterLabel.Replace("Họ tên", "", StringComparison.OrdinalIgnoreCase)
+                           .Replace("Họ và tên", "", StringComparison.OrdinalIgnoreCase)
+                           .Replace("Full name", "", StringComparison.OrdinalIgnoreCase)
+                           .TrimStart(':', ' ', '\t');
+            return afterLabel.Trim();
         }
 
         private string? ParseDateOfBirth()

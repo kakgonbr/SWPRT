@@ -1,4 +1,3 @@
-﻿using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 using rental_services.Server.Models;
 using rental_services.Server.Models.DTOs;
 
@@ -12,9 +11,7 @@ namespace rental_services.Server.Services
         private AutoMapper.IMapper _mapper;
         private readonly ILogger<BikeService> _logger;
 
-        public BikeService(Repositories.IVehicleModelRepository vehicleModelRepository,
-            Repositories.IVehicleRepository vehicleRepository, AutoMapper.IMapper mapper,
-            Repositories.IPeripheralRepository peripheralRepository, ILogger<BikeService> logger)
+        public BikeService(Repositories.IVehicleModelRepository vehicleModelRepository, Repositories.IVehicleRepository vehicleRepository, AutoMapper.IMapper mapper, Repositories.IPeripheralRepository peripheralRepository, ILogger<BikeService> logger)
         {
             _vehicleModelRepository = vehicleModelRepository;
             _vehicleRepository = vehicleRepository;
@@ -166,19 +163,25 @@ namespace rental_services.Server.Services
             return await _vehicleModelRepository.SaveAsync() != 0;
         }
 
-        public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly? startDate,
-            DateOnly? endDate, string? address)
+        public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly? startDate, DateOnly? endDate, string? address, string? searchTerm)
         {
             if (startDate == null || endDate == null || startDate.Value > endDate.Value)
-{
+            {
                 throw new ArgumentException("Start date cannot be after end date or one of them are null");
             }
-            var vehicleModels = await _vehicleModelRepository.GetAllEagerShopTypeAsync();
-            var result = new List<Models.VehicleModel>();
+            List<VehicleModel> vehicleModels;
+            if (string.IsNullOrEmpty(searchTerm))
+            {
+                vehicleModels = await _vehicleModelRepository.GetAllEagerShopTypeAsync();
+            }
+            else
+            {
+                vehicleModels = await _vehicleModelRepository.GetAllEagerShopTypeAsync(searchTerm);
+            }
+            var result = new List<VehicleModel>();
             foreach (var model in vehicleModels)
             {
-                if (!string.IsNullOrEmpty(address) &&
-                    !model.Shop.Address.Contains(address, StringComparison.OrdinalIgnoreCase))
+                if (!string.IsNullOrEmpty(address) && !model.Shop.Address.Contains(address, StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
@@ -196,17 +199,14 @@ namespace rental_services.Server.Services
                             break;
                         }
                     }
-
                     if (isAvailable)
                         availableCount++;
                 }
-
                 if (availableCount > 1)
                 {
                     result.Add(model);
                 }
             }
-
             return _mapper.Map<List<Models.DTOs.VehicleModelDTO>>(result);
         }
 
@@ -214,6 +214,7 @@ namespace rental_services.Server.Services
         {
             Models.Vehicle dbVehicle = _mapper.Map<Models.Vehicle>(vehicle);
             dbVehicle.ModelId = modelId;
+            dbVehicle.VehicleId = 0;
 
             return await _vehicleRepository.AddAsync(dbVehicle) != 0;
         }
@@ -222,14 +223,13 @@ namespace rental_services.Server.Services
         {
             return await _vehicleRepository.DeleteAsync(id) != 0;
         }
-
+        
         public List<VehicleModelDTO> FilterModelByVehicleType(List<VehicleModelDTO> vehicleModels, string? type)
         {
             if (string.IsNullOrEmpty(type))
             {
                 return vehicleModels;
             }
-
             return vehicleModels
                 .Where(vm => vm.VehicleType.Equals(type, StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -241,22 +241,8 @@ namespace rental_services.Server.Services
             {
                 return vehicleModels;
             }
-
             return vehicleModels
                 .Where(vm => vm.Shop.Equals(shop, StringComparison.OrdinalIgnoreCase))
-                .ToList();
-        }
-
-        public List<VehicleModelDTO> FilterModelBySearchTerm(List<VehicleModelDTO> vehicleModels, string? searchTerm)
-        {
-            if (string.IsNullOrEmpty(searchTerm))
-            {
-                return vehicleModels;
-            }
-
-            return vehicleModels
-                .Where(vm => vm.DisplayName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                             vm.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
                 .ToList();
         }
     }

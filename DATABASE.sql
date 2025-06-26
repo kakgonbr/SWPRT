@@ -6,6 +6,11 @@ SET SINGLE_USER WITH ROLLBACK IMMEDIATE;
 DROP DATABASE [SWP-PROTOTYPE]
 END;
 
+CREATE DATABASE [SWP-PROTOTYPE]
+GO
+
+USE [SWP-PROTOTYPE]
+
 CREATE TABLE Users
 (
     UserId int PRIMARY KEY IDENTITY(1, 1),
@@ -123,12 +128,12 @@ CREATE TABLE Bookings
     UserId int NOT NULL,
     StartDate date NOT NULL,
     EndDate date NOT NULL,
-    Status varchar(20) NOT NULL DEFAULT 'Pending',
+    Status varchar(20) NOT NULL DEFAULT 'Awaiting Payment',
 
     CONSTRAINT fk_bookings_vehicle FOREIGN KEY (VehicleId) REFERENCES Vehicles,
     CONSTRAINT fk_bookings_users FOREIGN KEY (UserId) REFERENCES Users,
     CONSTRAINT ck_bookings_date CHECK (StartDate < EndDate),
-    CONSTRAINT ck_bookings_status CHECK (Status IN ('Pending', 'WaitingPickup', 'Active', 'Returned'))
+    CONSTRAINT ck_bookings_status CHECK (Status IN ('Awaiting Payment', 'Upcoming', 'Active', 'Completed', 'Cancelled'))
 )
 
 CREATE TABLE Payments
@@ -331,7 +336,7 @@ INSERT INTO Bookings (UserId, VehicleId, StartDate, EndDate, Status)
 VALUES
     (3, 4, '2025-05-15', '2025-07-10', 'Active'),
     (4, 7, '2025-06-01', '2025-06-02', 'Active'),
-    (5, 8, '2025-06-05', '2025-06-30', 'Pending')
+    (5, 8, '2025-06-05', '2025-06-30', 'Upcoming')
 
 -- Insert into Payments (20 rows: 1 per booking)
 INSERT INTO Payments (BookingId, AmountPaid, PaymentDate)

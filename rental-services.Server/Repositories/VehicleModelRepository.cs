@@ -32,15 +32,15 @@ namespace rental_services.Server.Repositories
                 .SingleOrDefaultAsync(vm => vm.ModelId == id);
         }
 
-        public async Task<int> AddAsync(Models.VehicleModel product)
+        public async Task<int> AddAsync(Models.VehicleModel vehicleModel)
         {
-            await _rentalContext.VehicleModels.AddAsync(product);
+            await _rentalContext.VehicleModels.AddAsync(vehicleModel);
             return await _rentalContext.SaveChangesAsync();
         }
 
-        public async Task<int> UpdateAsync(Models.VehicleModel product)
+        public async Task<int> UpdateAsync(Models.VehicleModel vehicleModel)
         {
-            _rentalContext.VehicleModels.Update(product);
+            _rentalContext.VehicleModels.Update(vehicleModel);
             return await _rentalContext.SaveChangesAsync();
         }
 
@@ -51,10 +51,10 @@ namespace rental_services.Server.Repositories
 
         public async Task<int> DeleteAsync(int id)
         {
-            var product = await _rentalContext.VehicleModels.FindAsync(id);
-            if (product != null)
+            var vehicleModel = await _rentalContext.VehicleModels.FindAsync(id);
+            if (vehicleModel != null)
             {
-                _rentalContext.VehicleModels.Remove(product);
+                _rentalContext.VehicleModels.Remove(vehicleModel);
                 return await _rentalContext.SaveChangesAsync();
             }
 
@@ -89,6 +89,17 @@ namespace rental_services.Server.Repositories
         {
             return await _rentalContext.VehicleModels
                 .Where(vm => vm.IsAvailable)
+                .Include(vm => vm.Shop)
+                .Include(vm => vm.VehicleType)
+                .Include(vm => vm.Manufacturer)
+                .ToListAsync();
+        }
+
+        public async Task<List<Models.VehicleModel>> GetAllEagerShopTypeAsync(string searchTerm)
+        {
+            return await _rentalContext.VehicleModels
+                .Where(vm => vm.IsAvailable)
+                .Where(vm => vm.ModelName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || vm.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
                 .Include(vm => vm.Shop)
                 .Include(vm => vm.VehicleType)
                 .Include(vm => vm.Manufacturer)
