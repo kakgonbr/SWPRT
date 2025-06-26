@@ -8,7 +8,7 @@ import React, {
   useEffect,
   type ReactNode,
 } from "react";
-const API = import.meta.env.VITE_API_BASE_URL;
+const API = "http://localhost:5125";
 
 interface AuthContextType {
   user: UserDto | null;
@@ -37,6 +37,7 @@ interface DriverLicenseDto {
   licenseId: string;
   holderName: string;
   dateOfIssue: Date;
+  imageLicenseUrl?: string;
 }
 
 export interface LoginRequest {
