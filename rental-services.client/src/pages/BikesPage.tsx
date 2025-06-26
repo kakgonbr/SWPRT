@@ -13,7 +13,9 @@ import {bikeApi} from "../lib/api.ts";
 
 export default function BikesPage() {
     const [searchParams] = useSearchParams();
+    // @ts-ignore
     const [searchTerm, setSearchTerm] = useState('')
+    const [searchInputValue, setSearchInputValue] = useState('')
     const [selectedType, setSelectedType] = useState<string>('all')
     const [selectedLocation, setSelectedLocation] = useState<string>('all')
     const [sortBy, setSortBy] = useState<string>('name')
@@ -24,6 +26,10 @@ export default function BikesPage() {
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
     const location = searchParams.get('location');
+
+    const handleSearch = () => {
+        setSearchTerm(searchInputValue);
+    }
 
     useEffect(() => {
         async function fetchBikeModels() {
@@ -38,7 +44,8 @@ export default function BikesPage() {
                 const data = await bikeApi.getAvailableBike(
                     String(startDate),
                     String(endDate),
-                    location || undefined
+                    location || undefined,
+                    // searchTerm || undefined
                 );
                 setBikes(data);
             } catch (error) {
@@ -48,16 +55,25 @@ export default function BikesPage() {
                 setLoading(false);
             }
         }
+        //debounce implementation to void to many api calls
+        const handler = setTimeout(() => {
+            fetchBikeModels();
+        }, 500);
 
-        fetchBikeModels();
+        return () => {
+            clearTimeout(handler);
+        }
     }, [startDate, endDate, location]);
 
     console.log(bikes)
 
+    const bikeTypes = useMemo(() => {
+        return Array.from(new Set(bikes.map(bike => bike.vehicleType)))
+    }, [bikes]);
 
-    //// Get unique types and locations for filters
-    //const bikeTypes = Array.from(new Set(MOCK_BIKES.map(bike => bike.type)))
-    //const locations = Array.from(new Set(MOCK_BIKES.map(bike => bike.location)))
+    const locations = useMemo(() => {
+        return Array.from(new Set(bikes.map(bike => bike.shop)))
+    }, [bikes]);
 
     // Filter and sort bikes
     const filteredBikes = useMemo(() => {
@@ -65,12 +81,11 @@ export default function BikesPage() {
         const bikesArray = Array.isArray(bikes) ? bikes : []
         const filtered = bikesArray
             .filter(bike => {
-                const matchesSearch = bike.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                bike.description?.toLowerCase().includes(searchTerm.toLowerCase())
+                //const matchesSearch = bike.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                //bike.description?.toLowerCase().includes(searchTerm.toLowerCase())
             const matchesType = selectedType === 'all' || bike.vehicleType === selectedType
             const matchesLocation = selectedLocation === 'all' || bike.shop === selectedLocation
-
-            return matchesSearch && matchesType && matchesLocation
+            return matchesType && matchesLocation
         })
 
         //Sort bikes
@@ -89,7 +104,7 @@ export default function BikesPage() {
         })
 
         return filtered
-    }, [bikes, searchTerm, selectedType, selectedLocation, sortBy])
+    }, [bikes, selectedType, selectedLocation, sortBy])
 
     const BikeCard = ({bikes}: { bikes: VehicleModelDTO }) => (
         <Card className="overflow-hidden hover:shadow-lg transition-shadow">
@@ -157,10 +172,13 @@ export default function BikesPage() {
                         className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4"/>
                     <Input
                         placeholder="Search bikes..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        value={searchInputValue}
+                        onChange={(e) => setSearchInputValue(e.target.value)}
                         className="pl-10"
                     />
+                    <Button onClick={handleSearch} className="ml-2">
+                        Search
+                    </Button>
                 </div>
 
                 <Select value={selectedType} onValueChange={setSelectedType}>
@@ -169,9 +187,9 @@ export default function BikesPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Types</SelectItem>
-                        {/*{bikeTypes.map(type => (*/}
-                        {/*    <SelectItem key={type} value={type}>{type}</SelectItem>*/}
-                        {/*))}*/}
+                        {bikeTypes.map(type => (
+                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
 
@@ -181,9 +199,9 @@ export default function BikesPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Locations</SelectItem>
-                        {/*{locations.map(location => (*/}
-                        {/*    <SelectItem key={location} value={location}>{location}</SelectItem>*/}
-                        {/*))}*/}
+                        {locations.map(location => (
+                            <SelectItem key={location} value={location}>{location}</SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
 

@@ -10,7 +10,7 @@ export const bikeApi = {
         return response.data;
     },
 
-    getBikeById: async (id: number): Promise<VehicleModelDTO[]> => {
+    getBikeById: async (id: number): Promise<VehicleModelDTO> => {
         const response = await axios.get(`${BASE_API_URL}/bikes/${id}`);
         return response.data;
     },

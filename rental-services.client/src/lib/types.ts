@@ -21,7 +21,7 @@ export interface VehicleModelDTO {
     displayName: string;
     description: string;
     ratePerDay: number;
-    imageFile?: string;
+    imageFile: string;
     upFrontPercentage: number; //deposit money when place a rental
     isAvailable: boolean;   
     rating: number;
