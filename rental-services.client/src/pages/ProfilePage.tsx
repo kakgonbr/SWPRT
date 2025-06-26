@@ -82,6 +82,8 @@ export default function ProfilePage() {
       return;
     }
 
+    console.log("User data loaded on Profile Page:", user);
+
     // Populate form with user data
     setFormData({
       name: user.fullName,
@@ -91,6 +93,13 @@ export default function ProfilePage() {
       licenseId: user.driverLicenses?.licenseId || "",
     });
   }, [user, isAuthenticated, loading, navigate]);
+
+  useEffect(() => {
+    if (user?.driverLicenses?.imageLicenseUrl) {
+      setUploadedImageUrl(user.driverLicenses.imageLicenseUrl);
+    }
+  }, [user]);
+
   useEffect(() => {
     console.log("State changes:");
     console.log("isIdReviewOpen:", isIdReviewOpen);

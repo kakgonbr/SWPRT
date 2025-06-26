@@ -15,7 +15,9 @@ public class UserRepository : IUserRepository
 
     public async Task<User> GetById(int id)
     {
-        return await _db.Users.FindAsync(id);
+        return await _db.Users
+            .Include(u => u.DriverLicenses)
+            .FirstOrDefaultAsync(u => u.UserId == id);
     }
 
     public async Task<User?> GetBySub(string sub)
