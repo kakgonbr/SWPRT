@@ -46,4 +46,11 @@
 		</AssemblyAttribute>
 	</ItemGroup>
 
+	<ItemGroup>
+		<Content Include=".\tessdata\**\*">
+			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
+			<TargetPath>tessdata\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+		</Content>
+	</ItemGroup>
+
 </Project>
