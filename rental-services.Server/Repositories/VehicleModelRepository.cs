@@ -89,9 +89,15 @@ namespace rental_services.Server.Repositories
 
         public async Task<List<Models.VehicleModel>> GetAllEagerShopTypeAsync(string searchTerm)
         {
+            var loweredTerm = searchTerm.ToLower();
             return await _rentalContext.VehicleModels
-                .Where(vm => vm.IsAvailable)
-                .Where(vm => vm.ModelName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) || vm.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .Where(vm => vm.IsAvailable &&
+                    (
+                        vm.ModelName.ToLower().Contains(loweredTerm) ||
+                        vm.Description.ToLower().Contains(loweredTerm) ||
+                        vm.Manufacturer.ManufacturerName.ToLower().Contains(loweredTerm)
+                    )
+                )
                 .Include(vm => vm.Shop)
                 .Include(vm => vm.VehicleType)
                 .Include(vm => vm.Manufacturer)
