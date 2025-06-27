@@ -101,7 +101,7 @@ public class BikesController : ControllerBase
         return await _bikeService.UpdatePhysicalAsync(vehicle) ? Ok("Updated.") : BadRequest("Failed.");
     }
 
-    [HttpPut("physical/{modelId}")]
+    [HttpPut("physical/{modelId}")] 
     [Authorize(Roles = Utils.Config.Role.Admin)]
     public async Task<ActionResult<string>> AddPhysicalVehicle(int modelId, [FromBody] VehicleDTO vehicle)
     {
