@@ -45,8 +45,8 @@ jobs:
         host: ${{ secrets.VPS_HOST }}
         username: ${{ secrets.VPS_USER }}
         key: ${{ secrets.VPS_DEPLOY_KEY }}
-        source: "images/*"
-        target: "/tmp/images"
+        source: "images/"
+        target: "/tmp"
 
     - name: Move images to web directory
       uses: appleboy/ssh-action@v1.0.0
@@ -56,8 +56,11 @@ jobs:
         key: ${{ secrets.VPS_DEPLOY_KEY }}
         script: |
           rm -rf /var/www/images/*
-          mv /tmp/images/* /var/www/images/
-          rmdir /tmp/images
+          cp -a /tmp/images/. /var/www/images/
+          rm -rf /tmp/images
+          sudo chown -R www-data:www-data /var/www/images
+          sudo chmod -R 777 /var/www/images;
+
 
     - name: Restart service on VPS
       uses: appleboy/ssh-action@v1.0.0
