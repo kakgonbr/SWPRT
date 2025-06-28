@@ -85,3 +85,22 @@ export interface AdminSupportMessage {
     status: AdminSupportMessageStatus;
 }
 
+export interface ChatDTO {
+    chatId: number;
+    userId: number;
+    staffId?: number;
+    status: string;
+    priority: string;
+    openTime: string;
+    subject: string;
+    userName: string;
+    staffName: string;
+}
+
+export interface ChatMessageDTO {
+    chatMessageId: number;
+    chatId: number;
+    senderId: number;
+    content: string;
+    timestamp: string;
+}

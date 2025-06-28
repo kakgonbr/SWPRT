@@ -1,4 +1,3 @@
-// src/components/layout/Header.tsx
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -119,7 +118,7 @@ export default function Header() {
                             </>
                         )}
 
-                        {(user.role === 'Staff') && (
+                        {(user.role?.toLowerCase?.() === 'staff') && (
                             <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>

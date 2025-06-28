@@ -70,6 +70,16 @@ namespace rental_services.Server.Utils
 
             CreateMap<Peripheral, PeripheralDTO>();
             CreateMap<PeripheralDTO, Peripheral>();
+
+            CreateMap<Chat, ChatDTO>()
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName))
+                .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.Staff != null ? src.Staff.FullName : string.Empty));
+
+            CreateMap<ChatMessage, ChatMessageDTO>()
+               .ForMember(dest => dest.Timestamp, opt => opt.MapFrom(src => src.Chat.ChatMessages
+                   .Where(m => m.ChatMessageId == src.ChatMessageId)
+                   .Select(m => m.Chat.ChatMessages.OrderByDescending(x => x.ChatMessageId).FirstOrDefault() != null ? DateTime.Now : DateTime.Now)
+                   .FirstOrDefault()));
         }
     }
 }

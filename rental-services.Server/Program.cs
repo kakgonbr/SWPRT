@@ -50,6 +50,19 @@ namespace rental_services.Server
                         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
                         ValidateLifetime = true
                     };
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnMessageReceived = context =>
+                        {
+                            var accessToken = context.Request.Query["access_token"];
+                            var path = context.HttpContext.Request.Path;
+                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat"))
+                            {
+                                context.Token = accessToken;
+                            }
+                            return Task.CompletedTask;
+                        }
+                    };
                 });
             // TODO: Add policies later for AddAuthorization()
             builder.Services.AddAuthorization(); 
@@ -68,8 +81,10 @@ namespace rental_services.Server
                 .AddScoped<IVehicleModelRepository, VehicleModelRepository>()
                 .AddScoped<IVehicleRepository, VehicleRepository>()
                 .AddScoped<IPeripheralRepository, PeripheralRepository>()
-.AddScoped<IBikeService, BikeService>()
-.AddScoped<IOcrService, OcrService>();
+                .AddScoped<IBikeService, BikeService>()
+                .AddScoped<IOcrService, OcrService>()
+                .AddScoped<IChatRepository, ChatRepository>()
+                .AddScoped<IChatService, ChatService>();
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
             {
@@ -84,6 +99,9 @@ namespace rental_services.Server
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+
+            //real-time 
+            builder.Services.AddSignalR();
 
             // Build app
             var app = builder.Build();
@@ -106,6 +124,10 @@ namespace rental_services.Server
             //
             //app.UseHttpsRedirection(); // nginx handles https
             app.MapControllers();
+            
+            // Add SignalR endpoint
+            app.MapHub<Controllers.Realtime.ChatHub>("/hubs/chat");
+            
             app.MapFallbackToFile("/index.html");
             app.Run();
         }
