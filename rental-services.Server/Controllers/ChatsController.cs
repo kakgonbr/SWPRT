@@ -45,11 +45,10 @@ namespace rental_services.Server.Controllers
         [HttpGet("{chatId}/messages")]
         public async Task<ActionResult<IEnumerable<ChatMessageDTO>>> GetMessages(int chatId)
         {
-            var userId = int.Parse(User.FindFirstValue("VroomVroomUserId")!);
-            //var userId = await _chatService.GetIDBasedOnMailForChat(User.FindFirstValue(ClaimTypes.Email) ?? string.Empty);
-            //test
-            if (userId == 0)
+            var userIdClaim = User.FindFirstValue("VroomVroomUserId");
+            if (string.IsNullOrEmpty(userIdClaim))
                 return Forbid("lack claim id in the token");
+            var userId = int.Parse(userIdClaim);
             var isCustomer = User.IsInRole("Customer");
             _logger.LogInformation("User {UserId} is a {Role} and is requesting messages for chat {ChatId}", userId, isCustomer ? "Customer" : "Staff", chatId);
             var messages = await _chatService.GetMessagesForChatAsync(chatId, userId, isCustomer);
@@ -67,11 +66,10 @@ namespace rental_services.Server.Controllers
         [Authorize(Roles = "Customer")]
         public async Task<ActionResult<ChatDTO>> CreateChat([FromBody] CreateChatRequest request)
         {
-            var userId = int.Parse(User.FindFirstValue("VroomVroomUserId")!);
-            //var userId = await _chatService.GetIDBasedOnMailForChat(User.FindFirstValue(ClaimTypes.Email) ?? string.Empty);
-            //test
-            if (userId == 0)
+            var userIdClaim = User.FindFirstValue("VroomVroomUserId");
+            if (string.IsNullOrEmpty(userIdClaim))
                 return Forbid("lack claim id in the token");
+            var userId = int.Parse(userIdClaim);
             var chat = await _chatService.CreateChatAsync(userId, request.Subject, request.Priority);
             return Ok(chat);
         }
@@ -82,11 +80,10 @@ namespace rental_services.Server.Controllers
         //[Authorize(Roles = "Staff")]
         public async Task<ActionResult<ChatDTO>> AssignStaff(int chatId)
         {
-            var staffId = int.Parse(User.FindFirstValue("VroomVroomUserId")!);
-            //var staffId = await _chatService.GetIDBasedOnMailForChat(User.FindFirstValue(ClaimTypes.Email) ?? string.Empty);
-            //test
-            if (staffId == 0)
+            var userIdClaim = User.FindFirstValue("VroomVroomUserId");
+            if (string.IsNullOrEmpty(userIdClaim))
                 return Forbid("lack claim id in the token");
+            var staffId = int.Parse(userIdClaim);
             var chat = await _chatService.AssignStaffAsync(chatId, staffId);
             if (chat == null) 
                 return NotFound();
