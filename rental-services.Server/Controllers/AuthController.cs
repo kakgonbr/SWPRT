@@ -171,7 +171,8 @@ public class AuthController : ControllerBase
         {
             new Claim(JwtRegisteredClaimNames.Sub,   user.Sub),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim(ClaimTypes.Role,               user.Role)
+            new Claim(ClaimTypes.Role,               user.Role),
+            new Claim("VroomVroomUserId", user.UserId.ToString())
         };
         
         string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? _jwtSettings.Key;
