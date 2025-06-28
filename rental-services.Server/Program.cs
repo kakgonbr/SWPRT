@@ -89,7 +89,7 @@ namespace rental_services.Server
                 .AddScoped<IBikeService, BikeService>()
                 .AddScoped<IOcrService, OcrService>()
                 .AddScoped<IChatRepository, ChatRepository>()
-                .AddScoped<IChatService, ChatService>();
+                .AddScoped<IChatService, ChatService>()
                 .AddScoped<IBookingRepository, BookingRepository>()
                 .AddScoped<IRentalService, RentalService>();
           
