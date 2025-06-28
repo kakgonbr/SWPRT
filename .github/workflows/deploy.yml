@@ -39,6 +39,26 @@ jobs:
         source: "published/"
         target: "/var/web"
 
+    - name: Copy images to temporary directory
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        key: ${{ secrets.VPS_DEPLOY_KEY }}
+        source: "images/"
+        target: "/tmp/images"
+
+    - name: Move images to web directory
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        key: ${{ secrets.VPS_DEPLOY_KEY }}
+        script: |
+          rm -rf /var/www/images/*
+          mv /tmp/images/* /var/www/images/
+          rmdir /tmp/images
+
     - name: Restart service on VPS
       uses: appleboy/ssh-action@v1.0.0
       with:

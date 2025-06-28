@@ -10,6 +10,8 @@ using rental_services.Server.Controllers;
 using rental_services.Server.Models;
 using rental_services.Server.Services;
 using rental_services.Server.Repositories;
+using Microsoft.Extensions.FileProviders;
+using System.Runtime.InteropServices;
 
 namespace rental_services.Server
 {
@@ -23,8 +25,12 @@ namespace rental_services.Server
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            builder.Logging.ClearProviders();
+            builder.Logging.AddConsole();
             // automapper
             builder.Services.AddAutoMapper(typeof(Utils.DTOMapper));
+            // schedulers
+            builder.Services.AddHostedService<Utils.FileCleanupService>();
 
             // Bind JWT config
             string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new InvalidOperationException("Environment Variable 'JWT_KEY' not found.");
@@ -74,8 +80,6 @@ namespace rental_services.Server
             // Add passsword hasher
             builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
             // Add services to the container.
-            builder.Logging.ClearProviders();
-            builder.Logging.AddConsole();
             // Add EF Core with SQL Server
             builder.Services.AddDbContext<RentalContext>(options =>
                 options.UseSqlServer(Environment.GetEnvironmentVariable("DATABASE_CONNECTION") ?? throw new InvalidOperationException("Environment Variable 'DATABASE_CONNECTION' not found.")));
@@ -116,6 +120,18 @@ namespace rental_services.Server
             // Use files
             app.UseDefaultFiles();
             app.UseStaticFiles();
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Directory.Exists(@"C:\images"))
+            {
+                Directory.CreateDirectory(@"C:\images");
+            }
+
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\images" : "/var/www/images"),
+                RequestPath = "/images"
+            });
+
             // Configure the HTTP request pipeline.
             if (app.Environment.IsDevelopment())
             {

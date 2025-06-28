@@ -1,0 +1,1 @@
+All images here will be moved to a special directory on the VPS, which then will be served statically under /images

@@ -36,6 +36,8 @@ import { format } from "date-fns";
 import ChangePasswordDialog from "../components/ChangePasswordDialog";
 import IdReviewDialog from "../components/IdReviewDialog";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 // Define the extracted ID data interface
 interface ExtractedIdData {
   fullName: string;
@@ -209,7 +211,7 @@ export default function ProfilePage() {
 
     try {
       const response = await fetch(
-        "http://localhost:5125/api/ocr/upload-license",
+          `${API}/api/ocr/upload-license`,
         {
           method: "POST",
           headers: {

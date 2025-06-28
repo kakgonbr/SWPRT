@@ -43,7 +43,7 @@ public class BikesController : ControllerBase
 
     [HttpDelete("{id}")]
     [Authorize(Roles = Utils.Config.Role.Admin)]
-    public async Task<ActionResult<string>> DeleteBike(int id)
+    public async Task<ActionResult<string>> DeleteBIkeModel(int id)
     {
         return await _bikeService.DeleteVehicleModel(id) ? Ok("Deleted.") : BadRequest("Failed to delete.");
     }
