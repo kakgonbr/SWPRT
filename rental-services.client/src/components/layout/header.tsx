@@ -162,7 +162,7 @@ export default function Header() {
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                 <Link to="/" className="flex items-center space-x-2">
                     <Bike className="h-8 w-8 text-primary" />
-                    <span className="font-bold text-xl text-primary">VroomVroom.vn</span>
+                    <span className="font-bold text-xl text-primary">VroomVroom.click</span>
                 </Link>
 
                 <div className="flex items-center space-x-4">

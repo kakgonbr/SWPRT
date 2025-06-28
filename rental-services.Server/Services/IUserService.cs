@@ -9,4 +9,5 @@ public interface IUserService
     void CreateUser(User user);
     void UpdateUser(User user);
     void DeleteUser(int id);
+    Task<User?> GetUserBySubAsync(string sub);
 }

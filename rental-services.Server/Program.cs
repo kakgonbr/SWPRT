@@ -65,7 +65,12 @@ namespace rental_services.Server
                     };
                 });
             // TODO: Add policies later for AddAuthorization()
-            builder.Services.AddAuthorization(); 
+            builder.Services.AddAuthorization(options =>
+            {
+                options.AddPolicy("AdminOrStaff", policy =>
+                policy.RequireRole("Admin", "Staff"));
+            }
+            );
             // Add passsword hasher
             builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
             // Add services to the container.
@@ -85,6 +90,9 @@ namespace rental_services.Server
                 .AddScoped<IOcrService, OcrService>()
                 .AddScoped<IChatRepository, ChatRepository>()
                 .AddScoped<IChatService, ChatService>();
+                .AddScoped<IBookingRepository, BookingRepository>()
+                .AddScoped<IRentalService, RentalService>();
+          
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
             {
@@ -128,7 +136,7 @@ namespace rental_services.Server
             // Add SignalR endpoint
             app.MapHub<Controllers.Realtime.ChatHub>("/hubs/chat");
             
-            app.MapFallbackToFile("/index.html");
+            app.MapFallbackToFile("wwwroot/index.html");
             app.Run();
         }
     }

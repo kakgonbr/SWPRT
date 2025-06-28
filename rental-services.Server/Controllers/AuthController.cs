@@ -11,6 +11,7 @@ using rental_services.Server.Models;
 using rental_services.Server.Models.DTOs;
 using rental_services.Server.Data;
 using rental_services.Server.Services;
+using Microsoft.EntityFrameworkCore;
 
 namespace rental_services.Server.Controllers;
 
@@ -79,7 +80,9 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         // Check if the user exists in the database
-        var existingUser = _db.Users.SingleOrDefault(u => u.Email == request.Email);
+        var existingUser = _db.Users
+            .Include(u => u.DriverLicenses)
+            .SingleOrDefault(u => u.Email == request.Email);
         if (existingUser == null || existingUser.PasswordHash == null)
         {
             Console.WriteLine("AuthController: Email not found in database.");
@@ -92,6 +95,7 @@ public class AuthController : ControllerBase
             Console.WriteLine("AuthController: Password verification failed for user " + existingUser.Email);
             return Unauthorized(new {Message = "Cannot log in: Invalid credentials"});
         }
+        
         // Generate JWT token
         var accessToken = GenerateJwtToken(existingUser, out var expires);
         var userDto = new UserDto(
@@ -108,7 +112,8 @@ public class AuthController : ControllerBase
             existingUser.DriverLicenses.Select(dl => new DriverLicenseDto(
                 dl.LicenseId, 
                 dl.HolderName,
-                dl.DateOfIssue
+                dl.DateOfIssue,
+                dl.ImageLicenseUrl
             )).SingleOrDefault()
         );
         return Ok(new LoginResponse(accessToken, null, expires, userDto));
@@ -150,7 +155,8 @@ public class AuthController : ControllerBase
             user.DriverLicenses.Select(dl => new DriverLicenseDto(
                 dl.LicenseId, 
                 dl.HolderName,
-                dl.DateOfIssue
+                dl.DateOfIssue,
+                dl.ImageLicenseUrl
             )).SingleOrDefault()
         );
         return Ok(dto);

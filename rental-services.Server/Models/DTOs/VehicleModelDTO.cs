@@ -14,7 +14,7 @@
         public string? ImageFile { get; set; }
 
         public int UpFrontPercentage { get; set; }
-
+ 
         public bool IsAvailable { get; set; }
         
         public decimal Rating { get; set; }

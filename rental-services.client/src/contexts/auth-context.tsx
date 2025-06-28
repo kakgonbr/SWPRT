@@ -37,6 +37,7 @@ interface DriverLicenseDto {
   licenseId: string;
   holderName: string;
   dateOfIssue: Date;
+  imageLicenseUrl?: string;
 }
 
 export interface LoginRequest {
