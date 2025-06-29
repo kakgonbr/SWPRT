@@ -34,6 +34,11 @@ namespace rental_services.Server.Controllers
         [Authorize(Roles = Utils.Config.Role.Admin)]
         public async Task<ActionResult<string>> Update(UserDto newUser)
         {
+            if (newUser.UserId == 1)
+            {
+                return BadRequest("Cannot edit root user.");
+            }
+
             return await _userService.UpdateUser(newUser) ? Ok("Updated.") : BadRequest("Failed.");
         }
     }

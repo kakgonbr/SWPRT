@@ -50,7 +50,7 @@ export default function UserEditDialog({
     editFormData,
     setEditFormData,
     onSave,
-    isSaving
+    isSaving,
 }: UserEditDialogProps) {
     console.log(editFormData.role);
 

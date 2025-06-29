@@ -32,6 +32,7 @@ export const useUserManagement = () => {
         isActive: true
     })
     const [isSaving, setIsSaving] = useState(false)
+    const [refreshToken, updateRefreshToken] = useState(0)
 
     const handleEditUser = (userToEdit: User) => {
         setSelectedUser(userToEdit)
@@ -64,6 +65,7 @@ export const useUserManagement = () => {
             })
 
             if (response.ok) {
+                updateRefreshToken(prev => prev + 1)
                 toast({
                     title: "User Updated",
                     description: "User information has been updated successfully.",
@@ -108,6 +110,7 @@ export const useUserManagement = () => {
         isSaving,
         handleEditUser,
         handleSaveUser,
-        handleCancel
+        handleCancel,
+        refreshToken
     }
 }

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Edit } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
@@ -11,16 +11,17 @@ import { type User } from '../../lib/types'
 const API = import.meta.env.VITE_API_BASE_URL;
 
 interface UsersTabProps {
-    onEditUser: (user: User) => void
+    onEditUser: (user: User) => void,
+    refreshToken: number
 }
 
-export default function UsersTab({ onEditUser }: UsersTabProps) {
+export default function UsersTab({ onEditUser, refreshToken }: UsersTabProps) {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
     const rawToken = localStorage.getItem('token');
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
+    const fetchUsers = useCallback(() => {
         if (!rawToken) {
             setError("No auth token found");
             setLoading(false);
@@ -45,6 +46,8 @@ export default function UsersTab({ onEditUser }: UsersTabProps) {
             })
             .finally(() => setLoading(false));
     }, [rawToken])
+
+    useEffect(() => { fetchUsers() }, [fetchUsers, refreshToken]);
 
     if (loading) return <div>Loading users...</div>;
     if (error) return <div>Error: {error}</div>;        ;
