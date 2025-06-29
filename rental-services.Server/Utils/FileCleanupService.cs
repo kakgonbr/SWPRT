@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace rental_services.Server.Utils
 {
     /// <summary>
+    /// UNUSED
     /// Runs every few days, clean files older than 30 days in the directory stated in the config
     /// </summary>
     public class FileCleanupService : BackgroundService

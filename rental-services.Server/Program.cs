@@ -30,7 +30,7 @@ namespace rental_services.Server
             // automapper
             builder.Services.AddAutoMapper(typeof(Utils.DTOMapper));
             // schedulers
-            builder.Services.AddHostedService<Utils.FileCleanupService>();
+            //builder.Services.AddHostedService<Utils.FileCleanupService>();
 
             // Bind JWT config
             string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new InvalidOperationException("Environment Variable 'JWT_KEY' not found.");
