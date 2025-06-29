@@ -1,27 +1,18 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import { useToast } from './use-toast'
+import type { User, UserRole } from '../lib/types'
 
-export interface User {
-    id: string
-    name: string
-    email: string
-    role: 'renter' | 'admin' | 'staff'
-    avatarUrl?: string
-    createdAt: Date
-    dateOfBirth?: string
-    address?: string
-    credentialIdNumber?: string
-    status: boolean
-}
+const API = import.meta.env.VITE_API_BASE_URL;
 
 interface UserFormData {
-    name: string
+    userId: number
+    fullName: string
     email: string
     role: 'renter' | 'admin' | 'staff'
     dateOfBirth: string
     address: string
     credentialIdNumber: string
-    status: boolean
+    isActive: boolean
 }
 
 export const useUserManagement = () => {
@@ -31,37 +22,40 @@ export const useUserManagement = () => {
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
     const [editFormData, setEditFormData] = useState<UserFormData>({
-        name: '',
+        userId : -1,
+        fullName: '',
         email: '',
         role: 'renter',
         dateOfBirth: '',
         address: '',
         credentialIdNumber: '',
-        status: true
+        isActive: true
     })
     const [isSaving, setIsSaving] = useState(false)
 
     const handleEditUser = (userToEdit: User) => {
         setSelectedUser(userToEdit)
         setEditFormData({
-            name: userToEdit.name,
+            userId: userToEdit.userId || -1,
+            fullName: userToEdit.fullName,
             email: userToEdit.email,
-            role: userToEdit.role,
+            role: userToEdit.role.toLowerCase() as UserRole,
             dateOfBirth: userToEdit.dateOfBirth || '',
             address: userToEdit.address || '',
             credentialIdNumber: userToEdit.credentialIdNumber || '',
-            status: userToEdit.status,
+            isActive: userToEdit.isActive,
         })
         setIsEditDialogOpen(true)
     }
 
     const handleSaveUser = async () => {
-        if (!selectedUser) return
+        if (!selectedUser || selectedUser.userId == -1) return
 
-        setIsSaving(true)
+        setIsSaving(true)        
+
         try {
-            const response = await fetch(`/api/admin/users/${selectedUser.id}`, {
-                method: 'PUT',
+            const response = await fetch(`${API}/api/users`, {
+                method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${localStorage.getItem('token')}`
@@ -95,13 +89,14 @@ export const useUserManagement = () => {
         setIsEditDialogOpen(false)
         setSelectedUser(null)
         setEditFormData({
-            name: '',
+            userId: -1,
+            fullName: '',
             email: '',
             role: 'renter',
             dateOfBirth: '',
             address: '',
             credentialIdNumber: '',
-            status: true
+            isActive: true
         })
     }
 

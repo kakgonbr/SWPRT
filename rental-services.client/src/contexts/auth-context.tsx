@@ -30,7 +30,7 @@ interface UserDto {
   dateOfBirth: Date | null;
   isActive: boolean;
   role: string;
-  driverLicenses: DriverLicenseDto | null;
+  driverLicenses: DriverLicenseDto[] | null;
 }
 
 interface DriverLicenseDto {

@@ -109,6 +109,20 @@ namespace rental_services.Server.Utils
             .ForMember(dest => dest.CustomerEmail, opt => opt.MapFrom(
                 src => src.User.Email
             ));
+
+            CreateMap<DriverLicense, DriverLicenseDto>();
+
+            CreateMap<User, UserDto>()
+            .ForMember(dest => dest.Role, opt => opt.MapFrom(
+                src => src.Role.ToLower()
+            ));
+            CreateMap<UserDto, User>()
+            .ForMember(dest => dest.Role, opt => opt.MapFrom(
+                src => src.Role[0].ToString().ToUpper() + src.Role.Substring(1)
+            ))
+            .ForMember(dest => dest.DriverLicenses, opt => opt.Ignore())
+            .ForMember(dest => dest.PhoneNumber, opt => opt.Ignore())
+            .ForMember(dest => dest.CreationDate, opt => opt.Ignore());
         }
     }
 }

@@ -1,17 +1,54 @@
+import { useState, useEffect } from 'react'
 import { Edit } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
 import { Button } from '../ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
-import { MOCK_USERS } from '../../lib/mock-data'
+//import { MOCK_USERS } from '../../lib/mock-data'
 import { format } from 'date-fns'
 import { type User } from '../../lib/types'
+
+const API = import.meta.env.VITE_API_BASE_URL;
 
 interface UsersTabProps {
     onEditUser: (user: User) => void
 }
 
 export default function UsersTab({ onEditUser }: UsersTabProps) {
+    const [users, setUsers] = useState<User[]>([]);
+    const [loading, setLoading] = useState(true);
+    const rawToken = localStorage.getItem('token');
+    const [error, setError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!rawToken) {
+            setError("No auth token found");
+            setLoading(false);
+            return;
+        }
+
+        fetch(`${API}/api/users`, {
+            headers: {
+                Authorization: `Bearer ${rawToken}`
+            }
+        })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to fetch users: ' + response.statusText);
+                return response.json();
+            })
+            .then((data: User[]) => {
+                setUsers(data);
+            })
+            .catch((err) => {
+                setError(err.message);
+                setUsers([]);
+            })
+            .finally(() => setLoading(false));
+    }, [rawToken])
+
+    if (loading) return <div>Loading users...</div>;
+    if (error) return <div>Error: {error}</div>;        ;
+
     return (
         <Card>
             <CardHeader>
@@ -20,26 +57,26 @@ export default function UsersTab({ onEditUser }: UsersTabProps) {
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
-                    {MOCK_USERS.map((user) => (
-                        <div key={user.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    {users.map((user) => (
+                        <div key={user.userId} className="flex items-center justify-between p-4 border rounded-lg">
                             <div className="flex items-center space-x-4">
                                 <Avatar className="w-12 h-12">
-                                    <AvatarImage src={user.avatarUrl || undefined} alt={user.name} />
+                                    <AvatarImage src={user.avatarUrl || undefined} alt={user.fullName} />
                                     <AvatarFallback>
-                                        {user.name.split(' ').map(n => n[0]).join('')}
+                                        {user.fullName.split(' ').map(n => n[0]).join('')}
                                     </AvatarFallback>
                                 </Avatar>
                                 <div>
-                                    <p className="font-medium">{user.name}</p>
+                                    <p className="font-medium">{user.fullName}</p>
                                     <p className="text-sm text-muted-foreground">{user.email}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        Joined {format(user.createdAt, 'MMM yyyy')}
+                                        Joined {format(user.creationDate, 'MMM yyyy')}
                                     </p>
                                 </div>
                             </div>
                             <div className="flex items-center space-x-2">
-                                <Badge variant={user.status ? 'default' : 'destructive'}>
-                                    {user.status ? 'Active' : 'Inactive'}
+                                <Badge variant={user.isActive ? 'default' : 'destructive'}>
+                                    {user.isActive ? 'Active' : 'Inactive'}
                                 </Badge>
                                 <Badge variant={
                                     user.role === 'admin' ? 'default' :

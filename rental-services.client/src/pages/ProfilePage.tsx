@@ -92,13 +92,13 @@ export default function ProfilePage() {
       email: user.email,
       dateOfBirth: String(user.dateOfBirth) || "",
       address: user.address || "",
-      licenseId: user.driverLicenses?.licenseId || "",
+        licenseId: user.driverLicenses?.at(0)?.licenseId || "",
     });
   }, [user, isAuthenticated, loading, navigate]);
 
   useEffect(() => {
-    if (user?.driverLicenses?.imageLicenseUrl) {
-      setUploadedImageUrl(user.driverLicenses.imageLicenseUrl);
+      if (user?.driverLicenses?.at(0)?.imageLicenseUrl) {
+      setUploadedImageUrl(user.driverLicenses.at(0)!.imageLicenseUrl!);
     }
   }, [user]);
 
@@ -145,7 +145,7 @@ export default function ProfilePage() {
       email: user.email,
       dateOfBirth: String(user.dateOfBirth) || "",
       address: user.address || "",
-      licenseId: user.driverLicenses?.licenseId || "",
+      licenseId: user.driverLicenses?.at(0)?.licenseId || "",
     });
     setIsEditing(false);
   };

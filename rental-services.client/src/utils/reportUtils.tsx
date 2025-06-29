@@ -53,7 +53,7 @@ export const generateReportData = (period: string) => {
     )
 
     const filteredUsers = MOCK_USERS.filter(user =>
-        user.createdAt >= start && user.createdAt <= end
+        user.creationDate >= start && user.creationDate <= end
     )
 
     // Calculate metrics
@@ -106,10 +106,10 @@ export const generateReportData = (period: string) => {
         },
         rentals: filteredRentals.map(rental => {
             const bike = MOCK_BIKES.find(b => b.id === rental.bikeId)
-            const user = MOCK_USERS.find(u => u.id === rental.userId)
+            const user = MOCK_USERS.find(u => u.userId === rental.userId)
             return {
                 rentalId: rental.id,
-                userName: user?.name || 'Unknown',
+                userName: user?.fullName || 'Unknown',
                 userEmail: user?.email || 'Unknown',
                 bikeName: bike?.name || 'Unknown',
                 bikeType: bike?.type || 'Unknown',
@@ -124,15 +124,15 @@ export const generateReportData = (period: string) => {
         popularBikes,
         usersByRole,
         users: filteredUsers.map(user => ({
-            userId: user.id,
-            name: user.name,
+            userId: user.userId,
+            name: user.fullName,
             email: user.email,
             role: user.role,
-            status: user.status ? 'Active' : 'Inactive',
-            createdAt: format(user.createdAt, 'yyyy-MM-dd HH:mm:ss'),
-            totalRentals: filteredRentals.filter(r => r.userId === user.id).length,
+            status: user.isActive ? 'Active' : 'Inactive',
+            createdAt: format(user.creationDate, 'yyyy-MM-dd HH:mm:ss'),
+            totalRentals: filteredRentals.filter(r => r.userId === user.userId).length,
             totalSpent: filteredRentals
-                .filter(r => r.userId === user.id)
+                .filter(r => r.userId === user.userId)
                 .reduce((sum, r) => sum + r.totalPrice, 0)
         }))
     }

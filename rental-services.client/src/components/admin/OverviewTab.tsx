@@ -9,7 +9,7 @@ export default function OverviewTab() {
         .slice(0, 5)
 
     const recentUsers = MOCK_USERS
-        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+        .sort((a, b) => b.creationDate.getTime() - a.creationDate.getTime())
         .slice(0, 5)
 
     return (
@@ -60,14 +60,14 @@ export default function OverviewTab() {
                 <CardContent>
                     <div className="space-y-4">
                         {recentUsers.map((user) => (
-                            <div key={user.id} className="flex items-center space-x-4">
+                            <div key={user.userId} className="flex items-center space-x-4">
                                 <img
                                     src={user.avatarUrl || '/default-avatar.png'}
-                                    alt={user.name}
+                                    alt={user.fullName}
                                     className="w-10 h-10 rounded-full"
                                 />
                                 <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium truncate">{user.name}</p>
+                                    <p className="text-sm font-medium truncate">{user.fullName}</p>
                                     <p className="text-xs text-muted-foreground">{user.email}</p>
                                 </div>
                                 <Badge variant={

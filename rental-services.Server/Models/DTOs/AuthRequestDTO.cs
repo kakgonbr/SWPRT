@@ -3,7 +3,7 @@
 public record UserDto(
     int UserId, 
     string Email, 
-    string PhoneNumber, 
+    string? PhoneNumber, 
     string? FullName, 
     string? Address, 
     DateOnly CreationDate, 
@@ -12,7 +12,7 @@ public record UserDto(
     bool IsActive,
     string Role,
     // TODO: Change DriverLicenseDto? to IEnumerable<DriverLicenseDto>? if multiple licenses are allowed
-    DriverLicenseDto? DriverLicenses
+    IEnumerable<DriverLicenseDto>? DriverLicenses
 );
 
 public record LoginRequest(
