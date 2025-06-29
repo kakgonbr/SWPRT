@@ -19,30 +19,18 @@ import {
 import { Button } from '../ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
 import { format } from 'date-fns'
+import type { User } from '../../lib/types'
 
-
-// Define proper types instead of importing from AdminDashboard
-interface User {
-    id: string
-    name: string
-    email: string
-    role: 'renter' | 'admin' | 'staff'
-    dateOfBirth: string
-    address: string
-    credentialIdNumber: string
-    status: boolean
-    avatarUrl?: string
-    createdAt: string | Date
-}
 
 interface UserFormData {
-    name: string
+    userId: number
+    fullName: string
     email: string
     role: 'renter' | 'admin' | 'staff'
     dateOfBirth: string
     address: string
     credentialIdNumber: string
-    status: boolean
+    isActive: boolean
 }
 
 interface UserEditDialogProps {
@@ -62,8 +50,10 @@ export default function UserEditDialog({
     editFormData,
     setEditFormData,
     onSave,
-    isSaving
+    isSaving,
 }: UserEditDialogProps) {
+    console.log(editFormData.role);
+
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setEditFormData(prev => ({
             ...prev,
@@ -81,7 +71,7 @@ export default function UserEditDialog({
     const handleStatusChange = (value: string) => {
         setEditFormData(prev => ({
             ...prev,
-            status: value === 'active'
+            isActive: value === 'active'
         }))
     }
 
@@ -91,7 +81,7 @@ export default function UserEditDialog({
                 <DialogHeader>
                     <DialogTitle>Edit User Information</DialogTitle>
                     <DialogDescription>
-                        Update user details and account settings for {selectedUser?.name}
+                        Update user details and account settings for {selectedUser?.fullName}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -100,15 +90,15 @@ export default function UserEditDialog({
                         {/* User Avatar and Basic Info */}
                         <div className="flex items-center space-x-4 pb-4 border-b">
                             <Avatar className="w-16 h-16">
-                                <AvatarImage src={selectedUser.avatarUrl || undefined} alt={selectedUser.name} />
+                                <AvatarImage src={selectedUser.avatarUrl || undefined} alt={selectedUser.fullName} />
                                 <AvatarFallback>
-                                    {selectedUser.name.split(' ').map(n => n[0]).join('')}
+                                    {selectedUser.fullName.split(' ').map(n => n[0]).join('')}
                                 </AvatarFallback>
                             </Avatar>
                             <div>
-                                <h3 className="text-lg font-medium">{selectedUser.name}</h3>
+                                <h3 className="text-lg font-medium">{selectedUser.fullName}</h3>
                                 <p className="text-sm text-muted-foreground">
-                                    Member since {format(new Date(selectedUser.createdAt), 'MMM yyyy')}
+                                    Member since {format(new Date(selectedUser.creationDate), 'MMM yyyy')}
                                 </p>
                             </div>
                         </div>
@@ -119,8 +109,8 @@ export default function UserEditDialog({
                                 <Label htmlFor="edit-name">Full Name</Label>
                                 <Input
                                     id="edit-name"
-                                    name="name"
-                                    value={editFormData.name}
+                                    name="fullName"
+                                    value={editFormData.fullName}
                                     onChange={handleInputChange}
                                     placeholder="Enter full name"
                                 />
@@ -157,7 +147,7 @@ export default function UserEditDialog({
                             <div className="space-y-2">
                                 <Label htmlFor="edit-status">Account Status</Label>
                                 <Select
-                                    value={editFormData.status ? 'active' : 'inactive'}
+                                    value={editFormData.isActive ? 'active' : 'inactive'}
                                     onValueChange={handleStatusChange}
                                 >
                                     <SelectTrigger>

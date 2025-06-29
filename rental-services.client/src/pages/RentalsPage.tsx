@@ -56,7 +56,7 @@ export default function RentalsPage() {
 
         // Filter rentals for current user
         setTimeout(() => {
-            const userRentals = MOCK_RENTALS.filter(r => parseInt(r.userId) === user?.userId)
+            const userRentals = MOCK_RENTALS.filter(r => r.userId === user?.userId)
                 .sort((a, b) => a.orderDate && b.orderDate ? b.orderDate.getTime() - a.orderDate.getTime() : 0)
 
             setRentals(userRentals)
