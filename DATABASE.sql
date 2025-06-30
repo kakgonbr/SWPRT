@@ -85,7 +85,7 @@ CREATE TABLE VehicleModels
 (
     ModelId int PRIMARY KEY IDENTITY(1, 1),
     VehicleTypeId int NOT NULL,
-    ShopId int NOT NULL,
+    --ShopId int NOT NULL,
     ModelName nvarchar(100) NOT NULL,
     RatePerDay bigint NOT NULL,
     ManufacturerId int NOT NULL,
@@ -95,8 +95,9 @@ CREATE TABLE VehicleModels
     IsAvailable bit NOT NULL DEFAULT 0,
 
     CONSTRAINT fk_vhm_vht FOREIGN KEY (VehicleTypeId) REFERENCES VehicleTypes,
-    CONSTRAINT fk_vhm_manu FOREIGN KEY (ManufacturerId) REFERENCES Manufacturers,
-    CONSTRAINT fk_vhm_shop FOREIGN KEY (ShopId) REFERENCES Shops
+    CONSTRAINT fk_vhm_manu FOREIGN KEY (ManufacturerId) REFERENCES Manufacturers
+    --,
+    --CONSTRAINT fk_vhm_shop FOREIGN KEY (ShopId) REFERENCES Shops
 )
 
 CREATE TABLE Reviews
@@ -117,8 +118,10 @@ CREATE TABLE Vehicles
     VehicleId int PRIMARY KEY IDENTITY(1, 1),
     ModelId int NOT NULL,
     Condition nvarchar(100) NOT NULL DEFAULT 'Normal',
+    ShopId int NOT NULL
 
-    CONSTRAINT fk_vehicle_model FOREIGN KEY (ModelId) REFERENCES VehicleModels
+    CONSTRAINT fk_vehicle_model FOREIGN KEY (ModelId) REFERENCES VehicleModels,
+    CONSTRAINT fk_vehicle_shop FOREIGN KEY (ShopId) REFERENCES Shops
 )
 
 CREATE TABLE Bookings
@@ -196,6 +199,7 @@ CREATE TABLE ChatMessages
     ChatId int NOT NULL,
     SenderId int NOT NULL,
     Content nvarchar(MAX) NOT NULL, -- maybe enforce length checks on the API
+    SendTime datetime NOT NULL DEFAULT GETDATE(),
 
     CONSTRAINT fk_chtmsg_chat FOREIGN KEY (ChatId) REFERENCES Chats,
     CONSTRAINT fk_chtmsg_sender FOREIGN KEY (SenderId) REFERENCES Users
@@ -285,45 +289,42 @@ VALUES
     (N'456 Đường Nguyễn Huệ, Quận 1, TP.HCM', 'Open');
 
 -- Insert into VehicleModels (15 rows: 5 per vehicle type)
-INSERT INTO VehicleModels (VehicleTypeId, ShopId, ModelName, RatePerDay, ManufacturerId, ImageFile, Description, UpFrontPercentage, IsAvailable)
+INSERT INTO VehicleModels (VehicleTypeId, ModelName, RatePerDay, ManufacturerId, ImageFile, Description, UpFrontPercentage, IsAvailable)
 VALUES 
-    -- Shop 1: 8 models
-    (1, 1, N'Wave Alpha', 100000, 1, 'wave_alpha.jpg', N'Popular motorbike for daily use.', 50, 1),
-    (1, 1, N'Sirius', 120000, 2, 'sirius.jpg', N'Reliable and fuel-efficient.', 50, 1),
-    (1, 1, N'Blade', 105000, 1, 'blade.jpg', N'Affordable and durable.', 50, 1),
-    (2, 1, N'Winner X', 150000, 1, 'winner_x.jpg', N'Sporty underbone motorbike.', 50, 1),
-    (2, 1, N'Exciter', 160000, 2, 'exciter.jpg', N'Popular choice for young riders.', 50, 1),
-    (2, 1, N'Liberty', 145000, 3, 'liberty.jpg', N'Elegant Italian design.', 50, 1),
-    (3, 1, N'CB150R', 200000, 1, 'cb150r.jpg', N'Naked bike with sporty performance.', 50, 1),
-    (3, 1, N'R15', 220000, 2, 'r15.jpg', N'Sport bike with racing DNA.', 50, 1),
-    -- Shop 2: 7 models
-    (1, 2, N'Future', 110000, 1, 'future.jpg', N'Modern design with good performance.', 50, 1),
-    (1, 2, N'Jupiter', 115000, 2, 'jupiter.jpg', N'Sporty look with smooth ride.', 50, 1),
-    (2, 2, N'Air Blade', 140000, 1, 'air_blade.jpg', N'Stylish scooter with good performance.', 50, 1),
-    (2, 2, N'NVX', 155000, 2, 'nvx.jpg', N'Powerful scooter with modern features.', 50, 1),
-    (3, 2, N'CBR150R', 210000, 1, 'cbr150r.jpg', N'Fully faired sport bike.', 50, 1),
-    (3, 2, N'MT-15', 215000, 2, 'mt15.jpg', N'Street fighter style.', 50, 1),
-    (3, 2, N'Medley', 205000, 3, 'medley.jpg', N'Premium scooter with large wheels.', 50, 1);
-
+    (1, N'Wave Alpha', 100000, 1, 'wave_alpha.jpg', N'Popular motorbike for daily use.', 50, 1),
+    (1, N'Sirius', 120000, 2, 'sirius.jpg', N'Reliable and fuel-efficient.', 50, 1),
+    (1, N'Blade', 105000, 1, 'blade.jpg', N'Affordable and durable.', 50, 1),
+    (2, N'Winner X', 150000, 1, 'winner_x.jpg', N'Sporty underbone motorbike.', 50, 1),
+    (2, N'Exciter', 160000, 2, 'exciter.jpg', N'Popular choice for young riders.', 50, 1),
+    (2, N'Liberty', 145000, 3, 'liberty.jpg', N'Elegant Italian design.', 50, 1),
+    (3, N'CB150R', 200000, 1, 'cb150r.jpg', N'Naked bike with sporty performance.', 50, 1),
+    (3, N'R15', 220000, 2, 'r15.jpg', N'Sport bike with racing DNA.', 50, 1),
+    (1, N'Future', 110000, 1, 'future.jpg', N'Modern design with good performance.', 50, 1),
+    (1, N'Jupiter', 115000, 2, 'jupiter.jpg', N'Sporty look with smooth ride.', 50, 1),
+    (2, N'Air Blade', 140000, 1, 'air_blade.jpg', N'Stylish scooter with good performance.', 50, 1),
+    (2, N'NVX', 155000, 2, 'nvx.jpg', N'Powerful scooter with modern features.', 50, 1),
+    (3, N'CBR150R', 210000, 1, 'cbr150r.jpg', N'Fully faired sport bike.', 50, 1),
+    (3, N'MT-15', 215000, 2, 'mt15.jpg', N'Street fighter style.', 50, 1),
+    (3, N'Medley', 205000, 3, 'medley.jpg', N'Premium scooter with large wheels.', 50, 1);
 
 -- Insert into Vehicles (45 rows: 3 per model)
-INSERT INTO Vehicles (ModelId, Condition)
+INSERT INTO Vehicles (ModelId, Condition, ShopId)
 VALUES 
-    (1, 'Normal'), (1, 'Normal'), (1, 'Normal'), -- Shop 1: 24 vehicles
-    (2, 'Normal'), (2, 'Normal'), (2, 'Normal'),
-    (3, 'Normal'), (3, 'Normal'), (3, 'Normal'),
-    (4, 'Normal'), (4, 'Normal'), (4, 'Normal'),
-    (5, 'Normal'), (5, 'Normal'), (5, 'Normal'),
-    (6, 'Normal'), (6, 'Normal'), (6, 'Normal'),
-    (7, 'Normal'), (7, 'Normal'), (7, 'Normal'),
-    (8, 'Normal'), (8, 'Normal'), (8, 'Normal'),
-    (9, 'Normal'), (9, 'Normal'), (9, 'Normal'), -- Shop 2: 21 vehicles
-    (10, 'Normal'), (10, 'Normal'), (10, 'Normal'),
-    (11, 'Normal'), (11, 'Normal'), (11, 'Normal'),
-    (12, 'Normal'), (12, 'Normal'), (12, 'Normal'),
-    (13, 'Normal'), (13, 'Normal'), (13, 'Normal'),
-    (14, 'Normal'), (14, 'Normal'), (14, 'Normal'),
-    (15, 'Normal'), (15, 'Normal'), (15, 'Normal');
+    (1, 'Normal', 1), (1, 'Normal', 1), (1, 'Normal', 1), -- Shop 1: 24 vehicles
+    (2, 'Normal', 1), (2, 'Normal', 2), (2, 'Normal', 2),
+    (3, 'Normal', 1), (3, 'Normal', 2), (3, 'Normal', 1),
+    (4, 'Normal', 1), (4, 'Normal', 1), (4, 'Normal', 1),
+    (5, 'Normal', 1), (5, 'Normal', 1), (5, 'Normal', 2),
+    (6, 'Normal', 1), (6, 'Normal', 1), (6, 'Normal', 1),
+    (7, 'Normal', 1), (7, 'Normal', 1), (7, 'Normal', 1),
+    (8, 'Normal', 1), (8, 'Normal', 2), (8, 'Normal', 2),
+    (9, 'Normal', 1), (9, 'Normal', 2), (9, 'Normal', 1), -- Shop 2: 21 vehicles
+    (10, 'Normal', 1), (10, 'Normal', 1), (10, 'Normal', 1),
+    (11, 'Normal', 2), (11, 'Normal', 1), (11, 'Normal', 1),
+    (12, 'Normal', 2), (12, 'Normal', 1), (12, 'Normal', 2),
+    (13, 'Normal', 2), (13, 'Normal', 1), (13, 'Normal', 2),
+    (14, 'Normal', 1), (14, 'Normal', 2), (14, 'Normal', 1),
+    (15, 'Normal', 1), (15, 'Normal', 2), (15, 'Normal', 1);
 
 INSERT INTO Reviews (UserId, ModelId, Rate, Comment, IsVisible)
 VALUES

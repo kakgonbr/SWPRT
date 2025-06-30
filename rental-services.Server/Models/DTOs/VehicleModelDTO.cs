@@ -21,6 +21,6 @@
 
         public string VehicleType { get; set; } = null!;
 
-        public string Shop { get; set; } = null!;
+        public IEnumerable<string> Shops { get; set; } = null!;
     }
 }
