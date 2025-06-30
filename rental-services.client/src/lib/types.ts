@@ -1,11 +1,11 @@
 export type UserRole = 'renter' | 'admin' | 'staff';
 
 export interface User {
-    id: string;
+    userId: number;
     email: string;
-    name: string;
+    fullName: string;
     role: UserRole;
-    status: boolean; //0: active, 1: deactive
+    isActive: boolean; //0: active, 1: deactive
     avatarUrl?: string;
     lastLogin?: Date;
     feedbackCount?: number;
@@ -13,7 +13,7 @@ export interface User {
     address?: string;
     credentialIdNumber?: string;
     credentialIdImageUrl?: string;
-    createdAt: Date; // Added to track user sign-up date
+    creationDate: Date; // Added to track user sign-up date
 }
 
 export interface VehicleModelDTO {
@@ -55,7 +55,7 @@ export interface Bike {
 export interface Rental {
     id: string;
     bikeId: string;
-    userId: string;
+    userId: number;
     startDate: Date;
     endDate: Date;
     totalPrice: number;
@@ -89,7 +89,7 @@ export type AdminSupportMessageStatus = 'New' | 'In Progress' | 'Replied' | 'Res
 // Kept for staff panel reference if needed.
 export interface AdminSupportMessage {
     id: string;
-    userId: string;
+    userId: number;
     userName: string;
     userEmail: string;
     subject: string;

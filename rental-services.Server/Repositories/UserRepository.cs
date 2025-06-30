@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using rental_services.Server.Data;
 using rental_services.Server.Models;
+using rental_services.Server.Models.DTOs;
 
 namespace rental_services.Server.Repositories;
 
@@ -13,11 +14,11 @@ public class UserRepository : IUserRepository
         _db = db;
     }
 
-    public async Task<User> GetById(int id)
+    public async Task<User?> GetById(int id)
     {
         return await _db.Users
             .Include(u => u.DriverLicenses)
-            .FirstOrDefaultAsync(u => u.UserId == id);
+            .SingleOrDefaultAsync(u => u.UserId == id);
     }
 
     public async Task<User?> GetBySub(string sub)
@@ -31,10 +32,10 @@ public class UserRepository : IUserRepository
         _db.SaveChanges();
     }
 
-    public void Update(User user)
+    public async Task<int> Update(User user)
     {
         _db.Users.Update(user);
-        _db.SaveChanges();
+        return await _db.SaveChangesAsync();
     }
 
     public async void Delete(int id)
@@ -46,4 +47,15 @@ public class UserRepository : IUserRepository
             _db.SaveChanges();
         }
     }
+
+    public async Task<List<User>> GetAll()
+    {
+        return await _db.Users.ToListAsync();
+    }
+
+    public async Task<int> SaveAsync()
+    {
+        return await _db.SaveChangesAsync();
+    }
+
 }

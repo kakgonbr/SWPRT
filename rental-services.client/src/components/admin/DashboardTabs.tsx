@@ -6,10 +6,11 @@ import RentalsTab from './RentalsTab'
 import FeedbackManagement from './FeedbackManagement'
 
 interface DashboardTabsProps {
-    onEditUser: (user: any) => void
+    onEditUser: (user: any) => void,
+    refreshToken : number
 }
 
-export default function DashboardTabs({ onEditUser }: DashboardTabsProps) {
+export default function DashboardTabs({ onEditUser, refreshToken }: DashboardTabsProps) {
     return (
         <Tabs defaultValue="users" className="w-full">
             <TabsList className="grid w-full grid-cols-4">
@@ -32,7 +33,7 @@ export default function DashboardTabs({ onEditUser }: DashboardTabsProps) {
             </TabsList>
 
             <TabsContent value="users" className="mt-6">
-                <UsersTab onEditUser={onEditUser} />
+                <UsersTab onEditUser={onEditUser} refreshToken={refreshToken} />
             </TabsContent>
 
             <TabsContent value="bikes" className="mt-6">

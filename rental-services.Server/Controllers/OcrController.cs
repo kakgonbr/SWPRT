@@ -31,11 +31,14 @@ namespace rental_services.Server.Controllers
         [HttpPost("upload-license")]
         public async Task<IActionResult> UploadAndProcessLicense(IFormFile image)
         {
-            if (image == null || image.Length == 0)
-                return BadRequest("Ảnh không được để trống.");
-            
-            // upload this image to the server  
-            var imageUrl = await UploadImageToServer(image);
+            string status = await ImageUploadHandler.Upload(image);
+
+            if (status.StartsWith("Failed"))
+            {
+                return BadRequest(status);
+            }
+
+            var imageUrl = $"{Request.Scheme}://{Request.Host}/images/{status}";
 
             string extractedText;
             try
@@ -46,6 +49,7 @@ namespace rental_services.Server.Controllers
                     await image.CopyToAsync(memoryStream);
                     var imageBytes = memoryStream.ToArray();
 
+                    _logger.LogInformation("CWD: {Directory}", Directory.GetCurrentDirectory());
                     using (var engine = new TesseractEngine(@"./tessdata", "vie", EngineMode.Default))
                     {
                         using (var img = Pix.LoadFromMemory(imageBytes))
@@ -107,6 +111,13 @@ namespace rental_services.Server.Controllers
             }
         }
 
+        /// <summary>
+        /// UNUSED
+        /// </summary>
+        /// <param name="image"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        /// <exception cref="Exception"></exception>
         private async Task<string> UploadImageToServer(IFormFile image)
 {
     try

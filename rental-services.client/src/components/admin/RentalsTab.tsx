@@ -177,7 +177,7 @@ export default function RentalsTab() {
                                     <div className="flex items-center space-x-4">
                                         {imgError ? (
                                              <img
-                                            src= "/placeholder-bike.png"
+                                            src= "/images/placeholder-bike.png"
                                             alt="Placeholder"
                                             className="w-16 h-16 object-cover rounded"
                                             />

@@ -114,7 +114,7 @@ public class AuthController : ControllerBase
                 dl.HolderName,
                 dl.DateOfIssue,
                 dl.ImageLicenseUrl
-            )).SingleOrDefault()
+            ))
         );
         return Ok(new LoginResponse(accessToken, null, expires, userDto));
     }
@@ -141,25 +141,25 @@ public class AuthController : ControllerBase
         var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var user = await _userService.GetUser(userId);
         if (user == null) return NotFound(new {Message = "User not found"});
-        var dto = new UserDto(
-            user.UserId,
-            user.Email,
-            user.PhoneNumber,
-            user.FullName,
-            user.Address,
-            user.CreationDate,
-            user.EmailConfirmed,
-            user.DateOfBirth,
-            user.IsActive,
-            user.Role,
-            user.DriverLicenses.Select(dl => new DriverLicenseDto(
-                dl.LicenseId, 
-                dl.HolderName,
-                dl.DateOfIssue,
-                dl.ImageLicenseUrl
-            )).SingleOrDefault()
-        );
-        return Ok(dto);
+        //var dto = new UserDto(
+        //    user.UserId,
+        //    user.Email,
+        //    user.PhoneNumber,
+        //    user.FullName,
+        //    user.Address,
+        //    user.CreationDate,
+        //    user.EmailConfirmed,
+        //    user.DateOfBirth,
+        //    user.IsActive,
+        //    user.Role,
+        //    user.DriverLicenses.Select(dl => new DriverLicenseDto(
+        //        dl.LicenseId, 
+        //        dl.HolderName,
+        //        dl.DateOfIssue,
+        //        dl.ImageLicenseUrl
+        //    )).SingleOrDefault()
+        //);
+        return Ok(user);
     }
     
     /// <summary>
