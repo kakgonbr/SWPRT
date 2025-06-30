@@ -235,6 +235,72 @@ CREATE TABLE Reports
     CONSTRAINT fk_rep_type FOREIGN KEY (TypeId) REFERENCES ReportTypes
 )
 
+CREATE TABLE Banners
+(
+    BannerId int PRIMARY KEY IDENTITY(1, 1),
+    Title nvarchar(50) NOT NULL,
+    Message nvarchar(256) NOT NULL,
+    StartTime datetime NOT NULL DEFAULT GETDATE(),
+    EndTime datetime NOT NULL,
+    ButtonText nvarchar(50) NOT NULL,
+    ButtonLink varchar(50) NOT NULL,
+    Type varchar(10) NOT NULL,
+    Background varchar(7) NOT NULL,
+    TextColor varchar(7) NOT NULL,
+    Priority int NOT NULL DEFAULT 1,
+    IsActive bit NOT NULL DEFAULT 0,
+    ShowOnce bit NOT NULL DEFAULT 0,
+
+    CONSTRAINT ck_ban_type CHECK (Type IN ('Info', 'Warning', 'Success', 'Error', 'Promotion')),
+    CONSTRAINT ck_ban_date CHECK (EndTime > StartTime)
+)
+
+INSERT INTO Banners 
+(Title, Message, StartTime, EndTime, ButtonText, ButtonLink, Type, Background, TextColor, Priority, IsActive, ShowOnce)
+VALUES
+-- 1. Info Banner
+('Welcome Back!', 
+ 'Check out our new features and updates for July 2025.', 
+ '2025-07-01T08:00:00', 
+ '2025-07-10T23:59:59', 
+ 'Learn More', 
+ '/features', 
+ 'Info', 
+ '#e3f2fd', 
+ '#0d47a1', 
+ 2, 
+ 1, 
+ 0),
+
+-- 2. Promotion Banner
+('Limited Offer!', 
+ 'Get 20% off on all bookings until July 5th. Use code JULY20 at checkout!', 
+ '2025-07-01T00:00:00', 
+ '2025-07-05T23:59:59', 
+ 'Book Now', 
+ '/promo', 
+ 'Promotion', 
+ '#fff8e1', 
+ '#bf360c', 
+ 1, 
+ 1, 
+ 1),
+
+-- 3. Warning Banner
+('Scheduled Maintenance', 
+ 'Our site will be undergoing scheduled maintenance on July 3rd from 2am to 5am UTC.', 
+ '2025-07-02T20:00:00', 
+ '2025-07-03T05:00:00', 
+ 'View Details', 
+ '/maintenance', 
+ 'Warning', 
+ '#fff3e0', 
+ '#ff6f00', 
+ 3, 
+ 0, 
+ 0);
+
+
 -- Insert into Users (10 rows)
 -- Pass: Abc@12345
 INSERT INTO Users (Email, PhoneNumber, PasswordHash, Role, FullName, Address, CreationDate, EmailConfirmed, DateOfBirth, IsActive, Sub)

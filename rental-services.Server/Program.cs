@@ -95,8 +95,10 @@ namespace rental_services.Server
                 .AddScoped<IChatRepository, ChatRepository>()
                 .AddScoped<IChatService, ChatService>()
                 .AddScoped<IBookingRepository, BookingRepository>()
-                .AddScoped<IRentalService, RentalService>();
-          
+                .AddScoped<IRentalService, RentalService>()
+                .AddScoped<IBannerRepository, BannerRepository>()
+                .AddScoped<IAdminControlPanelService, AdminControlPanelService>();
+
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
             {
