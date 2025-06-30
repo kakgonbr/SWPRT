@@ -13,6 +13,8 @@ public partial class ChatMessage
 
     public string Content { get; set; } = null!;
 
+    public DateTime SendTime { get; set; }
+
     public virtual Chat Chat { get; set; } = null!;
 
     public virtual User Sender { get; set; } = null!;
