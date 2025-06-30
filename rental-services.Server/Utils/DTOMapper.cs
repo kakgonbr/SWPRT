@@ -17,8 +17,8 @@ namespace rental_services.Server.Utils
             .ForMember(dest => dest.VehicleType, opt => opt.MapFrom(
                 src => src.VehicleType.VehicleTypeName
             ))
-            .ForMember(dest => dest.Shop, opt => opt.MapFrom(
-                src => src.Shop.Address
+            .ForMember(dest => dest.Shops, opt => opt.MapFrom(
+                src => src.Vehicles.GroupBy(v => v.Shop.Address).Select(g => g.First().Shop.Address).ToList()
             ))
             .ForMember(dest => dest.Rating, opt => opt.MapFrom(
                 src => src.Reviews.Any()
@@ -39,9 +39,9 @@ namespace rental_services.Server.Utils
             .ForMember(dest => dest.VehicleType, opt => opt.MapFrom(
                 src => src.VehicleType.VehicleTypeName
             ))
-            .ForMember(dest => dest.Shop, opt => opt.MapFrom(
-                src => src.Shop.Address
-            ))
+            //.ForMember(dest => dest.Shop, opt => opt.MapFrom(
+            //    src => src.Shop.Address
+            //))
             //.ForMember(dest => dest.Peripherals, opt => opt.MapFrom(
             //    src => src.Peripherals.Select(p => new PeripheralDTO
             //    {
@@ -59,9 +59,15 @@ namespace rental_services.Server.Utils
             .ForMember(dest => dest.Vehicles, opt => opt.Ignore())
             .ForMember(dest => dest.Reviews, opt => opt.Ignore())
             .ForMember(dest => dest.Manufacturer, opt => opt.Ignore())
-            .ForMember(dest => dest.Shop, opt => opt.Ignore())
+            //.ForMember(dest => dest.Shop, opt => opt.Ignore())
             .ForMember(dest => dest.VehicleType, opt => opt.Ignore())
-            .ForMember(dest => dest.PeripheralsNavigation, opt => opt.Ignore());
+            .ForMember(dest => dest.PeripheralsNavigation, opt => opt.Ignore())
+            .ForMember(dest => dest.Vehicles, opt => opt.Ignore());
+
+            // shop
+            CreateMap<Shop, ShopDTO>();
+            CreateMap<ShopDTO, Shop>()
+            .ForMember(dest => dest.Shopid, opt => opt.Ignore());
 
             // back and forth
             CreateMap<Vehicle, VehicleDTO>();

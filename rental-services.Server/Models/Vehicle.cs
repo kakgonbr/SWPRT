@@ -11,7 +11,11 @@ public partial class Vehicle
 
     public string Condition { get; set; } = null!;
 
+    public int ShopId { get; set; }
+
     public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
     public virtual VehicleModel Model { get; set; } = null!;
+
+    public virtual Shop Shop { get; set; } = null!;
 }
