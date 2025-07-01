@@ -1,5 +1,6 @@
 using rental_services.Server.Models;
 using rental_services.Server.Models.DTOs;
+using System;
 
 namespace rental_services.Server.Services
 {
@@ -181,7 +182,14 @@ namespace rental_services.Server.Services
             var result = new List<VehicleModel>();
             foreach (var model in vehicleModels)
             {
-                if (!string.IsNullOrEmpty(address) && !model.Shop.Address.Contains(address, StringComparison.OrdinalIgnoreCase))
+                //if (!string.IsNullOrEmpty(address) && !model.Shop.Address.Contains(address, StringComparison.OrdinalIgnoreCase))
+                //{
+                //    continue;
+                //}
+
+                var shopList = model.Vehicles.Select(v => v.Shop).ToList();
+
+                if (!string.IsNullOrEmpty(address) && !shopList.Any(s => s.Address.Contains(address, StringComparison.OrdinalIgnoreCase)))
                 {
                     continue;
                 }
@@ -242,7 +250,8 @@ namespace rental_services.Server.Services
                 return vehicleModels;
             }
             return vehicleModels
-                .Where(vm => vm.Shop.Equals(shop, StringComparison.OrdinalIgnoreCase))
+                //.Where(vm => vm.Shop.Equals(shop, StringComparison.OrdinalIgnoreCase))
+                .Where(vm => vm.Shops.Any(s => s.Equals(shop, StringComparison.OrdinalIgnoreCase)))
                 .ToList();
         }
     }

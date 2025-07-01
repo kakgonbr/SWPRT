@@ -26,7 +26,8 @@ export default function AdminDashboard() {
         isSaving,
         handleEditUser,
         handleSaveUser,
-        handleCancel
+        handleCancel,
+        refreshToken
     } = useUserManagement()
 
     // Authentication and authorization check
@@ -84,7 +85,7 @@ export default function AdminDashboard() {
             <StatsCards stats={stats} />
 
             {/* Dashboard Tabs */}
-            <DashboardTabs onEditUser={handleEditUser} />
+            <DashboardTabs onEditUser={handleEditUser} refreshToken={ refreshToken } />
 
             {/* Export Report Section */}
             <ExportReportSection />

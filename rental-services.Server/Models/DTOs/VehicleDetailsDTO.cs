@@ -34,8 +34,8 @@
 
         public string? VehicleType { get; set; } = null!;
 
-        public string? Shop { get; set; } = null!;
-
         public int? NumOfAvailable { get; set; }
+
+        public IEnumerable<VehicleDTO>? Vehicles { get; set; }
     }
 }

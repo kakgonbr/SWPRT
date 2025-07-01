@@ -38,7 +38,7 @@ export const useDashboardStats = () => {
                 )
 
                 const recentUsers = MOCK_USERS.filter(user =>
-                    user.createdAt >= subDays(new Date(), 30)
+                    user.creationDate >= subDays(new Date(), 30)
                 ).length
 
                 setStats({

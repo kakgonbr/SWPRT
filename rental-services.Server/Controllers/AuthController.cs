@@ -24,7 +24,8 @@ public class AuthController : ControllerBase
     private readonly RentalContext _db;
     private readonly IUserService _userService;
 
-    public AuthController(IOptions<JwtSettings> jwtSettings, IPasswordHasher<User> hasher, RentalContext db, IUserService userService)
+    public AuthController(IOptions<JwtSettings> jwtSettings, IPasswordHasher<User> hasher, RentalContext db,
+        IUserService userService)
     {
         _jwtSettings = jwtSettings.Value;
         _hasher = hasher;
@@ -33,8 +34,12 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Signs up a new user with Auth0
+    /// Registers a new user in the system.
     /// </summary>
+    /// <param name="request">The <see cref="SignupRequest"/> containing the user's email, password, phone number, and name.</param>
+    /// <returns>Returns <see cref="IActionResult"/> with a success message if registration is successful, or a BadRequest with an error message if registration fails.</returns>
+    /// <exception cref="ArgumentNullException">Thrown if the request is null.</exception>
+    /// <exception cref="InvalidOperationException">Thrown if the email already exists or a database error occurs.</exception>
     [HttpPost("signup")]
     public async Task<IActionResult> Signup([FromBody] SignupRequest request)
     {
@@ -44,6 +49,7 @@ public class AuthController : ControllerBase
             Console.WriteLine("AuthController: Email already exists in database.");
             return BadRequest(new { Message = "Cannot sign up: Email already exists." });
         }
+
         // Create new user
         var newUser = new User
         {
@@ -66,6 +72,7 @@ public class AuthController : ControllerBase
             Console.WriteLine("AuthController: Error while saving new user to database: " + e.Message);
             return BadRequest(new { Message = "Cannot sign up: " + e.Message });
         }
+
         return Ok(new
         {
             Message = "Successfully signed up! An email verification code has been sent to your email address."
@@ -73,9 +80,24 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Logs a new user in with Auth0 and grants an access token and user DTO
-    /// /api/auth/login
+    /// Authenticates a user using their email and password, and issues a JWT access token along with user details.
     /// </summary>
+    /// <param name="request">
+    /// The <see cref="LoginRequest"/> containing the user's email and password.
+    /// </param>
+    /// <returns>
+    /// Returns <see cref="IActionResult"/> with a <see cref="LoginResponse"/> containing the access token, its expiration, and user information if authentication is successful.
+    /// Returns <see cref="UnauthorizedResult"/> with an error message if credentials are invalid.
+    /// </returns>
+    /// <exception cref="ArgumentNullException">
+    /// Thrown if the request is null.
+    /// </exception>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown if a database error occurs during user lookup.
+    /// </exception>
+    /// <remarks>
+    /// Route: POST /api/auth/login
+    /// </remarks>
     [HttpPost("login")]
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
@@ -88,8 +110,10 @@ public class AuthController : ControllerBase
             Console.WriteLine("AuthController: Email not found in database.");
             return Unauthorized(new { Message = "Cannot log in: Invalid credentials" });
         }
+
         // Check against hashed password
-        var verifyHashedPassword = _hasher.VerifyHashedPassword(existingUser, existingUser.PasswordHash, request.Password);
+        var verifyHashedPassword =
+            _hasher.VerifyHashedPassword(existingUser, existingUser.PasswordHash, request.Password);
         if (verifyHashedPassword == PasswordVerificationResult.Failed)
         {
             Console.WriteLine("AuthController: Password verification failed for user " + existingUser.Email);
@@ -112,17 +136,21 @@ public class AuthController : ControllerBase
             existingUser.DriverLicenses.Select(dl => new DriverLicenseDto(
                 dl.LicenseId,
                 dl.HolderName,
-                dl.DateOfIssue,
-                dl.ImageLicenseUrl
-            )).SingleOrDefault()
+                dl.DateOfIssue
+                //dl.ImageLicenseUrl
+            ))
         );
         return Ok(new LoginResponse(accessToken, null, expires, userDto));
     }
 
     /// <summary>
-    /// Simply instructs client to drop the token; 
-    /// for stateless JWTs no server-side action is required
+    /// Handles user logout by instructing the client to remove the refresh token.
+    /// For stateless JWT authentication, no server-side action is required, but this endpoint can be used to acknowledge logout or revoke refresh tokens if implemented.
     /// </summary>
+    /// <param name="refreshToken">The refresh token to be revoked (if applicable).</param>
+    /// <returns>
+    /// Returns <see cref="OkObjectResult"/> with a message indicating the refresh token has been revoked successfully.
+    /// </returns>
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] string refreshToken)
     {
@@ -130,10 +158,17 @@ public class AuthController : ControllerBase
     }
 
     /// <summary>
-    /// Refetches user information based on access token.
-    /// This is useful for refreshing user data without re-authenticating.
-    /// Use cases include refreshing pages or updating user profile information.
+    /// Retrieves the authenticated user's information based on the access token provided in the request.
+    /// This endpoint is useful for refreshing user data on the client side without requiring the user to re-authenticate.
+    /// Typical use cases include updating user profile information or refreshing session data after login.
     /// </summary>
+    /// <remarks>
+    /// Requires a valid JWT access token in the Authorization header.
+    /// </remarks>
+    /// <returns>
+    /// Returns <see cref="OkObjectResult"/> with a <see cref="UserDto"/> containing the user's details if the user is found.
+    /// Returns <see cref="NotFoundObjectResult"/> with an error message if the user does not exist.
+    /// </returns>
     [Authorize]
     [HttpGet("me")]
     public async Task<IActionResult> Me()
@@ -141,44 +176,54 @@ public class AuthController : ControllerBase
         var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var user = await _userService.GetUser(userId);
         if (user == null) return NotFound(new { Message = "User not found" });
-        var dto = new UserDto(
-            user.UserId,
-            user.Email,
-            user.PhoneNumber,
-            user.FullName,
-            user.Address,
-            user.CreationDate,
-            user.EmailConfirmed,
-            user.DateOfBirth,
-            user.IsActive,
-            user.Role,
-            user.DriverLicenses.Select(dl => new DriverLicenseDto(
-                dl.LicenseId,
-                dl.HolderName,
-                dl.DateOfIssue,
-                dl.ImageLicenseUrl
-            )).SingleOrDefault()
-        );
-        return Ok(dto);
+        //var dto = new UserDto(
+        //    user.UserId,
+        //    user.Email,
+        //    user.PhoneNumber,
+        //    user.FullName,
+        //    user.Address,
+        //    user.CreationDate,
+        //    user.EmailConfirmed,
+        //    user.DateOfBirth,
+        //    user.IsActive,
+        //    user.Role,
+        //    user.DriverLicenses.Select(dl => new DriverLicenseDto(
+        //        dl.LicenseId, 
+        //        dl.HolderName,
+        //        dl.DateOfIssue,
+        //        dl.ImageLicenseUrl
+        //    )).SingleOrDefault()
+        //);
+        return Ok(user);
     }
 
     /// <summary>
-    /// Helper method to generate JWT token
+    /// Generates a JWT access token for the specified user, embedding user claims such as subject, email, and role.
+    /// The token is signed using the configured secret key and includes issuer, audience, and expiration information.
     /// </summary>
+    /// <param name="user">The <see cref="User"/> entity for whom the JWT token is generated.</param>
+    /// <param name="expiration">
+    /// When the method returns, contains the <see cref="DateTime"/> value representing the token's expiration time.
+    /// </param>
+    /// <returns>
+    /// A <see cref="string"/> containing the serialized JWT access token.
+    /// </returns>
     private string GenerateJwtToken(User user, out DateTime expiration)
     {
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub,   user.Sub),
+            new Claim(JwtRegisteredClaimNames.Sub, user.Sub),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim(ClaimTypes.Role,               user.Role),
+            new Claim(ClaimTypes.Role, user.Role),
             new Claim("VroomVroomUserId", user.UserId.ToString())
         };
 
         string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? _jwtSettings.Key;
         string jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? _jwtSettings.Issuer;
         string jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? _jwtSettings.Audience;
-        int jwtDuration = int.TryParse(Environment.GetEnvironmentVariable("JWT_DURATION"), out var duration) ? duration : _jwtSettings.DurationInMinutes;
+        int jwtDuration = int.TryParse(Environment.GetEnvironmentVariable("JWT_DURATION"), out var duration)
+            ? duration
+            : _jwtSettings.DurationInMinutes;
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

@@ -52,7 +52,7 @@ namespace rental_services.Server.Services
                     LicenseId = gplxData.LicenseNumber,
                     HolderName = gplxData.FullName,
                     DateOfIssue = DateTime.TryParse(gplxData.DateOfIssue, out var doi) ? DateOnly.FromDateTime(doi) : DateOnly.FromDateTime(DateTime.Now),
-                    ImageLicenseUrl = gplxData.ImageUrl ?? imageUrl
+                    //ImageLicenseUrl = gplxData.ImageUrl ?? imageUrl
                 };
                 _context.DriverLicenses.Add(newLicense);
             }
@@ -64,7 +64,7 @@ namespace rental_services.Server.Services
                 {
                     existingLicense.DateOfIssue = DateOnly.FromDateTime(doi);
                 }
-                existingLicense.ImageLicenseUrl = gplxData.ImageUrl ?? imageUrl;
+                //existingLicense.ImageLicenseUrl = gplxData.ImageUrl ?? imageUrl;
             }
             
             await _context.SaveChangesAsync();
