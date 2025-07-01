@@ -55,5 +55,13 @@ namespace rental_services.Server.Repositories
 
             return 0;
         }
+
+        public async Task<Models.Banner?> GetTopBanner()
+        {
+            return await _rentalContext.Banners
+                .Where(b => b.StartTime <= Utils.CustomDateTime.CurrentTime && b.EndTime > Utils.CustomDateTime.CurrentTime && b.IsActive)
+                .OrderBy(b => b.Priority)
+                .FirstOrDefaultAsync();
+        }
     }
 }

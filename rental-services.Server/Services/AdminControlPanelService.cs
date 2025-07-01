@@ -46,5 +46,10 @@
         {
             return await _bannerRepository.DeleteAsync(bannerId) != 0;
         }
+
+        public async Task<Models.DTOs.BannerDTO?> GetTopBanner()
+        {
+            return _mapper.Map<Models.DTOs.BannerDTO>(await _bannerRepository.GetTopBanner());
+        }
     }
 }

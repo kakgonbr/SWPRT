@@ -10,10 +10,12 @@ namespace rental_services.Server.Controllers
     public class AdminController : Controller
     {
         private readonly IAdminControlPanelService _bannerService;
+        private readonly IMaintenanceService _maintenanceService;
 
-        public AdminController(IAdminControlPanelService bannerService)
+        public AdminController(IAdminControlPanelService bannerService, IMaintenanceService maintenanceService)
         {
             _bannerService = bannerService;
+            _maintenanceService = maintenanceService;
         }
 
         [HttpGet("banners")]
@@ -42,6 +44,20 @@ namespace rental_services.Server.Controllers
         public async Task<ActionResult<string>> UpdateBannerAsync([FromBody] BannerDTO banner)
         {
             return await _bannerService.EditBannerAsync(banner) ? Ok("Updated.") : BadRequest("Failed.");
+        }
+
+        [HttpPost("maintenance")]
+        public ActionResult<string> EnableMaintenance([FromBody] MaintenanceDTO maintenance)
+        {
+            return _maintenanceService.SetMaintenancePeriod(maintenance.Start ?? Utils.CustomDateTime.CurrentTime, maintenance.End ?? DateTime.MaxValue, maintenance.Message) ? Ok("Set.") : BadRequest("Failed");
+        }
+
+        [HttpDelete("maintenance")]
+        public ActionResult<string> ClearMaintenance()
+        {
+            _maintenanceService.ClearMaintenancePeriod();
+
+            return _maintenanceService.IsActive ? BadRequest("Failed.") : Ok("Cleared.");
         }
     }
 }
