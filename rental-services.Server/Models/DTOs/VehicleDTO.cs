@@ -7,5 +7,7 @@
         public int? ModelId { get; set; }
 
         public string? Condition { get; set; } = null!;
+
+        public ShopDTO Shop { get; set; } = null!;
     }
 }

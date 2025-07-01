@@ -112,8 +112,8 @@ public class AuthController : ControllerBase
             existingUser.DriverLicenses.Select(dl => new DriverLicenseDto(
                 dl.LicenseId, 
                 dl.HolderName,
-                dl.DateOfIssue,
-                dl.ImageLicenseUrl
+                dl.DateOfIssue
+                //dl.ImageLicenseUrl
             ))
         );
         return Ok(new LoginResponse(accessToken, null, expires, userDto));

@@ -18,6 +18,4 @@ public partial class DriverLicense
     public virtual DriverLicenseType LicenseType { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;
-        public string? ImageLicenseUrl { get; set; }
-
 }

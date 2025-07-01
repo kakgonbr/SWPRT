@@ -19,7 +19,8 @@ namespace rental_services.Server.Repositories
         {
             return await _rentalContext.VehicleModels
                 .Include(vm => vm.Manufacturer)
-                .Include(vm => vm.Shop)
+                .Include(vm => vm.Vehicles)
+                    .ThenInclude(v => v.Shop)
                 .ToListAsync();
         }
 
@@ -28,7 +29,8 @@ namespace rental_services.Server.Repositories
             return await _rentalContext.VehicleModels
                 .Include(vm => vm.Manufacturer)
                 .Include(vm => vm.Peripherals)
-                .Include(vm => vm.Shop)
+                .Include(vm => vm.Vehicles)
+                    .ThenInclude(v => v.Shop)
                 .SingleOrDefaultAsync(vm => vm.ModelId == id);
         }
 
@@ -89,10 +91,13 @@ namespace rental_services.Server.Repositories
         {
             return await _rentalContext.VehicleModels
                 .Where(vm => vm.IsAvailable)
-                .Include(vm => vm.Shop)
+                .Include(vm => vm.Vehicles)
+                    .ThenInclude(v => v.Shop)
                 .Include(vm => vm.VehicleType)
                 .Include(vm => vm.Manufacturer)
                 .ToListAsync();
+
+            //return null;
         }
 
         public async Task<List<Models.VehicleModel>> GetAllEagerShopTypeAsync(string searchTerm)
@@ -106,10 +111,13 @@ namespace rental_services.Server.Repositories
                         vm.Manufacturer.ManufacturerName.ToLower().Contains(loweredTerm)
                     )
                 )
-                .Include(vm => vm.Shop)
+                .Include(vm => vm.Vehicles)
+                    .ThenInclude(v => v.Shop)
                 .Include(vm => vm.VehicleType)
                 .Include(vm => vm.Manufacturer)
                 .ToListAsync();
+
+            //return null;
         }
     }
 }
