@@ -12,6 +12,7 @@ using rental_services.Server.Services;
 using rental_services.Server.Repositories;
 using Microsoft.Extensions.FileProviders;
 using System.Runtime.InteropServices;
+using rental_services.Server.Middlewares;
 
 namespace rental_services.Server
 {
@@ -97,7 +98,8 @@ namespace rental_services.Server
                 .AddScoped<IBookingRepository, BookingRepository>()
                 .AddScoped<IRentalService, RentalService>()
                 .AddScoped<IBannerRepository, BannerRepository>()
-                .AddScoped<IAdminControlPanelService, AdminControlPanelService>();
+                .AddScoped<IAdminControlPanelService, AdminControlPanelService>()
+                .AddSingleton<IMaintenanceService, MaintenanceService>();
 
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
@@ -147,6 +149,9 @@ namespace rental_services.Server
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseMiddleware<MaintenanceMiddleware>();
+
             //
             //app.UseHttpsRedirection(); // nginx handles https
             app.MapControllers();

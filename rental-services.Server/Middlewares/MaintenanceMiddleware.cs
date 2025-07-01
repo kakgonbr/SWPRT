@@ -13,6 +13,11 @@ namespace rental_services.Server.Middlewares
 
         public async Task InvokeAsync(HttpContext context, IMaintenanceService maintenanceService)
         {
+            if (context.Request.Path.StartsWithSegments("/api/serverinfo/maintenance"))
+            {
+                await _next(context);
+                return;
+            }
 
             if (maintenanceService is not null &&
                 maintenanceService.IsActive &&

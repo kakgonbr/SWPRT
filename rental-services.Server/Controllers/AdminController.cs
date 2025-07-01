@@ -47,12 +47,14 @@ namespace rental_services.Server.Controllers
         }
 
         [HttpPost("maintenance")]
+        [Authorize(Roles = Utils.Config.Role.Admin)]
         public ActionResult<string> EnableMaintenance([FromBody] MaintenanceDTO maintenance)
         {
-            return _maintenanceService.SetMaintenancePeriod(maintenance.Start ?? Utils.CustomDateTime.CurrentTime, maintenance.End ?? DateTime.MaxValue, maintenance.Message) ? Ok("Set.") : BadRequest("Failed");
+            return _maintenanceService.SetMaintenancePeriod(maintenance.Start ?? Utils.CustomDateTime.CurrentTime, maintenance.End ?? DateTime.MaxValue, maintenance.Message) ? Ok("Set.") : BadRequest("Failed.");
         }
 
         [HttpDelete("maintenance")]
+        [Authorize(Roles = Utils.Config.Role.Admin)]
         public ActionResult<string> ClearMaintenance()
         {
             _maintenanceService.ClearMaintenancePeriod();

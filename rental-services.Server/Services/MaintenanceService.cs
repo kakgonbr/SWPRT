@@ -26,6 +26,7 @@
                 message = $"Expected Maintenance period from ${start} to ${end}. Services will be unavailable.";
             }
 
+            Message = message;
             Start = start;
             End = end;
 
