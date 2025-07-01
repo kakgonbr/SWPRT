@@ -42,7 +42,7 @@ public class AuthController : ControllerBase
         if (_db.Users.Any(u => u.Email == request.Email))
         {
             Console.WriteLine("AuthController: Email already exists in database.");
-            return BadRequest(new {Message = "Cannot sign up: Email already exists."});
+            return BadRequest(new { Message = "Cannot sign up: Email already exists." });
         }
         // Create new user
         var newUser = new User
@@ -64,14 +64,14 @@ public class AuthController : ControllerBase
         catch (Exception e)
         {
             Console.WriteLine("AuthController: Error while saving new user to database: " + e.Message);
-            return BadRequest(new {Message = "Cannot sign up: " + e.Message});
+            return BadRequest(new { Message = "Cannot sign up: " + e.Message });
         }
         return Ok(new
         {
             Message = "Successfully signed up! An email verification code has been sent to your email address."
         });
     }
-    
+
     /// <summary>
     /// Logs a new user in with Auth0 and grants an access token and user DTO
     /// /api/auth/login
@@ -86,21 +86,21 @@ public class AuthController : ControllerBase
         if (existingUser == null || existingUser.PasswordHash == null)
         {
             Console.WriteLine("AuthController: Email not found in database.");
-            return Unauthorized(new {Message = "Cannot log in: Invalid credentials"});
+            return Unauthorized(new { Message = "Cannot log in: Invalid credentials" });
         }
         // Check against hashed password
         var verifyHashedPassword = _hasher.VerifyHashedPassword(existingUser, existingUser.PasswordHash, request.Password);
         if (verifyHashedPassword == PasswordVerificationResult.Failed)
         {
             Console.WriteLine("AuthController: Password verification failed for user " + existingUser.Email);
-            return Unauthorized(new {Message = "Cannot log in: Invalid credentials"});
+            return Unauthorized(new { Message = "Cannot log in: Invalid credentials" });
         }
-        
+
         // Generate JWT token
         var accessToken = GenerateJwtToken(existingUser, out var expires);
         var userDto = new UserDto(
-            existingUser.UserId, 
-            existingUser.Email, 
+            existingUser.UserId,
+            existingUser.Email,
             existingUser.PhoneNumber,
             existingUser.FullName,
             existingUser.Address,
@@ -110,7 +110,7 @@ public class AuthController : ControllerBase
             existingUser.IsActive,
             existingUser.Role,
             existingUser.DriverLicenses.Select(dl => new DriverLicenseDto(
-                dl.LicenseId, 
+                dl.LicenseId,
                 dl.HolderName,
                 dl.DateOfIssue,
                 dl.ImageLicenseUrl
@@ -118,7 +118,7 @@ public class AuthController : ControllerBase
         );
         return Ok(new LoginResponse(accessToken, null, expires, userDto));
     }
-    
+
     /// <summary>
     /// Simply instructs client to drop the token; 
     /// for stateless JWTs no server-side action is required
@@ -126,7 +126,7 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] string refreshToken)
     {
-        return Ok(new {Message = "Refresh token revoked successfully."});
+        return Ok(new { Message = "Refresh token revoked successfully." });
     }
 
     /// <summary>
@@ -140,7 +140,7 @@ public class AuthController : ControllerBase
     {
         var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var user = await _userService.GetUser(userId);
-        if (user == null) return NotFound(new {Message = "User not found"});
+        if (user == null) return NotFound(new { Message = "User not found" });
         var dto = new UserDto(
             user.UserId,
             user.Email,
@@ -153,7 +153,7 @@ public class AuthController : ControllerBase
             user.IsActive,
             user.Role,
             user.DriverLicenses.Select(dl => new DriverLicenseDto(
-                dl.LicenseId, 
+                dl.LicenseId,
                 dl.HolderName,
                 dl.DateOfIssue,
                 dl.ImageLicenseUrl
@@ -161,7 +161,7 @@ public class AuthController : ControllerBase
         );
         return Ok(dto);
     }
-    
+
     /// <summary>
     /// Helper method to generate JWT token
     /// </summary>
@@ -174,21 +174,21 @@ public class AuthController : ControllerBase
             new Claim(ClaimTypes.Role,               user.Role),
             new Claim("VroomVroomUserId", user.UserId.ToString())
         };
-        
+
         string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? _jwtSettings.Key;
         string jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? _jwtSettings.Issuer;
         string jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? _jwtSettings.Audience;
         int jwtDuration = int.TryParse(Environment.GetEnvironmentVariable("JWT_DURATION"), out var duration) ? duration : _jwtSettings.DurationInMinutes;
 
-        var key   = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         expiration = DateTime.UtcNow.AddMinutes(jwtDuration);
 
         var token = new JwtSecurityToken(
-            issuer:            jwtIssuer,
-            audience:          jwtAudience,
-            claims:            claims,
-            expires:           expiration,
+            issuer: jwtIssuer,
+            audience: jwtAudience,
+            claims: claims,
+            expires: expiration,
             signingCredentials: creds
         );
 
