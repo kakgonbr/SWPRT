@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Mvc.ModelBinding.Metadata;
 using rental_services.Server.Models;
 using rental_services.Server.Models.DTOs;
+using System;
 
 namespace rental_services.Server.Services
 {
@@ -164,18 +164,32 @@ namespace rental_services.Server.Services
             return await _vehicleModelRepository.SaveAsync() != 0;
         }
 
-        public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly? startDate, DateOnly? endDate, string? address)
+        public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly? startDate, DateOnly? endDate, string? address, string? searchTerm)
         {
-            var vehicleModels = await _vehicleModelRepository.GetAllEagerShopAsync();
+            if (startDate == null || endDate == null || startDate.Value > endDate.Value)
+            {
+                throw new ArgumentException("Start date cannot be after end date or one of them are null");
+            }
+            List<VehicleModel> vehicleModels;
+            if (string.IsNullOrEmpty(searchTerm))
+            {
+                vehicleModels = await _vehicleModelRepository.GetAllEagerShopTypeAsync();
+            }
+            else
+            {
+                vehicleModels = await _vehicleModelRepository.GetAllEagerShopTypeAsync(searchTerm);
+            }
+            var result = new List<VehicleModel>();
             foreach (var model in vehicleModels)
             {
-                _logger.LogInformation("Model: {ModelId}, Shop: {ShopAddress}", model.ModelId, model.Shop.Address);
-            }   
-            var result = new List<Models.VehicleModel>();
+                //if (!string.IsNullOrEmpty(address) && !model.Shop.Address.Contains(address, StringComparison.OrdinalIgnoreCase))
+                //{
+                //    continue;
+                //}
 
-            foreach (var model in vehicleModels)
-            {
-                if (!string.IsNullOrEmpty(address) && !model.Shop.Address.Contains(address, StringComparison.OrdinalIgnoreCase))
+                var shopList = model.Vehicles.Select(v => v.Shop).ToList();
+
+                if (!string.IsNullOrEmpty(address) && !shopList.Any(s => s.Address.Contains(address, StringComparison.OrdinalIgnoreCase)))
                 {
                     continue;
                 }
@@ -201,10 +215,6 @@ namespace rental_services.Server.Services
                     result.Add(model);
                 }
             }
-            foreach (var model in result)
-            {
-                _logger.LogInformation("Available Model: {ModelId}, Shop: {ShopAddress}", model.ModelId, model.Shop.Address);
-            }
             return _mapper.Map<List<Models.DTOs.VehicleModelDTO>>(result);
         }
 
@@ -212,6 +222,7 @@ namespace rental_services.Server.Services
         {
             Models.Vehicle dbVehicle = _mapper.Map<Models.Vehicle>(vehicle);
             dbVehicle.ModelId = modelId;
+            dbVehicle.VehicleId = 0;
 
             return await _vehicleRepository.AddAsync(dbVehicle) != 0;
         }
@@ -239,20 +250,9 @@ namespace rental_services.Server.Services
                 return vehicleModels;
             }
             return vehicleModels
-                .Where(vm => vm.Shop.Equals(shop, StringComparison.OrdinalIgnoreCase))
+                //.Where(vm => vm.Shop.Equals(shop, StringComparison.OrdinalIgnoreCase))
+                .Where(vm => vm.Shops.Any(s => s.Equals(shop, StringComparison.OrdinalIgnoreCase)))
                 .ToList();
-        }
-
-        public List<VehicleModelDTO> FilterModelBySearchTerm(List<VehicleModelDTO> vehicleModels, string? searchTerm)
-        {
-            if (string.IsNullOrEmpty(searchTerm))
-            {
-                return vehicleModels;
-            }
-            return vehicleModels
-                .Where(vm => vm.DisplayName.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
-                             vm.Description.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
-                .ToList();  
         }
     }
 }

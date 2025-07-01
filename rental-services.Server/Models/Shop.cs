@@ -11,5 +11,5 @@ public partial class Shop
 
     public string Status { get; set; } = null!;
 
-    public virtual ICollection<VehicleModel> VehicleModels { get; set; } = new List<VehicleModel>();
+    public virtual ICollection<Vehicle> Vehicles { get; set; } = new List<Vehicle>();
 }

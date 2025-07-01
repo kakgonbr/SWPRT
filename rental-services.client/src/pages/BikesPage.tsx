@@ -1,66 +1,119 @@
 // src/pages/BikesPage.tsx
-import { useState, useMemo } from 'react'
-import { Link } from 'react-router-dom'
-//@ts-ignore
-
-import { Search, Filter, MapPin, Star } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Search, MapPin, Star } from 'lucide-react'
 import { Bike as BikeIcon } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Badge } from '../components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
-import { MOCK_BIKES } from '../lib/mock-data'
-import type { Bike } from '../lib/types'
+import type { VehicleModelDTO } from '../lib/types'
+import { bikeApi } from "../lib/api.ts";
 
 export default function BikesPage() {
+    const [searchParams] = useSearchParams();
     const [searchTerm, setSearchTerm] = useState('')
+    const [searchInputValue, setSearchInputValue] = useState('')
     const [selectedType, setSelectedType] = useState<string>('all')
     const [selectedLocation, setSelectedLocation] = useState<string>('all')
     const [sortBy, setSortBy] = useState<string>('name')
+    const [loading, setLoading] = useState(false);
+    const [bikes, setBikes] = useState<VehicleModelDTO[]>([]);
+    const [error, setError] = useState<string>('');
 
-    // Get unique types and locations for filters
-    const bikeTypes = Array.from(new Set(MOCK_BIKES.map(bike => bike.type)))
-    const locations = Array.from(new Set(MOCK_BIKES.map(bike => bike.location)))
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    const location = searchParams.get('location');
+
+    const handleSearch = () => {
+        setSearchTerm(searchInputValue);
+    }
+
+    useEffect(() => {
+        async function fetchBikeModels() {
+            if (!startDate || !endDate) {
+                return;
+            }
+
+            setLoading(true);
+            try {
+                //customer must type in start date and end date to be allowed to see bike list
+                //TODO: add parameters to getAvailable method when this method updated
+                const data = await bikeApi.getAvailableBike(
+                    String(startDate),
+                    String(endDate),
+                    location || undefined,
+                    searchTerm || undefined
+                );
+                setBikes(data);
+            } catch (error) {
+                console.error('Error fetching bikes:', error);
+                setError('Failed to load bikes. Please try again later.');
+            } finally {
+                setLoading(false);
+            }
+        }
+        //debounce implementation to void to many api calls
+        const handler = setTimeout(() => {
+            fetchBikeModels();
+        }, 500);
+
+        return () => {
+            clearTimeout(handler);
+        }
+    }, [startDate, endDate, location, searchTerm]);
+
+    console.log(bikes)
+
+    const bikeTypes = useMemo(() => {
+        return Array.from(new Set(bikes.map(bike => bike.vehicleType)))
+    }, [bikes]);
+
+    const locations = useMemo(() => {
+        return Array.from(new Set(bikes.map(bike => bike.shop)))
+    }, [bikes]);
 
     // Filter and sort bikes
     const filteredBikes = useMemo(() => {
-        const filtered = MOCK_BIKES.filter(bike => {
-            const matchesSearch = bike.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                bike.description?.toLowerCase().includes(searchTerm.toLowerCase())
-            const matchesType = selectedType === 'all' || bike.type === selectedType
-            const matchesLocation = selectedLocation === 'all' || bike.location === selectedLocation
+        console.log(Array.isArray(bikes))
+        const bikesArray = Array.isArray(bikes) ? bikes : []
+        const filtered = bikesArray
+            .filter(bike => {
+                //const matchesSearch = bike.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                //bike.description?.toLowerCase().includes(searchTerm.toLowerCase())
+                const matchesType = selectedType === 'all' || bike.vehicleType === selectedType
+                const matchesLocation = selectedLocation === 'all' || bike.shop === selectedLocation
+                return matchesType && matchesLocation
+            })
 
-            return matchesSearch && matchesType && matchesLocation
-        })
-
-        // Sort bikes
+        //Sort bikes
         filtered.sort((a, b) => {
             switch (sortBy) {
                 case 'price-low':
-                    return a.pricePerDay - b.pricePerDay
+                    return a.ratePerDay - b.ratePerDay;
                 case 'price-high':
-                    return b.pricePerDay - a.pricePerDay
+                    return b.ratePerDay - a.ratePerDay;
                 // case 'rating':
                 //     return (b.rating ?? 0) - (a.rating ?? 0)
                 case 'name':
                 default:
-                    return a.name.localeCompare(b.name)
+                    return a.displayName.localeCompare(b.displayName);
             }
         })
 
         return filtered
-    }, [searchTerm, selectedType, selectedLocation, sortBy])
+    }, [bikes, selectedType, selectedLocation, sortBy])
 
-    const BikeCard = ({ bike }: { bike: Bike }) => (
+    const BikeCard = ({ bikes }: { bikes: VehicleModelDTO }) => (
         <Card className="overflow-hidden hover:shadow-lg transition-shadow">
             <div className="aspect-video relative">
                 <img
-                    src={bike.imageUrl.split('"')[0]}
-                    alt={bike.name}
+                    src={bikes.imageFile?.split('"')[0]}
+                    alt={bikes.displayName}
                     className="w-full h-full object-cover"
                 />
-                {!bike.isAvailable && (
+                {!bikes.isAvailable && (
                     <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
                         <Badge variant="destructive">Not Available</Badge>
                     </div>
@@ -69,15 +122,15 @@ export default function BikesPage() {
             <CardHeader>
                 <div className="flex justify-between items-start">
                     <div>
-                        <CardTitle className="text-lg">{bike.name}</CardTitle>
+                        <CardTitle className="text-lg">{bikes.displayName}</CardTitle>
                         <CardDescription className="flex items-center mt-1">
-                            <Badge variant="outline" className="mr-2">{bike.type}</Badge>
+                            <Badge variant="outline" className="mr-2">{bikes.vehicleType}</Badge>
                             <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 mr-1" />
-                            {bike.rating}
+                            {bikes.rating}
                         </CardDescription>
                     </div>
                     <div className="text-right">
-                        <p className="text-2xl font-bold text-primary">${bike.pricePerDay}</p>
+                        <p className="text-2xl font-bold text-primary">${bikes.ratePerDay}</p>
                         <p className="text-sm text-muted-foreground">per day</p>
                     </div>
                 </div>
@@ -85,16 +138,16 @@ export default function BikesPage() {
             <CardContent>
                 <div className="flex items-center text-sm text-muted-foreground mb-3">
                     <MapPin className="w-4 h-4 mr-1" />
-                    {bike.location}
+                    {bikes.shop}
                 </div>
                 <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                    {bike.description}
+                    {bikes.description}
                 </p>
                 <div className="flex gap-2">
-                    <Button className="flex-1" asChild disabled={!bike.isAvailable}>
-                        <Link to={`/bikes/${bike.id}`}>
+                    <Button className="flex-1" asChild disabled={!bikes.isAvailable}>
+                        <Link to={`/bikes/${bikes.modelId}`}>
                             <BikeIcon className="w-4 h-4 mr-2" />
-                            {bike.isAvailable ? 'View Details' : 'Unavailable'}
+                            {bikes.isAvailable ? 'View Details' : 'Unavailable'}
                         </Link>
                     </Button>
                 </div>
@@ -113,15 +166,34 @@ export default function BikesPage() {
 
             {/* Filters */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-                <div className="relative">
-                    <Search
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                <div className="relative w-full">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <Input
                         placeholder="Search bikes..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        className="pl-10"
+                        value={searchInputValue}
+                            onChange={(e) => {
+                            setSearchInputValue(e.target.value);
+                            // Auto-search after typing stops
+                            const handler = setTimeout(() => {
+                                setSearchTerm(e.target.value);
+                            }, 500);
+                            return () => clearTimeout(handler);
+                        }}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                                setSearchTerm(searchInputValue);
+                            }
+                        }}
+                        className="pl-10 pr-10"
                     />
+                    <Button 
+                        onClick={handleSearch} 
+                        variant="ghost" 
+                        size="icon"
+                        className="absolute right-0 top-0 h-full"
+                    >
+                        <Search className="h-4 w-4" />
+                    </Button>
                 </div>
 
                 <Select value={selectedType} onValueChange={setSelectedType}>
@@ -161,18 +233,55 @@ export default function BikesPage() {
                 </Select>
             </div>
 
-            {/* Results */}
+            {/*Results*/}
             <div className="mb-4">
-                <p className="text-muted-foreground">
-                    Showing {filteredBikes.length} of {MOCK_BIKES.length} bikes
-                </p>
+                {loading ? (
+                    <div className="flex items-center justify-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mr-3"></div>
+                        <p>Loading bikes...</p>
+                    </div>
+                ) : (
+                    <p className="text-muted-foreground">
+                        Showing {bikes.length} of {bikes.length} bikes
+                    </p>
+                )}
             </div>
 
-            {/* Bikes Grid */}
+            {/* Error Display */}
+            {error && (
+                <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded mb-6">
+                    <p className="font-medium">Error</p>
+                    <p>{error}</p>
+                    <Button
+                        variant="outline"
+                        className="mt-2"
+                        onClick={() => {
+                            setError('');
+                            if (startDate && endDate) {
+                                // Retry loading
+                                bikeApi.getAvailableBike(
+                                    String(startDate),
+                                    String(endDate),
+                                    location || undefined
+                                ).then(data => {
+                                    setBikes(data);
+                                }).catch(err => {
+                                    console.error('Error fetching bikes:', err);
+                                    setError('Failed to load bikes. Please try again later.');
+                                });
+                            }
+                        }}
+                    >
+                        Retry
+                    </Button>
+                </div>
+            )}
+
+            {/*Bikes Grid */}
             {filteredBikes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredBikes.map(bike => (
-                        <BikeCard key={bike.id} bike={bike} />
+                        <BikeCard key={bike.modelId} bikes={bike} />
                     ))}
                 </div>
             ) : (
@@ -184,6 +293,7 @@ export default function BikesPage() {
                     </p>
                 </div>
             )}
+
         </div>
     )
 }

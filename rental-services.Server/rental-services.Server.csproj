@@ -31,6 +31,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="Tesseract" Version="5.2.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -43,6 +44,13 @@
 		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
 			<_Parameter1>rental-services.Test</_Parameter1>
 		</AssemblyAttribute>
+	</ItemGroup>
+
+	<ItemGroup>
+		<Content Include=".\tessdata\**\*">
+			<CopyToPublishDirectory>Always</CopyToPublishDirectory>
+			<TargetPath>tessdata\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+		</Content>
 	</ItemGroup>
 
 </Project>

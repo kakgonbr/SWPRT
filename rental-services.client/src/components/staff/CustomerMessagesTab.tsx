@@ -1,214 +1,153 @@
 import { useState } from 'react'
 import { format } from 'date-fns'
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '../ui/card'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '../ui/table'
-import { Button } from '../ui/button'
+import type { ChatDTO } from '../../lib/types'
+import { Avatar, AvatarFallback } from '../ui/avatar'
 import { Badge } from '../ui/badge'
-import { Input } from '../ui/input'
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
-import {
-    Search,
-    Reply,
-    AlertCircle,
-    Clock,
-    CheckCircle2,
-} from 'lucide-react'
-import { type CustomerMessage } from '../../lib/mock-staff-data'
+import { Button } from '../ui/button'
 
 interface CustomerMessagesTabProps {
-    messages: CustomerMessage[]
-    onOpenChat: (message: CustomerMessage) => void
+    chats: ChatDTO[]
+    onOpenChat: (chat: ChatDTO) => void
 }
 
-export default function CustomerMessagesTab({ messages, onOpenChat }: CustomerMessagesTabProps) {
+function getStatusBadgeVariant(status: string) {
+    switch (status) {
+        case 'Unresolved': return 'destructive'
+        case 'Resolved': return 'default'
+        default: return 'outline'
+    }
+}
+
+function getPriorityBadgeVariant(priority: string) {
+    switch (priority.toLowerCase()) {
+        case 'high': return 'destructive'
+        case 'medium': return 'default'
+        case 'low': return 'secondary'
+        default: return 'outline'
+    }
+}
+
+export default function CustomerMessagesTab({ chats, onOpenChat }: CustomerMessagesTabProps) {
     const [searchTerm, setSearchTerm] = useState('')
-    const [messageFilter, setMessageFilter] = useState<'all' | 'unread' | 'read' | 'replied'>('all')
+    const [statusFilter, setStatusFilter] = useState('all')
 
-    const getStatusBadgeVariant = (status: string) => {
-        switch (status) {
-            case 'unread': return 'destructive'
-            case 'read': return 'secondary'
-            case 'replied': return 'default'
-            default: return 'outline'
-        }
-    }
-
-    const getPriorityBadgeVariant = (priority: string) => {
-        switch (priority) {
-            case 'high': return 'destructive'
-            case 'medium': return 'default'
-            case 'low': return 'secondary'
-            default: return 'outline'
-        }
-    }
-
-    const getPriorityIcon = (priority: string) => {
-        switch (priority) {
-            case 'high': return <AlertCircle className="h-3 w-3" />
-            case 'medium': return <Clock className="h-3 w-3" />
-            case 'low': return <CheckCircle2 className="h-3 w-3" />
-            default: return null
-        }
-    }
-
-    const filteredMessages = messages.filter(message => {
-        const matchesSearch = message.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            message.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            message.message.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesFilter = messageFilter === 'all' || message.status === messageFilter
-
-        return matchesSearch && matchesFilter
+    const filteredChats = chats.filter(chat => {
+        const matchesSearch = chat.subject.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesStatus = statusFilter === 'all' || chat.status === statusFilter
+        return matchesSearch && matchesStatus
     })
 
-    const sortedMessages = filteredMessages.sort((a, b) => {
-        const priorityOrder = { high: 3, medium: 2, low: 1 }
-        const statusOrder = { unread: 3, read: 2, replied: 1 }
-
+    const sortedChats = filteredChats.sort((a, b) => {
+        // Prioritize unresolved, then by openTime desc
         if (a.status !== b.status) {
-            return statusOrder[b.status] - statusOrder[a.status]
+            return a.status === 'Unresolved' ? -1 : 1
         }
-
-        if (a.priority !== b.priority) {
-            return priorityOrder[b.priority] - priorityOrder[a.priority]
-        }
-
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        return new Date(b.openTime).getTime() - new Date(a.openTime).getTime()
     })
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <div>
-                        <CardTitle>Customer Messages</CardTitle>
-                        <CardDescription>
-                            Manage customer support requests and conversations ({filteredMessages.length} messages)
-                        </CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                        <div className="relative">
-                            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                            <Input
-                                placeholder="Search messages..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-8 w-64"
-                            />
-                        </div>
-                        <select
-                            value={messageFilter}
-                            onChange={(e) => setMessageFilter(e.target.value as any)}
-                            className="px-3 py-2 border rounded-md"
-                        >
-                            <option value="all">All Messages</option>
-                            <option value="unread">Unread ({messages.filter(m => m.status === 'unread').length})</option>
-                            <option value="read">Read ({messages.filter(m => m.status === 'read').length})</option>
-                            <option value="replied">Replied ({messages.filter(m => m.status === 'replied').length})</option>
-                        </select>
-                    </div>
+        <div className="card">
+            <div className="flex justify-between items-center mb-2">
+                <div>
+                    <div className="font-bold text-lg">Customer Messages</div>
+                    <div className="text-xs text-muted-foreground">Manage customer support requests and conversations ({filteredChats.length} chats)</div>
                 </div>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Customer</TableHead>
-                            <TableHead>Subject</TableHead>
-                            <TableHead>Message Preview</TableHead>
-                            <TableHead>Priority</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead className="text-center">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {sortedMessages.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                                    No messages found matching your criteria
-                                </TableCell>
-                            </TableRow>
+                <div className="flex gap-2">
+                    <input
+                        className="border rounded px-2 py-1"
+                        placeholder="Search subject..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                    />
+                    <select
+                        value={statusFilter}
+                        onChange={e => setStatusFilter(e.target.value)}
+                        className="px-2 py-1 border rounded"
+                    >
+                        <option value="all">All</option>
+                        <option value="Unresolved">Unresolved</option>
+                        <option value="Resolved">Resolved</option>
+                    </select>
+                </div>
+            </div>
+            <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                    <thead>
+                        <tr>
+                            <th className="text-left">Customer</th>
+                            <th className="text-left">Staff</th>
+                            <th className="text-left">Subject</th>
+                            <th className="text-left">Priority</th>
+                            <th className="text-left">Status</th>
+                            <th className="text-left">Opened</th>
+                            <th className="text-center">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {sortedChats.length === 0 ? (
+                            <tr>
+                                <td colSpan={7} className="text-center py-8 text-muted-foreground">
+                                    No chats found matching your criteria
+                                </td>
+                            </tr>
                         ) : (
-                            sortedMessages.map((message) => (
-                                <TableRow
-                                    key={message.id}
-                                    className={`${message.status === 'unread' ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-muted/50'} cursor-pointer`}
-                                    onClick={() => onOpenChat(message)}
+                            sortedChats.map((chat) => (
+                                <tr
+                                    key={chat.chatId}
+                                    className="hover:bg-muted/50 cursor-pointer"
+                                    onClick={() => onOpenChat(chat)}
                                 >
-                                    <TableCell>
+                                    <td>
                                         <div className="flex items-center gap-2">
                                             <Avatar className="h-8 w-8">
-                                                <AvatarImage src={message.customerAvatar} />
                                                 <AvatarFallback>
-                                                    {message.customerName.split(' ').map(n => n[0]).join('')}
+                                                    {chat.userName ? chat.userName[0] : chat.userId}
                                                 </AvatarFallback>
                                             </Avatar>
                                             <div>
-                                                <div className="font-medium">{message.customerName}</div>
-                                                <div className="text-sm text-muted-foreground">{message.customerEmail}</div>
+                                                <div className="font-medium">{chat.userName ? chat.userName : `User #${chat.userId}`}</div>
                                             </div>
                                         </div>
-                                    </TableCell>
-                                    <TableCell className="font-medium">
+                                    </td>
+                                    <td>
                                         <div className="flex items-center gap-2">
-                                            {message.status === 'unread' && (
-                                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                            )}
-                                            {message.subject}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="max-w-xs truncate">{message.message}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={getPriorityBadgeVariant(message.priority)} className="flex items-center gap-1 w-fit">
-                                            {getPriorityIcon(message.priority)}
-                                            {message.priority}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant={getStatusBadgeVariant(message.status)}>
-                                            {message.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="text-sm">
-                                            {format(new Date(message.createdAt), "MMM d, yyyy")}
-                                            <div className="text-xs text-muted-foreground">
-                                                {format(new Date(message.createdAt), "HH:mm")}
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarFallback>
+                                                    {chat.staffName ? chat.staffName[0] : (chat.staffId ?? '?')}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <div className="font-medium">{chat.staffName ? chat.staffName : (chat.staffId ? `Staff #${chat.staffId}` : 'Unassigned')}</div>
                                             </div>
                                         </div>
-                                    </TableCell>
-                                    <TableCell className="text-center">
+                                    </td>
+                                    <td className="font-medium">{chat.subject}</td>
+                                    <td>
+                                        <Badge variant={getPriorityBadgeVariant(chat.priority)}>{chat.priority}</Badge>
+                                    </td>
+                                    <td>
+                                        <Badge variant={getStatusBadgeVariant(chat.status)}>{chat.status}</Badge>
+                                    </td>
+                                    <td>
+                                        <div className="text-xs">
+                                            {format(new Date(chat.openTime), "MMM d, yyyy HH:mm")}
+                                        </div>
+                                    </td>
+                                    <td className="text-center">
                                         <Button
                                             size="sm"
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                onOpenChat(message)
-                                            }}
-                                            variant={message.status === 'unread' ? 'default' : 'outline'}
+                                            onClick={e => { e.stopPropagation(); onOpenChat(chat) }}
+                                            variant="outline"
                                         >
-                                            <Reply className="h-4 w-4 mr-1" />
-                                            {message.conversationHistory.length > 1 ? 'Continue' : 'Reply'}
+                                            Open
                                         </Button>
-                                    </TableCell>
-                                </TableRow>
+                                    </td>
+                                </tr>
                             ))
                         )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     )
 }

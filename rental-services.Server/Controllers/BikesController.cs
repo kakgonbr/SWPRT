@@ -43,21 +43,26 @@ public class BikesController : ControllerBase
 
     [HttpDelete("{id}")]
     [Authorize(Roles = Utils.Config.Role.Admin)]
-    public async Task<ActionResult<string>> DeleteBike(int id)
+    public async Task<ActionResult<string>> DeleteBIkeModel(int id)
     {
         return await _bikeService.DeleteVehicleModel(id) ? Ok("Deleted.") : BadRequest("Failed to delete.");
     }
 
-    // GET /bikes/available?startDate=2024-06-01&endDate=2024-06-10&address=abc
+    // GET /bikes/available?startDate=2024-06-01&endDate=2024-06-10&address=abc&searchTerm=honda
     [HttpGet("available")]
-    public async Task<ActionResult<List<VehicleModelDTO>>> GetAvailable(DateOnly? startDate, DateOnly? endDate, string? address = null)
+    public async Task<ActionResult<List<VehicleModelDTO>>> GetAvailable(DateOnly? startDate, DateOnly? endDate, string? address = null, string? searchTerm = null)
     {
-        if (startDate == null || endDate == null)
-            return BadRequest("Start date and end date are required.");
-        var availableModels = await _bikeService.GetAvailableModelsAsync(startDate, endDate, address);
-        if (availableModels == null)
-            return NotFound("No available models found for the given date range and address.");
-        return Ok(availableModels);
+        try
+        {
+            var availableModels = await _bikeService.GetAvailableModelsAsync(startDate, endDate, address, searchTerm);
+            if (availableModels == null)
+                return NotFound("No available models found for the given date range and address.");
+            return Ok(availableModels);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 
     // PATCH /bikes
@@ -96,7 +101,7 @@ public class BikesController : ControllerBase
         return await _bikeService.UpdatePhysicalAsync(vehicle) ? Ok("Updated.") : BadRequest("Failed.");
     }
 
-    [HttpPut("physical/{modelId}")]
+    [HttpPut("physical/{modelId}")] 
     [Authorize(Roles = Utils.Config.Role.Admin)]
     public async Task<ActionResult<string>> AddPhysicalVehicle(int modelId, [FromBody] VehicleDTO vehicle)
     {
@@ -124,10 +129,4 @@ public class BikesController : ControllerBase
         return Ok(_bikeService.FilterModelByShop(vehicleModels, shop));
     }
 
-    // GET /bikes/filter/search
-    [HttpGet("filter/search")]
-    public ActionResult<List<VehicleModelDTO>> FilterBySearchTerm(List<VehicleModelDTO> vehicleModels, string? searchTerm)
-    {
-        return Ok(_bikeService.FilterModelBySearchTerm(vehicleModels, searchTerm));
-    }
 }
