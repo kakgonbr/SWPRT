@@ -114,7 +114,7 @@ export default function SignupPage() {
                     title: "Account Created",
                     description: "Welcome to VroomVroom! Your account has been created successfully.",
                 })
-                navigate('/')
+                navigate('/login')
             } else {
                 toast({
                     title: "Registration Failed",

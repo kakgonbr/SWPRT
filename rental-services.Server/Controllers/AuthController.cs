@@ -23,15 +23,16 @@ public class AuthController : ControllerBase
     private readonly IPasswordHasher<User> _hasher;
     private readonly RentalContext _db;
     private readonly IUserService _userService;
-    
-    public AuthController(IOptions<JwtSettings> jwtSettings, IPasswordHasher<User> hasher, RentalContext db, IUserService userService)
+
+    public AuthController(IOptions<JwtSettings> jwtSettings, IPasswordHasher<User> hasher, RentalContext db,
+        IUserService userService)
     {
         _jwtSettings = jwtSettings.Value;
         _hasher = hasher;
         _db = db;
         _userService = userService;
     }
-    
+
     /// <summary>
     /// Registers a new user in the system.
     /// </summary>
@@ -46,8 +47,9 @@ public class AuthController : ControllerBase
         if (_db.Users.Any(u => u.Email == request.Email))
         {
             Console.WriteLine("AuthController: Email already exists in database.");
-            return BadRequest(new {Message = "Cannot sign up: Email already exists."});
+            return BadRequest(new { Message = "Cannot sign up: Email already exists." });
         }
+
         // Create new user
         var newUser = new User
         {
@@ -68,14 +70,15 @@ public class AuthController : ControllerBase
         catch (Exception e)
         {
             Console.WriteLine("AuthController: Error while saving new user to database: " + e.Message);
-            return BadRequest(new {Message = "Cannot sign up: " + e.Message});
+            return BadRequest(new { Message = "Cannot sign up: " + e.Message });
         }
+
         return Ok(new
         {
             Message = "Successfully signed up! An email verification code has been sent to your email address."
         });
     }
-    
+
     /// <summary>
     /// Authenticates a user using their email and password, and issues a JWT access token along with user details.
     /// </summary>
@@ -105,21 +108,23 @@ public class AuthController : ControllerBase
         if (existingUser == null || existingUser.PasswordHash == null)
         {
             Console.WriteLine("AuthController: Email not found in database.");
-            return Unauthorized(new {Message = "Cannot log in: Invalid credentials"});
+            return Unauthorized(new { Message = "Cannot log in: Invalid credentials" });
         }
+
         // Check against hashed password
-        var verifyHashedPassword = _hasher.VerifyHashedPassword(existingUser, existingUser.PasswordHash, request.Password);
+        var verifyHashedPassword =
+            _hasher.VerifyHashedPassword(existingUser, existingUser.PasswordHash, request.Password);
         if (verifyHashedPassword == PasswordVerificationResult.Failed)
         {
             Console.WriteLine("AuthController: Password verification failed for user " + existingUser.Email);
-            return Unauthorized(new {Message = "Cannot log in: Invalid credentials"});
+            return Unauthorized(new { Message = "Cannot log in: Invalid credentials" });
         }
-        
+
         // Generate JWT token
         var accessToken = GenerateJwtToken(existingUser, out var expires);
         var userDto = new UserDto(
-            existingUser.UserId, 
-            existingUser.Email, 
+            existingUser.UserId,
+            existingUser.Email,
             existingUser.PhoneNumber,
             existingUser.FullName,
             existingUser.Address,
@@ -129,7 +134,7 @@ public class AuthController : ControllerBase
             existingUser.IsActive,
             existingUser.Role,
             existingUser.DriverLicenses.Select(dl => new DriverLicenseDto(
-                dl.LicenseId, 
+                dl.LicenseId,
                 dl.HolderName,
                 dl.DateOfIssue
                 //dl.ImageLicenseUrl
@@ -137,7 +142,7 @@ public class AuthController : ControllerBase
         );
         return Ok(new LoginResponse(accessToken, null, expires, userDto));
     }
-    
+
     /// <summary>
     /// Handles user logout by instructing the client to remove the refresh token.
     /// For stateless JWT authentication, no server-side action is required, but this endpoint can be used to acknowledge logout or revoke refresh tokens if implemented.
@@ -149,7 +154,7 @@ public class AuthController : ControllerBase
     [HttpPost("logout")]
     public async Task<IActionResult> Logout([FromBody] string refreshToken)
     {
-        return Ok(new {Message = "Refresh token revoked successfully."});
+        return Ok(new { Message = "Refresh token revoked successfully." });
     }
 
     /// <summary>
@@ -170,7 +175,7 @@ public class AuthController : ControllerBase
     {
         var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
         var user = await _userService.GetUser(userId);
-        if (user == null) return NotFound(new {Message = "User not found"});
+        if (user == null) return NotFound(new { Message = "User not found" });
         //var dto = new UserDto(
         //    user.UserId,
         //    user.Email,
@@ -191,42 +196,44 @@ public class AuthController : ControllerBase
         //);
         return Ok(user);
     }
-    
-  /// <summary>
-  /// Generates a JWT access token for the specified user, embedding user claims such as subject, email, and role.
-  /// The token is signed using the configured secret key and includes issuer, audience, and expiration information.
-  /// </summary>
-  /// <param name="user">The <see cref="User"/> entity for whom the JWT token is generated.</param>
-  /// <param name="expiration">
-  /// When the method returns, contains the <see cref="DateTime"/> value representing the token's expiration time.
-  /// </param>
-  /// <returns>
-  /// A <see cref="string"/> containing the serialized JWT access token.
-  /// </returns>
+
+    /// <summary>
+    /// Generates a JWT access token for the specified user, embedding user claims such as subject, email, and role.
+    /// The token is signed using the configured secret key and includes issuer, audience, and expiration information.
+    /// </summary>
+    /// <param name="user">The <see cref="User"/> entity for whom the JWT token is generated.</param>
+    /// <param name="expiration">
+    /// When the method returns, contains the <see cref="DateTime"/> value representing the token's expiration time.
+    /// </param>
+    /// <returns>
+    /// A <see cref="string"/> containing the serialized JWT access token.
+    /// </returns>
     private string GenerateJwtToken(User user, out DateTime expiration)
     {
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub,   user.Sub),
+            new Claim(JwtRegisteredClaimNames.Sub, user.Sub),
             new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim(ClaimTypes.Role,               user.Role),
+            new Claim(ClaimTypes.Role, user.Role),
             new Claim("VroomVroomUserId", user.UserId.ToString())
         };
-        
+
         string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? _jwtSettings.Key;
         string jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? _jwtSettings.Issuer;
         string jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? _jwtSettings.Audience;
-        int jwtDuration = int.TryParse(Environment.GetEnvironmentVariable("JWT_DURATION"), out var duration) ? duration : _jwtSettings.DurationInMinutes;
+        int jwtDuration = int.TryParse(Environment.GetEnvironmentVariable("JWT_DURATION"), out var duration)
+            ? duration
+            : _jwtSettings.DurationInMinutes;
 
-        var key   = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
         expiration = DateTime.UtcNow.AddMinutes(jwtDuration);
 
         var token = new JwtSecurityToken(
-            issuer:            jwtIssuer,
-            audience:          jwtAudience,
-            claims:            claims,
-            expires:           expiration,
+            issuer: jwtIssuer,
+            audience: jwtAudience,
+            claims: claims,
+            expires: expiration,
             signingCredentials: creds
         );
 
