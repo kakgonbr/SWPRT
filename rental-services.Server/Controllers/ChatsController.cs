@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using rental_services.Server.Models.DTOs;
 using rental_services.Server.Services;
 using System.Security.Claims;
+using rental_services.Server.Controllers.Realtime;
 
 namespace rental_services.Server.Controllers
 {
@@ -13,17 +15,19 @@ namespace rental_services.Server.Controllers
     {
         private readonly IChatService _chatService;
         private readonly ILogger<ChatsController> _logger;
+        private readonly IHubContext<ChatHub> _hubContext;
 
-        public ChatsController(IChatService chatService, ILogger<ChatsController> logger)
+        public ChatsController(IChatService chatService, ILogger<ChatsController> logger, IHubContext<ChatHub> hubContext)
         {
             _chatService = chatService;
             _logger = logger;
+            _hubContext = hubContext;
         }
 
         // GET: api/chats
         // get all chats
         [HttpGet]
-        [Authorize(Roles = "Staff")]
+        [Authorize(Roles = Utils.Config.Role.Staff)]
         public async Task<ActionResult<IEnumerable<ChatDTO>>> GetChats()
         {
             var chats = await _chatService.GetAllChatsAsync();
@@ -63,7 +67,7 @@ namespace rental_services.Server.Controllers
         // POST: api/chats (customer starts chat)
         // create a new chat
         [HttpPost]
-        [Authorize(Roles = "Customer")]
+        [Authorize(Roles = Utils.Config.Role.Customer)]
         public async Task<ActionResult<ChatDTO>> CreateChat([FromBody] CreateChatRequest request)
         {
             var userIdClaim = User.FindFirstValue("VroomVroomUserId");
@@ -77,7 +81,7 @@ namespace rental_services.Server.Controllers
         // POST: api/chats/{chatId}/assign
         // assign staff to a chat
         [HttpPost("{chatId}/assign")]
-        //[Authorize(Roles = "Staff")]
+        [Authorize(Roles = Utils.Config.Role.Staff)]
         public async Task<ActionResult<ChatDTO>> AssignStaff(int chatId)
         {
             var userIdClaim = User.FindFirstValue("VroomVroomUserId");
@@ -87,6 +91,8 @@ namespace rental_services.Server.Controllers
             var chat = await _chatService.AssignStaffAsync(chatId, staffId);
             if (chat == null) 
                 return NotFound();
+            // Notify all staff clients about the update
+            await _hubContext.Clients.All.SendAsync("ChatUpdated", chat);
             return Ok(chat);
         }
     }

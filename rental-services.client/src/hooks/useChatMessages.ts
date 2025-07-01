@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react'
 import type { ChatDTO, ChatMessageDTO } from '../lib/types'
 import { ChatSignalRService } from '../services/chat-signalr'
 
-const API = import.meta.env.VITE_API_BASE_URL;
-/*const API = "http://localhost:5000";*/
+/*const API = import.meta.env.VITE_API_BASE_URL;*/
+const API = "http://localhost:5000";
 
 export function useChatMessages(token: string, chat: ChatDTO | null) {
   const [messages, setMessages] = useState<ChatMessageDTO[]>([])

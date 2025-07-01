@@ -7,8 +7,8 @@ import { format } from 'date-fns'
 import { ChatSignalRService } from '../../services/chat-signalr'
 import type { ChatDTO, ChatMessageDTO } from '../../lib/types'
 
-const API = import.meta.env.VITE_API_BASE_URL;
-/*const API = "http://localhost:5000";*/
+/*const API = import.meta.env.VITE_API_BASE_URL;*/
+const API = "http://localhost:5000";
 
 export default function StaffChat({ onBack }: { onBack: () => void }) {
     const { user } = useAuth()

@@ -39,4 +39,8 @@ export class ChatSignalRService {
   onStaffAssigned(callback: (chat: ChatDTO) => void) {
     this.connection.on("StaffAssigned", callback);
   }
+
+  onChatUpdated(callback: (chat: ChatDTO) => void) {
+    this.connection.on("ChatUpdated", callback);
+  }
 }

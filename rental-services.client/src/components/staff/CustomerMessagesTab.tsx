@@ -1,49 +1,83 @@
-import { useState } from 'react'
-import { format } from 'date-fns'
-import type { ChatDTO } from '../../lib/types'
-import { Avatar, AvatarFallback } from '../ui/avatar'
-import { Badge } from '../ui/badge'
-import { Button } from '../ui/button'
+import { useState } from 'react';
+import { format } from 'date-fns';
+import type { ChatDTO } from '../../lib/types';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { Badge } from '../ui/badge';
+import { Button } from '../ui/button';
+import { useAuth } from '../../contexts/auth-context';
+
+/*const API = import.meta.env.VITE_API_BASE_URL;*/
+const API = "http://localhost:5000";
 
 interface CustomerMessagesTabProps {
-    chats: ChatDTO[]
-    onOpenChat: (chat: ChatDTO) => void
+    chats: ChatDTO[];
+    onOpenChat: (chat: ChatDTO) => void;
 }
 
 function getStatusBadgeVariant(status: string) {
     switch (status) {
-        case 'Unresolved': return 'destructive'
-        case 'Resolved': return 'default'
-        default: return 'outline'
+        case 'Unresolved': return 'destructive';
+        case 'Resolved': return 'default';
+        default: return 'outline';
     }
 }
 
 function getPriorityBadgeVariant(priority: string) {
     switch (priority.toLowerCase()) {
-        case 'high': return 'destructive'
-        case 'medium': return 'default'
-        case 'low': return 'secondary'
-        default: return 'outline'
+        case 'high': return 'destructive';
+        case 'medium': return 'default';
+        case 'low': return 'secondary';
+        default: return 'outline';
     }
 }
 
 export default function CustomerMessagesTab({ chats, onOpenChat }: CustomerMessagesTabProps) {
-    const [searchTerm, setSearchTerm] = useState('')
-    const [statusFilter, setStatusFilter] = useState('all')
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const { user } = useAuth();
+    const token = localStorage.getItem('token') || '';
 
+    // search chat on chat subject and filter by status
     const filteredChats = chats.filter(chat => {
-        const matchesSearch = chat.subject.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesStatus = statusFilter === 'all' || chat.status === statusFilter
-        return matchesSearch && matchesStatus
-    })
+        const matchesSearch = chat.subject.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = statusFilter === 'all' || chat.status === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
 
     const sortedChats = filteredChats.sort((a, b) => {
         // Prioritize unresolved, then by openTime desc
         if (a.status !== b.status) {
-            return a.status === 'Unresolved' ? -1 : 1
+            return a.status === 'Unresolved' ? -1 : 1;
         }
-        return new Date(b.openTime).getTime() - new Date(a.openTime).getTime()
-    })
+        return new Date(b.openTime).getTime() - new Date(a.openTime).getTime();
+    });
+
+    const handleOpenChat = async (chat: ChatDTO) => {
+        setErrorMsg(null);
+        // If chat is assigned to another staff
+        if (chat.staffId && chat.staffId !== user?.userId) {
+            setErrorMsg('This chat is not assigned to you');
+            return;
+        }
+        // If chat is unassigned, assign it to this staff
+        if (!chat.staffId) {
+            try {
+                const res = await fetch(`${API}/api/chats/${chat.chatId}/assign`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) {
+                    setErrorMsg('Failed to assign this chat to you.');
+                    return;
+                }
+            } catch {
+                setErrorMsg('Failed to assign this chat to you.');
+                return;
+            }
+        }
+        onOpenChat(chat);
+    };
 
     return (
         <div className="card">
@@ -70,6 +104,7 @@ export default function CustomerMessagesTab({ chats, onOpenChat }: CustomerMessa
                     </select>
                 </div>
             </div>
+            {errorMsg && <div className="text-red-500 text-xs mb-2">{errorMsg}</div>}
             <div className="overflow-x-auto">
                 <table className="min-w-full text-sm">
                     <thead>
@@ -95,7 +130,7 @@ export default function CustomerMessagesTab({ chats, onOpenChat }: CustomerMessa
                                 <tr
                                     key={chat.chatId}
                                     className="hover:bg-muted/50 cursor-pointer"
-                                    onClick={() => onOpenChat(chat)}
+                                    onClick={() => handleOpenChat(chat)}
                                 >
                                     <td>
                                         <div className="flex items-center gap-2">
@@ -136,8 +171,12 @@ export default function CustomerMessagesTab({ chats, onOpenChat }: CustomerMessa
                                     <td className="text-center">
                                         <Button
                                             size="sm"
-                                            onClick={e => { e.stopPropagation(); onOpenChat(chat) }}
+                                            onClick={e => {
+                                                e.stopPropagation();
+                                                handleOpenChat(chat);
+                                            }}
                                             variant="outline"
+                                            disabled={!!chat.staffId && chat.staffId !== user?.userId}
                                         >
                                             Open
                                         </Button>
@@ -149,5 +188,5 @@ export default function CustomerMessagesTab({ chats, onOpenChat }: CustomerMessa
                 </table>
             </div>
         </div>
-    )
+    );
 }
