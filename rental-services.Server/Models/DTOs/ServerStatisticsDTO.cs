@@ -3,7 +3,7 @@
     public record ServerStatisticsDTO
     {
         public int TotalUsers { get; set; }
-        public int NewUsers { get; set; }
+        public int RecentUsers { get; set; }
         public int TotalBikes { get; set; }
         public int AvailableBikes { get; set; }
         public int ActiveRentals { get; set; }

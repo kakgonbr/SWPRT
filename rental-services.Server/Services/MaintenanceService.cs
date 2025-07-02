@@ -23,7 +23,7 @@
 
             if (string.IsNullOrWhiteSpace(message))
             {
-                message = $"Expected Maintenance period from ${start} to ${end}. Services will be unavailable.";
+                message = $"Expected Maintenance period from {start} to {end}. Services will be unavailable.";
             }
 
             Message = message;

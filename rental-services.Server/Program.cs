@@ -98,7 +98,7 @@ namespace rental_services.Server
                 .AddScoped<IBookingRepository, BookingRepository>()
                 .AddScoped<IRentalService, RentalService>()
                 .AddScoped<IBannerRepository, BannerRepository>()
-                .AddSingleton<IStatisticsRepository, StatisticsRepository>()
+                .AddScoped<IStatisticsRepository, StatisticsRepository>()
                 .AddScoped<IAdminControlPanelService, AdminControlPanelService>()
                 .AddSingleton<IMaintenanceService, MaintenanceService>();
 
@@ -153,6 +153,7 @@ namespace rental_services.Server
 
             app.UseMiddleware<MaintenanceMiddleware>();
 
+            app.MapFallbackToFile("index.html");
             //
             //app.UseHttpsRedirection(); // nginx handles https
             app.MapControllers();
@@ -160,7 +161,6 @@ namespace rental_services.Server
             // Add SignalR endpoint
             app.MapHub<Controllers.Realtime.ChatHub>("/hubs/chat");
             
-            app.MapFallbackToFile("wwwroot/index.html");
             app.Run();
         }
     }

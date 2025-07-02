@@ -25,7 +25,7 @@ namespace rental_services.Server.Controllers
         [HttpGet("maintenance")]
         public ActionResult<Models.DTOs.MaintenanceDTO?> GetMaintenanceInfo()
         {
-            return Ok(_maintenanceService.IsActive && _maintenanceService.End <= Utils.CustomDateTime.CurrentTime ? new Models.DTOs.MaintenanceDTO() { Start = _maintenanceService.Start, End = _maintenanceService.End, Message = _maintenanceService.Message! } : null);
+            return Ok(_maintenanceService.IsActive && _maintenanceService.End >= Utils.CustomDateTime.CurrentTime ? new Models.DTOs.MaintenanceDTO() { Start = _maintenanceService.Start, End = _maintenanceService.End, Message = _maintenanceService.Message! } : null);
         }
     }
 }

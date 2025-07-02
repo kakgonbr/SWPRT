@@ -19,7 +19,7 @@ namespace rental_services.Server.Repositories
             Models.DTOs.ServerStatisticsDTO serverStatistics = new();
 
             serverStatistics.TotalUsers = await _rentalContext.Users.Where(u => u.IsActive).CountAsync();
-            serverStatistics.NewUsers = await _rentalContext.Users.Where(u => u.IsActive && u.CreationDate.AddDays(30) > currentDate).CountAsync();
+            serverStatistics.RecentUsers = await _rentalContext.Users.Where(u => u.IsActive && u.CreationDate.AddDays(30) > currentDate).CountAsync();
             serverStatistics.TotalBikes = await _rentalContext.VehicleModels.CountAsync();
             serverStatistics.AvailableBikes = await _rentalContext.VehicleModels.Where(vm => vm.IsAvailable).CountAsync();
             serverStatistics.ActiveRentals = await _rentalContext.Bookings.Where(b => !b.Status.Equals("Awaiting Payment") && !b.Status.Equals("Cancelled") && b.StartDate > currentDate && b.EndDate < currentDate).CountAsync();

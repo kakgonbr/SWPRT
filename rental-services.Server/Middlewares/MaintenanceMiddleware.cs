@@ -13,12 +13,12 @@ namespace rental_services.Server.Middlewares
 
         public async Task InvokeAsync(HttpContext context, IMaintenanceService maintenanceService)
         {
-            if (maintenanceService is not null &&
-                maintenanceService.IsActive &&
-                Utils.CustomDateTime.CurrentTime >= maintenanceService.Start &&
-                Utils.CustomDateTime.CurrentTime <= maintenanceService.End &&
-                !context.User.IsInRole("Admin")
-
+            if (maintenanceService is not null 
+                && maintenanceService.IsActive 
+                && Utils.CustomDateTime.CurrentTime >= maintenanceService.Start 
+                && Utils.CustomDateTime.CurrentTime <= maintenanceService.End 
+                && context.Request.Path.StartsWithSegments("/api")
+                && !context.User.IsInRole("Admin")
                 && !(context.Request.Path.StartsWithSegments("/api/serverinfo/maintenance")
                 || context.Request.Path.StartsWithSegments("/api/auth/login")))
             {
