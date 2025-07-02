@@ -1,15 +1,15 @@
 // src/pages/BikesPage.tsx
-import { useState, useMemo, useEffect } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
-import { Search, MapPin, Star } from 'lucide-react'
-import { Bike as BikeIcon } from 'lucide-react'
-import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
-import { Badge } from '../components/ui/badge'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
-import type { VehicleModelDTO } from '../lib/types'
-import { bikeApi } from "../lib/api.ts";
+import {useState, useMemo, useEffect} from 'react'
+import {Link, useSearchParams} from 'react-router-dom'
+import {Search, MapPin, Star} from 'lucide-react'
+import {Bike as BikeIcon} from 'lucide-react'
+import {Button} from '../components/ui/button'
+import {Input} from '../components/ui/input'
+import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '../components/ui/card'
+import {Badge} from '../components/ui/badge'
+import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '../components/ui/select'
+import type {VehicleModelDTO} from '../lib/types'
+import {bikeApi} from "../lib/api.ts";
 
 export default function BikesPage() {
     const [searchParams] = useSearchParams();
@@ -54,6 +54,7 @@ export default function BikesPage() {
                 setLoading(false);
             }
         }
+
         //debounce implementation to void to many api calls
         const handler = setTimeout(() => {
             fetchBikeModels();
@@ -105,7 +106,7 @@ export default function BikesPage() {
         return filtered
     }, [bikes, selectedType, selectedLocation, sortBy])
 
-    const BikeCard = ({ bikes }: { bikes: VehicleModelDTO }) => (
+    const BikeCard = ({bikes}: { bikes: VehicleModelDTO }) => (
         <Card className="overflow-hidden hover:shadow-lg transition-shadow">
             <div className="aspect-video relative">
                 <img
@@ -125,7 +126,7 @@ export default function BikesPage() {
                         <CardTitle className="text-lg">{bikes.displayName}</CardTitle>
                         <CardDescription className="flex items-center mt-1">
                             <Badge variant="outline" className="mr-2">{bikes.vehicleType}</Badge>
-                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 mr-1" />
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 mr-1"/>
                             {bikes.rating}
                         </CardDescription>
                     </div>
@@ -137,7 +138,7 @@ export default function BikesPage() {
             </CardHeader>
             <CardContent>
                 <div className="flex items-center text-sm text-muted-foreground mb-3">
-                    <MapPin className="w-4 h-4 mr-1" />
+                    <MapPin className="w-4 h-4 mr-1"/>
                     {bikes.shop}
                 </div>
                 <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
@@ -145,8 +146,12 @@ export default function BikesPage() {
                 </p>
                 <div className="flex gap-2">
                     <Button className="flex-1" asChild disabled={!bikes.isAvailable}>
-                        <Link to={`/bikes/${bikes.modelId}`}>
-                            <BikeIcon className="w-4 h-4 mr-2" />
+                        <Link
+                            to={`/bikes/${bikes.modelId}`}
+                            state={{
+                                rentalParams: `startDate=${startDate}&endDate=${endDate}${location ? `&location=${location}` : ''}`
+                            }}>
+                            <BikeIcon className="w-4 h-4 mr-2"/>
                             {bikes.isAvailable ? 'View Details' : 'Unavailable'}
                         </Link>
                     </Button>
@@ -167,11 +172,12 @@ export default function BikesPage() {
             {/* Filters */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 <div className="relative w-full">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+                    <Search
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4"/>
                     <Input
                         placeholder="Search bikes..."
                         value={searchInputValue}
-                            onChange={(e) => {
+                        onChange={(e) => {
                             setSearchInputValue(e.target.value);
                             // Auto-search after typing stops
                             const handler = setTimeout(() => {
@@ -186,19 +192,19 @@ export default function BikesPage() {
                         }}
                         className="pl-10 pr-10"
                     />
-                    <Button 
-                        onClick={handleSearch} 
-                        variant="ghost" 
+                    <Button
+                        onClick={handleSearch}
+                        variant="ghost"
                         size="icon"
                         className="absolute right-0 top-0 h-full"
                     >
-                        <Search className="h-4 w-4" />
+                        <Search className="h-4 w-4"/>
                     </Button>
                 </div>
 
                 <Select value={selectedType} onValueChange={setSelectedType}>
                     <SelectTrigger>
-                        <SelectValue placeholder="All Types" />
+                        <SelectValue placeholder="All Types"/>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Types</SelectItem>
@@ -210,7 +216,7 @@ export default function BikesPage() {
 
                 <Select value={selectedLocation} onValueChange={setSelectedLocation}>
                     <SelectTrigger>
-                        <SelectValue placeholder="All Locations" />
+                        <SelectValue placeholder="All Locations"/>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Locations</SelectItem>
@@ -222,7 +228,7 @@ export default function BikesPage() {
 
                 <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger>
-                        <SelectValue placeholder="Sort by" />
+                        <SelectValue placeholder="Sort by"/>
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="name">Name A-Z</SelectItem>
@@ -281,12 +287,12 @@ export default function BikesPage() {
             {filteredBikes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredBikes.map(bike => (
-                        <BikeCard key={bike.modelId} bikes={bike} />
+                        <BikeCard key={bike.modelId} bikes={bike}/>
                     ))}
                 </div>
             ) : (
                 <div className="text-center py-12">
-                    <BikeIcon className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
+                    <BikeIcon className="w-16 h-16 mx-auto text-muted-foreground mb-4"/>
                     <h3 className="text-lg font-semibold mb-2">No bikes found</h3>
                     <p className="text-muted-foreground">
                         Try adjusting your search criteria

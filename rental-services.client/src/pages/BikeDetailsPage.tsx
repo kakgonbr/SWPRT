@@ -1,7 +1,6 @@
-import {useParams, Link, useNavigate} from 'react-router-dom'
+import {useParams, Link, useNavigate, useLocation} from 'react-router-dom'
 import {ArrowLeft, Star, MapPin, Calendar, Gauge} from 'lucide-react'
 import {Button} from '../components/ui/button'
-//import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '../components/ui/card'
 import {Badge} from '../components/ui/badge'
 import {Separator} from '../components/ui/separator'
 import {MOCK_BIKE_REVIEWS} from '../lib/mock-data'
@@ -16,6 +15,18 @@ export default function BikeDetailsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string>('');
     const navigate = useNavigate();
+    //location of the pages
+    const location = useLocation();
+    const rentalParams = location.state?.rentalParams;
+    const [rentalParamsFromState, setRentalParamsFromState] = useState<string | undefined>();
+
+    useEffect(() => {
+        if (rentalParams) {
+            setRentalParamsFromState(rentalParams);
+        }
+    }, [rentalParams]);
+
+    console.log(`RENTAL PARAMS: ${rentalParamsFromState}`);
 
     useEffect(() => {
         async function getVehicleModelDetailById() {
@@ -44,9 +55,9 @@ export default function BikeDetailsPage() {
     }, [id]);
 
     const handleGoBack = () => {
-        navigate(-1);
+        navigate(`/bikes?${rentalParamsFromState}`);
     };
-    
+
     // Get reviews for this bike
     const bikeReviews = MOCK_BIKE_REVIEWS.filter(review => review.bikeId === id)
     const averageRating = bikeReviews.length > 0
@@ -206,7 +217,13 @@ export default function BikeDetailsPage() {
                                 size="lg"
                                 asChild
                             >
-                                <Link to={`/checkout/${bike.modelId}`}>
+                                <Link
+                                    to={`/checkout/${bike.modelId}`}
+                                    state={{
+                                        from: 'bikeDetails',
+                                        rentalParams: rentalParams || rentalParamsFromState
+                                    }}
+                                >
                                     <Calendar className="w-4 h-4 mr-2"/>
                                     Book Now
                                 </Link>

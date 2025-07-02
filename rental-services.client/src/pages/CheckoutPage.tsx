@@ -1,5 +1,5 @@
 ﻿import {useState, useEffect} from 'react'
-import {useNavigate, useSearchParams, Link} from 'react-router-dom'
+import {useNavigate, Link, useParams, useLocation} from 'react-router-dom'
 import {
     ArrowLeft,
     Calendar,
@@ -18,34 +18,50 @@ import {Popover, PopoverContent, PopoverTrigger} from '../components/ui/popover'
 import {useAuth} from '../contexts/auth-context'
 import {useToast} from '../hooks/use-toast'
 import {RENTAL_OPTIONS} from '../lib/mock-data'
-import {format, addDays, differenceInDays} from 'date-fns'
+import {format, differenceInDays} from 'date-fns'
 import {cn} from '../lib/utils'
 import {bikeApi} from "../lib/api.ts";
 import {type VehicleModelDTO} from '../lib/types'
 
 export default function CheckoutPage() {
     const navigate = useNavigate()
-    const [searchParams] = useSearchParams()
     const {user, isAuthenticated, loading} = useAuth()
     const {toast} = useToast()
     const [error, setError] = useState<string>('');
     const [loadingState, setLoadingState] = useState(true);
-    const bikeId = searchParams.get('bikeId')
+    const {id} = useParams<{ id: string }>();
     const [bike, setBike] = useState<VehicleModelDTO>();
+    const location = useLocation();
+    const [startDate, setStartDate] = useState<Date>()
+    const [endDate, setEndDate] = useState<Date>()
+    
+    const rentalParams = location.state?.rentalParams;
+    
+    console.log(`RENTAL PARAMS OF CHECKOUT: ${rentalParams}`);
+
+    useEffect(() => {
+        if (rentalParams) {
+            setStartDate(rentalParams.startDate);
+            setEndDate(rentalParams.endDate);
+        }
+    }, [rentalParams]);
+
+
+    console.log(`bike id: ${id}`);
 
     const getVehicleModelDetailById = async () => {
-        if (!bikeId) return;
+        if (!id) return;
         setLoadingState(true);
         setError('');
 
         try {
-            const id = parseInt(bikeId, 10);
-            if (isNaN(id)) {
+            const bikeId = parseInt(id, 10);
+            if (isNaN(bikeId)) {
                 setError("Invalid bike ID");
                 setLoadingState(false);
                 return;
             }
-            const data = await bikeApi.getBikeById(id);
+            const data = await bikeApi.getBikeById(bikeId);
             setBike(data);
             // Auto-select the bike's shop location when data is loaded
             setSelectedLocation("bikeShop");
@@ -59,7 +75,7 @@ export default function CheckoutPage() {
 
     useEffect(() => {
         getVehicleModelDetailById();
-    }, [bikeId]);
+    }, [id]);
 
     // Add a retry function
     const retryFetch = () => {
@@ -67,8 +83,7 @@ export default function CheckoutPage() {
         getVehicleModelDetailById();
     };
 
-    const [startDate, setStartDate] = useState<Date>()
-    const [endDate, setEndDate] = useState<Date>()
+
     const [selectedOptions, setSelectedOptions] = useState(
         RENTAL_OPTIONS.map(option => ({...option, selected: false}))
     )
@@ -84,17 +99,12 @@ export default function CheckoutPage() {
             return
         }
 
-        if (!bikeId || !bike) {
-            navigate('/bikes')
-            return
-        }
-
-        // Set default dates (today + 1 to today + 3)
-        const tomorrow = addDays(new Date(), 1)
-        const dayAfterTomorrow = addDays(new Date(), 3)
-        setStartDate(tomorrow)
-        setEndDate(dayAfterTomorrow)
-    }, [bikeId, bike, isAuthenticated, loading, navigate])
+        // if (!bikeId || !bike) {
+        //     navigate('/')
+        //     return
+        // }
+        
+    }, [id, bike, isAuthenticated, loading, navigate])
 
     const handleOptionToggle = (optionId: string) => {
         setSelectedOptions(prev =>
@@ -108,7 +118,6 @@ export default function CheckoutPage() {
 
     const calculateTotal = () => {
         if (!startDate || !endDate || !bike) return 0
-
         const days = differenceInDays(endDate, startDate)
         const bikeTotal = bike.ratePerDay * days
         const optionsTotal = selectedOptions
@@ -193,7 +202,12 @@ export default function CheckoutPage() {
         <div className="container mx-auto px-4 py-8 max-w-6xl">
             {/* Back Button */}
             <Button variant="ghost" className="mb-6" asChild>
-                <Link to={`/bikes/${bike.modelId}`}>
+                <Link
+                    to={`/bikes/${bike.modelId}`}
+                    state={{
+                        rentalParams: rentalParams
+                    }}
+                >
                     <ArrowLeft className="w-4 h-4 mr-2"/>
                     Back to Bike Details
                 </Link>

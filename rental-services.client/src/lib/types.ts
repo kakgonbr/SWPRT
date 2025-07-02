@@ -55,7 +55,7 @@ export interface Bike {
 export interface Rental {
     id: string;
     bikeId: string;
-    userId: number;
+    userId: number
     startDate: Date;
     endDate: Date;
     totalPrice: number;
