@@ -62,6 +62,7 @@ export default function ProfilePage() {
   const [localImageUrl, setLocalImageUrl] = useState<string | null>(null);
   const [extractedData, setExtractedData] = useState<ExtractedIdData | null>(null);
   const [isIdReviewOpen, setIsIdReviewOpen] = useState(false);
+  const [isVerified, setIsVerified] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -257,8 +258,20 @@ export default function ProfilePage() {
       });
       const result = await res.json();
       if (res.ok) {
+        setIsVerified(true);
         toast({ title: "Thành công", description: result.message });
         setIsIdReviewOpen(false);
+
+        // Cập nhật formData ngay lập tức
+        setFormData((prev) => ({
+          ...prev,
+          licenseId: payload.licenseNumber, // hoặc extractedData.idNumber
+        }));
+
+        // Nếu bạn dùng extractedData để render, cũng cập nhật nó
+        setExtractedData(null);
+
+        // Gọi reloadUser để đồng bộ với backend (có thể giữ lại)
         reloadUser();
       } else {
         toast({ title: "Lỗi xác nhận", description: result.message || "Có lỗi xảy ra", variant: "destructive" });
@@ -509,42 +522,21 @@ export default function ProfilePage() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Identity Verification</h3>
 
-              {localImageUrl ? (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Selected ID Document</Label>
-                    <div className="border rounded-lg p-4 bg-green-50">
-                      <div className="flex items-start gap-4">
-                        <img
-                          src={localImageUrl}
-                          alt="ID Document"
-                          className="max-w-xs rounded border"
-                        />
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 text-green-600 mb-2">
-                            <CheckCircle className="h-5 w-5" />
-                            <span className="font-medium">
-                              {extractedData ? "Verification successful" : "Preview Only (not uploaded)"}
-                            </span>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            {extractedData
-                              ? "The image has been uploaded and information extracted successfully."
-                              : "This image is only visible to you and not uploaded to the server."}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+              {(user.driverLicenses?.licenseId || isVerified) ? (
+                <div className="flex items-center gap-3 bg-green-100 border border-green-400 text-green-800 rounded-lg p-4">
+                  <CheckCircle className="h-6 w-6 text-green-500" />
+                  <div>
+                    <div className="font-semibold">Verification successful</div>
+                    <div>The image has been uploaded and information extracted successfully.</div>
                   </div>
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={triggerIdUpload}
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Choose Another File
-                    </Button>
-                  </div>
+                  <Button
+                    onClick={triggerIdUpload}
+                    className="ml-4"
+                    variant="outline"
+                  >
+                    <Upload className="h-4 w-4 mr-2" />
+                    Re-upload
+                  </Button>
                 </div>
               ) : (
                 <div className="space-y-4">
