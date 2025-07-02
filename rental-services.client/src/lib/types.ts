@@ -16,6 +16,15 @@ export interface User {
     creationDate: Date; // Added to track user sign-up date
 }
 
+export interface DashboardStats {
+    totalUsers: number
+    totalBikes: number
+    activeRentals: number
+    monthlyRevenue: number
+    recentUsers: number
+    availableBikes: number
+}
+
 export interface VehicleModelDTO {
     modelId: number;
     displayName: string;

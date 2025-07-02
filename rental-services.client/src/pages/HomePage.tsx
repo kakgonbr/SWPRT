@@ -1,7 +1,7 @@
 // src/pages/HomePage.tsx
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { Search, Bike, MapPin, Star, Shield, Clock, Calendar, ArrowRight } from 'lucide-react'
+import { Search, Bike, MapPin, Star, Shield, Clock, Calendar, ArrowRight} from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Input } from '../components/ui/input'
@@ -16,6 +16,17 @@ export default function HomePage() {
     const navigate = useNavigate()
     const { toast } = useToast()
     const featuredBikes = MOCK_BIKES.slice(0, 3)
+    //const [maintenanceMessage, setMaintenanceMessage] = useState<string>("");
+
+    //useEffect(() => {
+    //    fetch("/api/serverinfo/maintenance")
+    //        .then(res => res.json())
+    //        .then(data => {
+    //            if (data && !!data.message) setMaintenanceMessage(data.message);
+    //            else setMaintenanceMessage("");
+    //        })
+    //        .catch(e => { })
+    //}, []);
 
     const calculateDays = () => {
         if (!startDate || !endDate) return 0
@@ -59,6 +70,18 @@ export default function HomePage() {
         <div className="min-h-screen">
             {/* Hero Section */}
             <section className="relative bg-gradient-to-br from-primary/10 via-background to-secondary/10 py-20">
+                {/*{!!maintenanceMessage && (*/}
+                {/*    <div className="border rounded-lg p-4 bg-muted">*/}
+                {/*        <h4 className="font-medium mb-2">Preview:</h4>*/}
+                {/*        <div className="bg-background border rounded p-4">*/}
+                {/*            <div className="text-center space-y-2">*/}
+                {/*                <Construction className="h-12 w-12 mx-auto text-orange-500" />*/}
+                {/*                <h3 className="text-lg font-semibold">Site Under Maintenance</h3>*/}
+                {/*                <p className="text-muted-foreground">{maintenanceMessage}</p>*/}
+                {/*            </div>*/}
+                {/*        </div>*/}
+                {/*    </div>*/}
+                {/*)}*/}
                 <div className="container mx-auto px-4 text-center">
                     <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
                         Explore Vietnam on Two Wheels

@@ -38,20 +38,20 @@ namespace rental_services.Server.Controllers
             return Ok(new { message = "Reset to system time", time = CustomDateTime.CurrentTime });
         }
 
-        [HttpPost("set")]
-        [Authorize(Roles = Utils.Config.Role.Admin)]
-        public IActionResult SetTime([FromQuery] string time, [FromQuery] string format = "dd/MM/yyyy")
-        {
-            try
-            {
-                CustomDateTime.SetTime(time, format);
-                return Ok(new { message = $"Set to {time}", time = CustomDateTime.CurrentTime });
-            }
-            catch (FormatException)
-            {
-                return BadRequest("Invalid date or format.");
-            }
-        }
+        //[HttpPost("set")]
+        //[Authorize(Roles = Utils.Config.Role.Admin)]
+        //public IActionResult SetTime([FromQuery] string time, [FromQuery] string format = "dd/MM/yyyy")
+        //{
+        //    try
+        //    {
+        //        CustomDateTime.SetTime(time, format);
+        //        return Ok(new { message = $"Set to {time}", time = CustomDateTime.CurrentTime });
+        //    }
+        //    catch (FormatException)
+        //    {
+        //        return BadRequest("Invalid date or format.");
+        //    }
+        //}
     }
 
 }
