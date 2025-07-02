@@ -20,7 +20,7 @@ export default function SignupPage() {
         email: '',
         password: '',
         confirmPassword: '',
-        phone: ''
+        phoneNumber: ''
     })
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
@@ -104,9 +104,9 @@ export default function SignupPage() {
         try {
             const data : SignupRequest = {
                 email: formData.email,
+                name: formData.name,
                 password: formData.password,
-                phone: formData.phone,
-                name: formData.name
+                phoneNumber: formData.phoneNumber,
             };
             const success = await register(data)
             if (success) {
@@ -114,7 +114,7 @@ export default function SignupPage() {
                     title: "Account Created",
                     description: "Welcome to VroomVroom! Your account has been created successfully.",
                 })
-                navigate('/')
+                navigate('/login')
             } else {
                 toast({
                     title: "Registration Failed",
@@ -227,12 +227,12 @@ export default function SignupPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="phone">Phone number</Label>
+                                <Label htmlFor="phoneNumber">phoneNumber number</Label>
                                 <Input
-                                    id="phone"
-                                    name="phone"
+                                    id="phoneNumber"
+                                    name="phoneNumber"
                                     type="text"
-                                    value={formData.phone}
+                                    value={formData.phoneNumber}
                                     onChange={handleInputChange}
                                     required
                                 />

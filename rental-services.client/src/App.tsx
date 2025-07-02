@@ -40,7 +40,7 @@ function App() {
                                     <Route path="/" element={<HomePage />} />
                                     <Route path="/bikes" element={<BikesPage />} />
                                     <Route path="/bikes/:id" element={<BikeDetailsPage />} />
-                                    <Route path="/checkout" element={<CheckoutPage />} />
+                                    <Route path="/checkout/:id" element={<CheckoutPage />} />
                                     <Route path="/rentals" element={<RentalsPage />} />
                                     <Route path="/profile" element={<ProfilePage />} />
                                     <Route path="/location-finder" element={<LocationFinderPage />} />
