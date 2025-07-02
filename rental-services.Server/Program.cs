@@ -12,6 +12,7 @@ using rental_services.Server.Services;
 using rental_services.Server.Repositories;
 using Microsoft.Extensions.FileProviders;
 using System.Runtime.InteropServices;
+using rental_services.Server.Middlewares;
 
 namespace rental_services.Server
 {
@@ -95,8 +96,12 @@ namespace rental_services.Server
                 .AddScoped<IChatRepository, ChatRepository>()
                 .AddScoped<IChatService, ChatService>()
                 .AddScoped<IBookingRepository, BookingRepository>()
-                .AddScoped<IRentalService, RentalService>();
-          
+                .AddScoped<IRentalService, RentalService>()
+                .AddScoped<IBannerRepository, BannerRepository>()
+                .AddScoped<IStatisticsRepository, StatisticsRepository>()
+                .AddScoped<IAdminControlPanelService, AdminControlPanelService>()
+                .AddSingleton<IMaintenanceService, MaintenanceService>();
+
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
             {
@@ -145,6 +150,10 @@ namespace rental_services.Server
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseMiddleware<MaintenanceMiddleware>();
+
+            app.MapFallbackToFile("index.html");
             //
             //app.UseHttpsRedirection(); // nginx handles https
             app.MapControllers();
@@ -152,7 +161,6 @@ namespace rental_services.Server
             // Add SignalR endpoint
             app.MapHub<Controllers.Realtime.ChatHub>("/hubs/chat");
             
-            app.MapFallbackToFile("wwwroot/index.html");
             app.Run();
         }
     }
