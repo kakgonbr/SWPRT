@@ -8,6 +8,7 @@ namespace rental_services.Server.Services
         Task<bool> DeleteBannerAsync(int bannerId);
         Task<bool> EditBannerAsync(BannerDTO editBanner);
         Task<List<BannerDTO>> GetAllbannersAsync();
+        Task<ServerStatisticsDTO> GetStatisticsAsync();
         Task<BannerDTO?> GetTopBanner();
     }
 }

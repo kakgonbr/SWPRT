@@ -3,12 +3,14 @@
     public class AdminControlPanelService : IAdminControlPanelService
     {
         private Repositories.IBannerRepository _bannerRepository;
+        private Repositories.IStatisticsRepository _statisticsRepository;
         private AutoMapper.IMapper _mapper;
         private readonly ILogger<BikeService> _logger;
 
-        public AdminControlPanelService(Repositories.IBannerRepository bannerRepository, AutoMapper.IMapper mapper, ILogger<BikeService> logger)
+        public AdminControlPanelService(Repositories.IBannerRepository bannerRepository, Repositories.IStatisticsRepository statisticsRepository, AutoMapper.IMapper mapper, ILogger<BikeService> logger)
         {
             _bannerRepository = bannerRepository;
+            _statisticsRepository = statisticsRepository;
             _mapper = mapper;
             _logger = logger;
         }
@@ -50,6 +52,11 @@
         public async Task<Models.DTOs.BannerDTO?> GetTopBanner()
         {
             return _mapper.Map<Models.DTOs.BannerDTO>(await _bannerRepository.GetTopBanner());
+        }
+
+        public async Task<Models.DTOs.ServerStatisticsDTO> GetStatisticsAsync()
+        {
+            return await _statisticsRepository.GetStatistics();
         }
     }
 }

@@ -98,6 +98,7 @@ namespace rental_services.Server
                 .AddScoped<IBookingRepository, BookingRepository>()
                 .AddScoped<IRentalService, RentalService>()
                 .AddScoped<IBannerRepository, BannerRepository>()
+                .AddSingleton<IStatisticsRepository, StatisticsRepository>()
                 .AddScoped<IAdminControlPanelService, AdminControlPanelService>()
                 .AddSingleton<IMaintenanceService, MaintenanceService>();
 
