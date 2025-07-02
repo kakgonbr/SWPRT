@@ -1,11 +1,6 @@
-// src/pages/BikeDetailsPage.tsx
-import {useParams, Link, useNavigate} from 'react-router-dom'
-//@ts-ignore
-
-import {ArrowLeft, Star, MapPin, Calendar, Users, Fuel, Gauge} from 'lucide-react'
+import {useParams, Link, useNavigate, useLocation} from 'react-router-dom'
+import {ArrowLeft, Star, MapPin, Calendar, Gauge} from 'lucide-react'
 import {Button} from '../components/ui/button'
-//@ts-ignore
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '../components/ui/card'
 import {Badge} from '../components/ui/badge'
 import {Separator} from '../components/ui/separator'
 import {MOCK_BIKE_REVIEWS} from '../lib/mock-data'
@@ -17,31 +12,51 @@ import {bikeApi} from "../lib/api.ts";
 export default function BikeDetailsPage() {
     const {id} = useParams<{ id: string }>();
     const [bike, setBike] = useState<VehicleModelDTO>();
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string>('');
     const navigate = useNavigate();
+    //location of the pages
+    const location = useLocation();
+    const rentalParams = location.state?.rentalParams;
+    const [rentalParamsFromState, setRentalParamsFromState] = useState<string | undefined>();
 
     useEffect(() => {
-        // @ts-ignore
+        if (rentalParams) {
+            setRentalParamsFromState(rentalParams);
+        }
+    }, [rentalParams]);
+
+    console.log(`RENTAL PARAMS: ${rentalParamsFromState}`);
+
+    useEffect(() => {
         async function getVehicleModelDetailById() {
             if (!id) return;
+            setLoading(true);
+            setError('');
+
             try {
                 const bikeId = parseInt(id, 10);
                 if (isNaN(bikeId)) {
-                    console.log("this is not a bike id");
+                    setError("Invalid bike ID");
+                    setLoading(false);
                     return;
                 }
                 const data = await bikeApi.getBikeById(bikeId);
                 setBike(data);
             } catch (error) {
                 console.error(`Error fetching bike details: `, error);
+                setError("Failed to load bike details. Please try again later.");
+            } finally {
+                setLoading(false);
             }
         }
+
         getVehicleModelDetailById();
     }, [id]);
 
     const handleGoBack = () => {
-        navigate(-1);
+        navigate(`/bikes?${rentalParamsFromState}`);
     };
-
 
     // Get reviews for this bike
     const bikeReviews = MOCK_BIKE_REVIEWS.filter(review => review.bikeId === id)
@@ -49,12 +64,71 @@ export default function BikeDetailsPage() {
         ? bikeReviews.reduce((sum, review) => sum + review.rating, 0) / bikeReviews.length
         : 0
 
+    // Loading state
+    if (loading) {
+        return (
+            <div className="container mx-auto px-4 py-8">
+                <Button variant="ghost" className="mb-6" onClick={handleGoBack}>
+                    <ArrowLeft className="w-4 h-4 mr-2"/>
+                    Back to Bikes
+                </Button>
+                <div className="flex flex-col items-center justify-center py-12">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
+                    <p className="text-muted-foreground">Loading bike details...</p>
+                </div>
+            </div>
+        );
+    }
+
+    // Error state
+    if (error) {
+        return (
+            <div className="container mx-auto px-4 py-8">
+                <Button variant="ghost" className="mb-6" onClick={handleGoBack}>
+                    <ArrowLeft className="w-4 h-4 mr-2"/>
+                    Back to Bikes
+                </Button>
+                <div className="bg-destructive/10 border border-destructive text-destructive px-4 py-3 rounded mb-6">
+                    <p className="font-medium">Error</p>
+                    <p>{error}</p>
+                    <Button
+                        variant="outline"
+                        className="mt-2"
+                        onClick={() => {
+                            setError('');
+                            if (id) {
+                                const bikeId = parseInt(id, 10);
+                                if (!isNaN(bikeId)) {
+                                    setLoading(true);
+                                    bikeApi.getBikeById(bikeId)
+                                        .then(data => setBike(data))
+                                        .catch(err => {
+                                            console.error(`Error fetching bike details: `, err);
+                                            setError("Failed to load bike details. Please try again later.");
+                                        })
+                                        .finally(() => setLoading(false));
+                                }
+                            }
+                        }}
+                    >
+                        Retry
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    // Not found state (no error but no bike data)
     if (!bike) {
         return (
             <div className="container mx-auto px-4 py-8 text-center">
+                <Button variant="ghost" className="mb-6" onClick={handleGoBack}>
+                    <ArrowLeft className="w-4 h-4 mr-2"/>
+                    Back to Bikes
+                </Button>
                 <h1 className="text-2xl font-bold mb-4">Bike Not Found</h1>
                 <Button asChild>
-                    <Link to="/bikes">Back to Bikes</Link>
+                    <Link to="/bikes">Browse All Bikes</Link>
                 </Button>
             </div>
         )
@@ -117,26 +191,16 @@ export default function BikeDetailsPage() {
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex items-center">
                                 <Gauge className="w-4 h-4 mr-2 text-muted-foreground"/>
-                                {/*<span className="text-sm">*/}
-                                {/*    {bike.cylinderVolume ? `${bike.cylinderVolume}cc` : 'Electric'}*/}
-                                {/*</span>*/}
+                                <span className="text-sm">
+                                    {bike.vehicleType}
+                                </span>
                             </div>
-                            {/*<div className="flex items-center">*/}
-                            {/*    <Users className="w-4 h-4 mr-2 text-muted-foreground" />*/}
-                            {/*    <span className="text-sm">{bike.} available</span>*/}
-                            {/*</div>*/}
                         </div>
                     </div>
 
                     <div>
                         <h3 className="font-semibold mb-3">Features</h3>
                         <div className="grid grid-cols-1 gap-2">
-                            {/*{bike.features?.map((feature, index) => (*/}
-                            {/*    <div key={index} className="flex items-center">*/}
-                            {/*        <div className="w-2 h-2 bg-primary rounded-full mr-3" />*/}
-                            {/*        <span className="text-sm">{feature}</span>*/}
-                            {/*    </div>*/}
-                            {/*))}*/}
                             <div className="flex items-center">
                                 <div className="w-2 h-2 bg-primary rounded-full mr-3"/>
                                 <span className="text-sm">{bike.description}</span>
@@ -147,21 +211,32 @@ export default function BikeDetailsPage() {
                     <Separator/>
 
                     <div className="space-y-3">
-                        <Button
-                            className="w-full"
-                            size="lg"
-                            disabled={!bike.isAvailable}
-                            asChild={bike.isAvailable}
-                        >
-                            {bike.isAvailable ? (
-                                <Link to={`/checkout?bikeId=${bike.modelId}`}>
+                        {bike.isAvailable ? (
+                            <Button
+                                className="w-full"
+                                size="lg"
+                                asChild
+                            >
+                                <Link
+                                    to={`/checkout/${bike.modelId}`}
+                                    state={{
+                                        from: 'bikeDetails',
+                                        rentalParams: rentalParams || rentalParamsFromState
+                                    }}
+                                >
                                     <Calendar className="w-4 h-4 mr-2"/>
                                     Book Now
                                 </Link>
-                            ) : (
-                                <>Not Available</>
-                            )}
-                        </Button>
+                            </Button>
+                        ) : (
+                            <Button
+                                className="w-full"
+                                size="lg"
+                                disabled
+                            >
+                                Not Available
+                            </Button>
+                        )}
 
                         <Button variant="outline" className="w-full" asChild>
                             <Link to="/location-finder">

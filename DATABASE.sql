@@ -230,6 +230,7 @@ CREATE TABLE Reports
     Title nvarchar(256) NOT NULL,
     Body nvarchar(MAX) NOT NULL,
     ImagePath varchar(256) NOT NULL,
+    ReportTime datetime NOT NULL DEFAULT GETDATE(),
 
     CONSTRAINT fk_rep_user FOREIGN KEY (UserId) REFERENCES Users,
     CONSTRAINT fk_rep_type FOREIGN KEY (TypeId) REFERENCES ReportTypes

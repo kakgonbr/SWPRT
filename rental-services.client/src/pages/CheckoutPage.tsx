@@ -1,6 +1,5 @@
-// src/pages/CheckoutPage.tsx
-import {useState, useEffect} from 'react'
-import {useNavigate, useSearchParams, Link} from 'react-router-dom'
+﻿import {useState, useEffect} from 'react'
+import {useNavigate, Link, useParams, useLocation} from 'react-router-dom'
 import {
     ArrowLeft,
     Calendar,
@@ -18,33 +17,79 @@ import {Calendar as CalendarComponent} from '../components/ui/calendar'
 import {Popover, PopoverContent, PopoverTrigger} from '../components/ui/popover'
 import {useAuth} from '../contexts/auth-context'
 import {useToast} from '../hooks/use-toast'
-import {MOCK_BIKES, RENTAL_OPTIONS} from '../lib/mock-data'
-import {format, addDays, differenceInDays} from 'date-fns'
+import {RENTAL_OPTIONS} from '../lib/mock-data'
+import {format, differenceInDays} from 'date-fns'
 import {cn} from '../lib/utils'
+import {bikeApi} from "../lib/api.ts";
+import {type VehicleModelDTO} from '../lib/types'
 
 export default function CheckoutPage() {
     const navigate = useNavigate()
-    const [searchParams] = useSearchParams()
     const {user, isAuthenticated, loading} = useAuth()
     const {toast} = useToast()
-
-    const bikeId = searchParams.get('bikeId')
-    const bike = MOCK_BIKES.find(b => b.id === bikeId)
-
+    const [error, setError] = useState<string>('');
+    const [loadingState, setLoadingState] = useState(true);
+    const {id} = useParams<{ id: string }>();
+    const [bike, setBike] = useState<VehicleModelDTO>();
+    const location = useLocation();
     const [startDate, setStartDate] = useState<Date>()
     const [endDate, setEndDate] = useState<Date>()
+    
+    const rentalParams = location.state?.rentalParams;
+    
+    console.log(`RENTAL PARAMS OF CHECKOUT: ${rentalParams}`);
+
+    useEffect(() => {
+        if (rentalParams) {
+            setStartDate(rentalParams.startDate);
+            setEndDate(rentalParams.endDate);
+        }
+    }, [rentalParams]);
+
+
+    console.log(`bike id: ${id}`);
+
+    const getVehicleModelDetailById = async () => {
+        if (!id) return;
+        setLoadingState(true);
+        setError('');
+
+        try {
+            const bikeId = parseInt(id, 10);
+            if (isNaN(bikeId)) {
+                setError("Invalid bike ID");
+                setLoadingState(false);
+                return;
+            }
+            const data = await bikeApi.getBikeById(bikeId);
+            setBike(data);
+            // Auto-select the bike's shop location when data is loaded
+            setSelectedLocation("bikeShop");
+        } catch (error) {
+            console.error(`Error fetching bike details: `, error);
+            setError("Failed to load bike details. Please try again later.");
+        } finally {
+            setLoadingState(false);
+        }
+    };
+
+    useEffect(() => {
+        getVehicleModelDetailById();
+    }, [id]);
+
+    // Add a retry function
+    const retryFetch = () => {
+        setError('');
+        getVehicleModelDetailById();
+    };
+
+
     const [selectedOptions, setSelectedOptions] = useState(
         RENTAL_OPTIONS.map(option => ({...option, selected: false}))
     )
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     const [selectedLocation, setSelectedLocation] = useState<string>('')
-
-    const LOCATIONS = [
-        {id: "loc1", name: "Hanoi Downtown", address: "15 Tran Hung Dao St, Hoan Kiem"},
-        {id: "loc2", name: "Hanoi West", address: "88 Cau Giay St, Cau Giay"},
-        {id: "loc3", name: "Hanoi South", address: "102 Nguyen Van Cu St, Long Bien"},
-    ]
 
     useEffect(() => {
         if (loading) return
@@ -54,17 +99,12 @@ export default function CheckoutPage() {
             return
         }
 
-        if (!bikeId || !bike) {
-            navigate('/bikes')
-            return
-        }
-
-        // Set default dates (today + 1 to today + 3)
-        const tomorrow = addDays(new Date(), 1)
-        const dayAfterTomorrow = addDays(new Date(), 3)
-        setStartDate(tomorrow)
-        setEndDate(dayAfterTomorrow)
-    }, [bikeId, bike, isAuthenticated, loading, navigate])
+        // if (!bikeId || !bike) {
+        //     navigate('/')
+        //     return
+        // }
+        
+    }, [id, bike, isAuthenticated, loading, navigate])
 
     const handleOptionToggle = (optionId: string) => {
         setSelectedOptions(prev =>
@@ -78,9 +118,8 @@ export default function CheckoutPage() {
 
     const calculateTotal = () => {
         if (!startDate || !endDate || !bike) return 0
-
         const days = differenceInDays(endDate, startDate)
-        const bikeTotal = bike.pricePerDay * days
+        const bikeTotal = bike.ratePerDay * days
         const optionsTotal = selectedOptions
             .filter(option => option.selected)
             .reduce((sum, option) => sum + (option.price * days), 0)
@@ -105,11 +144,11 @@ export default function CheckoutPage() {
             // Simulate API call
             await new Promise(resolve => setTimeout(resolve, 2000))
 
-            const locationName = LOCATIONS.find(loc => loc.id === selectedLocation)?.name
+            const locationName = bike.shop
 
             toast({
                 title: "Booking Confirmed!",
-                description: `Your rental for ${bike.name} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')} at ${locationName}.`,
+                description: `Your rental for ${bike.displayName} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')} at ${locationName}.`,
             })
 
             navigate('/rentals')
@@ -119,6 +158,8 @@ export default function CheckoutPage() {
                 description: "There was an error processing your booking. Please try again.",
                 variant: "destructive",
             })
+            console.error(`Error booking bike:`, error);
+            setError("Booking failed, There was an error processing your booking. Please try again.");
         } finally {
             setIsSubmitting(false)
         }
@@ -128,6 +169,24 @@ export default function CheckoutPage() {
         return (
             <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+            </div>
+        )
+    }
+
+    if (loadingState) {
+        return (
+            <div className="container mx-auto px-4 py-8 max-w-6xl">
+                <Button variant="ghost" className="mb-6" asChild>
+                    <Link to="/bikes">
+                        <ArrowLeft className="w-4 h-4 mr-2"/>
+                        Back to Bikes
+                    </Link>
+                </Button>
+
+                <div className="flex flex-col items-center justify-center h-64">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mb-4"></div>
+                    <p className="text-muted-foreground">Loading bike details...</p>
+                </div>
             </div>
         )
     }
@@ -143,11 +202,33 @@ export default function CheckoutPage() {
         <div className="container mx-auto px-4 py-8 max-w-6xl">
             {/* Back Button */}
             <Button variant="ghost" className="mb-6" asChild>
-                <Link to={`/bikes/${bike.id}`}>
+                <Link
+                    to={`/bikes/${bike.modelId}`}
+                    state={{
+                        rentalParams: rentalParams
+                    }}
+                >
                     <ArrowLeft className="w-4 h-4 mr-2"/>
                     Back to Bike Details
                 </Link>
             </Button>
+
+            {/* Error Message */}
+            {error && (
+                <div
+                    className="bg-destructive/15 border border-destructive text-destructive px-4 py-3 rounded-md mb-6 flex items-start justify-between">
+                    <div className="flex items-start">
+                        <div className="mr-2 mt-0.5">⚠️</div>
+                        <div>
+                            <p className="font-medium">Error</p>
+                            <p className="text-sm">{error}</p>
+                        </div>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={retryFetch} className="ml-4">
+                        Retry
+                    </Button>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Booking Form */}
@@ -230,24 +311,21 @@ export default function CheckoutPage() {
                             <div className="space-y-2 mt-4">
                                 <Label>Pickup Location</Label>
                                 <div className="space-y-3">
-                                    {LOCATIONS.filter(location =>
-                                        // This would ideally check which locations have this bike available
-                                        bike.availableLocations?.includes(location.id) || true
-                                    ).map((location) => (
-                                        <div key={location.id} className="flex items-center space-x-3">
-                                            <Checkbox
-                                                id={location.id}
-                                                checked={selectedLocation === location.id}
-                                                onCheckedChange={() => setSelectedLocation(location.id)}
-                                            />
-                                            <div className="flex-1">
-                                                <Label htmlFor={location.id} className="cursor-pointer font-medium">
-                                                    {location.name}
-                                                </Label>
-                                                <p className="text-xs text-muted-foreground">{location.address}</p>
-                                            </div>
+                                    <div className="flex items-center space-x-3">
+                                        <Checkbox
+                                            id="bikeShop"
+                                            checked={selectedLocation === "bikeShop"}
+                                            onCheckedChange={() => setSelectedLocation("bikeShop")}
+                                        />
+                                        <div className="flex-1">
+                                            <Label htmlFor="bikeShop" className="cursor-pointer font-medium">
+                                                {bike.shop}
+                                            </Label>
+                                            <p className="text-xs text-muted-foreground">
+                                                {bike.vehicleType} pickup location
+                                            </p>
                                         </div>
-                                    ))}
+                                    </div>
                                 </div>
                             </div>
 
@@ -338,16 +416,16 @@ export default function CheckoutPage() {
                             {/* Bike Details */}
                             <div className="flex space-x-4">
                                 <img
-                                    src={bike.imageUrl.split('"')[0]}
-                                    alt={bike.name}
+                                    src={bike.imageFile.split('"')[0]}
+                                    alt={bike.displayName}
                                     className="w-20 h-20 object-cover rounded-lg"
                                 />
                                 <div className="flex-1">
-                                    <h3 className="font-semibold">{bike.name}</h3>
-                                    <p className="text-sm text-muted-foreground">{bike.type}</p>
+                                    <h3 className="font-semibold">{bike.displayName}</h3>
+                                    <p className="text-sm text-muted-foreground">{bike.vehicleType}</p>
                                     <div className="flex items-center mt-1">
                                         <MapPin className="w-3 h-3 mr-1"/>
-                                        <span className="text-xs text-muted-foreground">{bike.location}</span>
+                                        <span className="text-xs text-muted-foreground">{bike.shop}</span>
                                     </div>
                                 </div>
                             </div>
@@ -358,7 +436,7 @@ export default function CheckoutPage() {
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
                                     <span>Bike rental ({days} {days === 1 ? 'day' : 'days'})</span>
-                                    <span>${(bike.pricePerDay * days).toFixed(2)}</span>
+                                    <span>${(bike.ratePerDay * days).toFixed(2)}</span>
                                 </div>
 
                                 {selectedOptions
@@ -407,7 +485,11 @@ export default function CheckoutPage() {
                                 disabled={isSubmitting || !startDate || !endDate || !selectedLocation}
                             >
                                 {isSubmitting ? (
-                                    <>Processing...</>
+                                    <div className="flex items-center justify-center">
+                                        <div
+                                            className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
+                                        Processing...
+                                    </div>
                                 ) : (
                                     <>
                                         <CreditCard className="w-4 h-4 mr-2"/>

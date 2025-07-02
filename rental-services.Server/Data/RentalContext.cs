@@ -213,7 +213,7 @@ public partial class RentalContext : DbContext
         modelBuilder.Entity<Manufacturer>(entity =>
         {
             entity.HasKey(e => e.ManufacturerId).HasName("PK__Manufact__357E5CC1BEF140B3");
-
+            
             entity.Property(e => e.ManufacturerName).HasMaxLength(100);
         });
 
@@ -277,6 +277,9 @@ public partial class RentalContext : DbContext
             entity.Property(e => e.ImagePath)
                 .HasMaxLength(256)
                 .IsUnicode(false);
+            entity.Property(e => e.ReportTime)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
             entity.Property(e => e.Title).HasMaxLength(256);
 
             entity.HasOne(d => d.Type).WithMany(p => p.Reports)
