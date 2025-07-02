@@ -58,13 +58,10 @@ export default function ProfilePage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [isUploadingId, setIsUploadingId] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [localImageUrl, setLocalImageUrl] = useState<string | null>(null);
+  const [extractedData, setExtractedData] = useState<ExtractedIdData | null>(null);
   const [isIdReviewOpen, setIsIdReviewOpen] = useState(false);
-  const [isSavingIdData, setIsSavingIdData] = useState(false);
-  const [extractedIdData, setExtractedIdData] =
-    useState<ExtractedIdData | null>(null);
-  const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -93,19 +90,6 @@ export default function ProfilePage() {
       licenseId: user.driverLicenses?.licenseId || "",
     });
   }, [user, isAuthenticated, loading, navigate]);
-
-  useEffect(() => {
-    if (user?.driverLicenses?.imageLicenseUrl) {
-      setUploadedImageUrl(user.driverLicenses.imageLicenseUrl);
-    }
-  }, [user]);
-
-  useEffect(() => {
-    console.log("State changes:");
-    console.log("isIdReviewOpen:", isIdReviewOpen);
-    console.log("extractedIdData:", extractedIdData);
-    console.log("uploadedImageUrl:", uploadedImageUrl);
-  }, [isIdReviewOpen, extractedIdData, uploadedImageUrl]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Only prevent editing of ID number if ID document is verified
@@ -191,163 +175,48 @@ export default function ProfilePage() {
       return;
     }
 
-    setIsUploadingId(true);
-
+    // Gọi API OCR
     const formData = new FormData();
-    formData.append("image", file);
+    formData.append('image', file);
 
-    const token = localStorage.getItem("token");
-    if (!token) {
-      toast({
-        title: "Authentication Required",
-        description: "Please log in to upload your ID document.",
-        variant: "destructive",
-      });
-      setIsUploadingId(false);
-      return;
-    }
+    // Lấy token từ localStorage
+    const token = localStorage.getItem('token');
 
     try {
-      const response = await fetch(
-        "http://localhost:5125/api/ocr/upload-license",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
+      const res = await fetch('http://localhost:5125/api/Ocr/upload-license', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          ...(token ? { 'Authorization': 'Bearer ' + token } : {})
         }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || `Server responded with ${response.status}`
-        );
-      }
-
-      const result = await response.json();
-      const serverExtractedData = result.extractedData;
-      const imageUrl = result.imageUrl;
-
-      // Map dữ liệu từ backend sang frontend format
-      const mappedData: ExtractedIdData = {
-        fullName: serverExtractedData.fullName || "",
-        dateOfBirth: serverExtractedData.dateOfBirth || "",
-        idNumber: serverExtractedData.licenseNumber || "",
-        address: serverExtractedData.address || "",
-        documentType: "Driver License",
-        licenseClass: serverExtractedData.licenseClass || "",
-        dateOfIssue: serverExtractedData.dateOfIssue || "",
-        imageUrl: imageUrl,
-      };
-
-      setExtractedIdData(mappedData);
-      setUploadedImageUrl(imageUrl);
-
-      toast({
-        title: "ID Document Processed",
-        description:
-          "Information extracted successfully. Please review the details.",
       });
-
-      setIsIdReviewOpen(true);
-    } catch (error: any) {
-      console.error("ID upload error:", error);
-      toast({
-        title: "Upload Failed",
-        description:
-          error.message || "Failed to process ID document. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsUploadingId(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
+      const data = await res.json();
+      if (res.ok && data.extractedData) {
+        const extracted = data.extractedData;
+        setExtractedData({
+          fullName: extracted.fullName,
+          dateOfBirth: extracted.dateOfBirth,
+          idNumber: extracted.licenseNumber,
+          address: extracted.address,
+          documentType: "driver_license",
+          licenseClass: extracted.licenseClass,
+          dateOfIssue: extracted.dateOfIssue,
+        });
+        setIsIdReviewOpen(true);
+      } else {
+        toast({ title: "OCR Failed", description: data.message || "Không trích xuất được dữ liệu", variant: "destructive" });
       }
+    } catch (err) {
+      toast({ title: "Error", description: "Lỗi khi gửi ảnh lên server", variant: "destructive" });
     }
-  };
 
-  const handleIdConfirm = async (editedData: ExtractedIdData) => {
-    setIsSavingIdData(true);
+    // Preview ảnh như cũ (nếu muốn)
+    const localUrl = URL.createObjectURL(file);
+    setLocalImageUrl(localUrl);
 
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("Authentication required");
-      }
-
-      // Gọi API để confirm và lưu dữ liệu
-      const response = await fetch(
-        "http://localhost:5125/api/ocr/confirm-license",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            fullName: editedData.fullName,
-            dateOfBirth: editedData.dateOfBirth,
-            licenseNumber: editedData.idNumber,
-            licenseClass: editedData.licenseClass,
-            address: editedData.address,
-            dateOfIssue: editedData.dateOfIssue,
-            imageUrl: editedData.imageUrl,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(
-          errorData.message || `Server responded with ${response.status}`
-        );
-      }
-
-      //@ts-ignore
-      const result = await response.json();
-
-      // Update form data with confirmed information
-      setFormData((prev) => ({
-        ...prev,
-        name: editedData.fullName,
-        dateOfBirth: editedData.dateOfBirth,
-        licenseId: editedData.idNumber,
-        address: editedData.address,
-      }));
-
-      toast({
-        title: "ID Document Verified",
-        description:
-          "Your ID information has been successfully verified and saved.",
-      });
-
-      setIsIdReviewOpen(false);
-    } catch (error: any) {
-      console.error("Error saving ID data:", error);
-      toast({
-        title: "Save Failed",
-        description:
-          error.message || "Failed to save ID information. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setIsSavingIdData(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
     }
-  };
-
-  const handleIdReject = () => {
-    setExtractedIdData(null);
-    setUploadedImageUrl(null);
-    setIsIdReviewOpen(false);
-
-    toast({
-      title: "Upload Cancelled",
-      description:
-        "Please re-upload your ID document if the extracted information was incorrect.",
-      variant: "destructive",
-    });
   };
 
   const triggerIdUpload = () => {
@@ -357,6 +226,74 @@ export default function ProfilePage() {
   const isFieldLocked = (fieldName: string) => {
     // Only lock the ID number field when ID document is verified
     return fieldName === "licenseId";
+  };
+
+  const handleConfirmIdData = async (data: ExtractedIdData) => {
+    // Lấy token từ localStorage
+    const token = localStorage.getItem('token');
+    // Map idNumber -> licenseNumber cho backend, loại bỏ idNumber
+    const payload = {
+      fullName: data.fullName,
+      dateOfBirth: data.dateOfBirth,
+      licenseNumber: data.idNumber,
+      address: data.address,
+      documentType: data.documentType,
+      licenseClass: data.licenseClass,
+      dateOfIssue: data.dateOfIssue,
+      imageUrl: data.imageUrl,
+      expiryDate: data.expiryDate,
+      placeOfBirth: data.placeOfBirth,
+      nationality: data.nationality,
+    };
+    // Gọi API /api/ocr/confirm-license để lưu vào DB
+    try {
+      const res = await fetch('http://localhost:5125/api/Ocr/confirm-license', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': 'Bearer ' + token } : {})
+        },
+        body: JSON.stringify(payload)
+      });
+      const result = await res.json();
+      if (res.ok) {
+        toast({ title: "Thành công", description: result.message });
+        setIsIdReviewOpen(false);
+        reloadUser();
+      } else {
+        toast({ title: "Lỗi xác nhận", description: result.message || "Có lỗi xảy ra", variant: "destructive" });
+      }
+    } catch (err) {
+      toast({ title: "Lỗi", description: "Không thể xác nhận thông tin", variant: "destructive" });
+    }
+  };
+
+  const reloadUser = async () => {
+    const token = localStorage.getItem('token');
+  
+    if (!token) return;
+    try {
+      const res = await fetch('http://localhost:5125/api/Auth/me', {
+        headers: {
+          'Authorization': 'Bearer ' + token
+        }
+      });
+      if (res.ok) {
+        const userData = await res.json();
+        setFormData({
+          name: userData.fullName,
+          email: userData.email,
+          dateOfBirth: String(userData.dateOfBirth) || "",
+          address: userData.address || "",
+          licenseId: userData.driverLicenses?.licenseId || "",
+        });
+        // Cập nhật lại localStorage
+        localStorage.setItem("user", JSON.stringify(userData));
+        // Nếu context có setUser thì gọi setUser(userData);
+      }
+    } catch (err) {
+      // Xử lý lỗi nếu cần
+    }
   };
 
   if (loading) {
@@ -572,54 +509,44 @@ export default function ProfilePage() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Identity Verification</h3>
 
-              {uploadedImageUrl ? (
-                // Show uploaded ID document
+              {localImageUrl ? (
                 <div className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Uploaded ID Document</Label>
+                    <Label>Selected ID Document</Label>
                     <div className="border rounded-lg p-4 bg-green-50">
                       <div className="flex items-start gap-4">
-                        {uploadedImageUrl && (
-                          <img
-                            src={uploadedImageUrl}
-                            alt="ID Document"
-                            className="max-w-xs rounded border"
-                          />
-                        )}
+                        <img
+                          src={localImageUrl}
+                          alt="ID Document"
+                          className="max-w-xs rounded border"
+                        />
                         <div className="flex-1">
                           <div className="flex items-center gap-2 text-green-600 mb-2">
                             <CheckCircle className="h-5 w-5" />
                             <span className="font-medium">
-                              Verification Completed
+                              {extractedData ? "Verification successful" : "Preview Only (not uploaded)"}
                             </span>
                           </div>
                           <p className="text-sm text-muted-foreground mb-2">
-                            Your ID document has been successfully verified and
-                            processed.
-                          </p>
-                          <p className="text-sm text -muted-foreground">
-                            <strong>Note:</strong> Information extracted from
-                            your ID document cannot be edited manually for
-                            security purposes.
+                            {extractedData
+                              ? "The image has been uploaded and information extracted successfully."
+                              : "This image is only visible to you and not uploaded to the server."}
                           </p>
                         </div>
                       </div>
                     </div>
                   </div>
-
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       onClick={triggerIdUpload}
-                      disabled={isUploadingId}
                     >
                       <Upload className="h-4 w-4 mr-2" />
-                      Re-upload ID Document
+                      Choose Another File
                     </Button>
                   </div>
                 </div>
               ) : (
-                // Show upload interface
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>ID Document Upload</Label>
@@ -629,26 +556,14 @@ export default function ProfilePage() {
                         Upload your ID Document
                       </h4>
                       <p className="text-sm text-muted-foreground mb-4">
-                        Upload a clear photo of your government-issued ID. Our
-                        system will automatically extract your information for
-                        verification.
+                        Upload a clear photo of your government-issued ID. This image will only be previewed locally and not uploaded.
                       </p>
                       <Button
                         onClick={triggerIdUpload}
-                        disabled={isUploadingId}
                         className="mb-2"
                       >
-                        {isUploadingId ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Processing...
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="h-4 w-4 mr-2" />
-                            Choose File
-                          </>
-                        )}
+                        <Upload className="h-4 w-4 mr-2" />
+                        Choose File
                       </Button>
                       <p className="text-xs text-muted-foreground">
                         Supported formats: JPG, PNG, GIF (Max 5MB)
@@ -680,12 +595,11 @@ export default function ProfilePage() {
 
       <IdReviewDialog
         isOpen={isIdReviewOpen}
+        extractedData={extractedData}
         onClose={() => setIsIdReviewOpen(false)}
-        onConfirm={handleIdConfirm}
-        onReject={handleIdReject}
-        extractedData={extractedIdData}
-        uploadedImageUrl={uploadedImageUrl}
-        isProcessing={isSavingIdData}
+        onConfirm={handleConfirmIdData}
+        onReject={() => setIsIdReviewOpen(false)}
+        uploadedImageUrl={localImageUrl || ""}
       />
     </div>
   );

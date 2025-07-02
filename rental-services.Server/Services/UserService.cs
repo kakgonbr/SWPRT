@@ -34,4 +34,9 @@ public class UserService : IUserService
     {
         _userRepository.Delete(id);
     }
+
+    public async Task<User?> GetUserBySub(string sub)
+    {
+        return await _userRepository.GetBySub(sub);
+    }
 }

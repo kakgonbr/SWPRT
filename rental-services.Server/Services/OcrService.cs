@@ -15,7 +15,7 @@ namespace rental_services.Server.Services
             _context = context;
         }
 
-        public async Task ProcessGplxDataAsync(string userSub, GplxData gplxData, string imageUrl)
+        public async Task ProcessGplxDataAsync(string userSub, GplxData gplxData)
         {
             var licenseType = await _context.DriverLicenseTypes
                 .FirstOrDefaultAsync(lt => lt.LicenseTypeCode == gplxData.LicenseClass);
@@ -52,7 +52,7 @@ namespace rental_services.Server.Services
                     LicenseId = gplxData.LicenseNumber,
                     HolderName = gplxData.FullName,
                     DateOfIssue = DateTime.TryParse(gplxData.DateOfIssue, out var doi) ? DateOnly.FromDateTime(doi) : DateOnly.FromDateTime(DateTime.Now),
-                    ImageLicenseUrl = gplxData.ImageUrl ?? imageUrl
+                    // ImageLicenseUrl = gplxData.ImageUrl ?? imageUrl
                 };
                 _context.DriverLicenses.Add(newLicense);
             }
@@ -64,7 +64,7 @@ namespace rental_services.Server.Services
                 {
                     existingLicense.DateOfIssue = DateOnly.FromDateTime(doi);
                 }
-                existingLicense.ImageLicenseUrl = gplxData.ImageUrl ?? imageUrl;
+                // existingLicense.ImageLicenseUrl = gplxData.ImageUrl ?? imageUrl;
             }
             
             await _context.SaveChangesAsync();

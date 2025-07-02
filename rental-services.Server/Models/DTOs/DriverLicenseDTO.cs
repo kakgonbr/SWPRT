@@ -3,7 +3,7 @@
 public record DriverLicenseDto(
     string LicenseId, 
     string HolderName, 
-    DateOnly DateOfIssue,
-    string? ImageLicenseUrl = null
+    DateOnly DateOfIssue
+    
 
 );

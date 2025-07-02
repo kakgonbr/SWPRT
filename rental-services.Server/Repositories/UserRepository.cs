@@ -20,9 +20,16 @@ public class UserRepository : IUserRepository
             .FirstOrDefaultAsync(u => u.UserId == id);
     }
 
-    public User GetBySub(string sub)
+    public async Task<User?> GetBySub(string sub)
     {
-        return _db.Users.FirstOrDefault(u => u.Sub == sub);
+       
+
+        var user = await _db.Users
+            .Include(u => u.DriverLicenses)
+            .FirstOrDefaultAsync(u => u.Sub == sub);
+
+      
+        return user;
     }
 
     public void Add(User user)

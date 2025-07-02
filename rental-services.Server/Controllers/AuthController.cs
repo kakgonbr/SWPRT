@@ -12,6 +12,7 @@ using rental_services.Server.Models.DTOs;
 using rental_services.Server.Data;
 using rental_services.Server.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace rental_services.Server.Controllers;
 
@@ -23,13 +24,15 @@ public class AuthController : ControllerBase
     private readonly IPasswordHasher<User> _hasher;
     private readonly RentalContext _db;
     private readonly IUserService _userService;
+    private readonly ILogger<AuthController> _logger;
 
-    public AuthController(IOptions<JwtSettings> jwtSettings, IPasswordHasher<User> hasher, RentalContext db, IUserService userService)
+    public AuthController(IOptions<JwtSettings> jwtSettings, IPasswordHasher<User> hasher, RentalContext db, IUserService userService, ILogger<AuthController> logger)
     {
         _jwtSettings = jwtSettings.Value;
         _hasher = hasher;
         _db = db;
         _userService = userService;
+        _logger = logger;
     }
 
     /// <summary>
@@ -112,8 +115,8 @@ public class AuthController : ControllerBase
             existingUser.DriverLicenses.Select(dl => new DriverLicenseDto(
                 dl.LicenseId, 
                 dl.HolderName,
-                dl.DateOfIssue,
-                dl.ImageLicenseUrl
+                dl.DateOfIssue
+                // dl.ImageLicenseUrl
             )).SingleOrDefault()
         );
         return Ok(new LoginResponse(accessToken, null, expires, userDto));
@@ -138,9 +141,18 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> Me()
     {
-        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
-        var user = await _userService.GetUser(userId);
-        if (user == null) return NotFound(new {Message = "User not found"});
+        foreach (var claim in User.Claims)
+            Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
+
+        var userSub = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        _logger.LogInformation("userSub from token: " + userSub);
+
+        var user = await _userService.GetUserBySub(userSub);
+        if (user == null)
+        {
+            _logger.LogWarning("User not found for sub: " + userSub);
+            return NotFound(new {Message = "User not found"});
+        }
         var dto = new UserDto(
             user.UserId,
             user.Email,
@@ -155,8 +167,7 @@ public class AuthController : ControllerBase
             user.DriverLicenses.Select(dl => new DriverLicenseDto(
                 dl.LicenseId, 
                 dl.HolderName,
-                dl.DateOfIssue,
-                dl.ImageLicenseUrl
+                dl.DateOfIssue
             )).SingleOrDefault()
         );
         return Ok(dto);

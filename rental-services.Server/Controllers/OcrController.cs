@@ -10,7 +10,7 @@ using rental_services.Server.Services;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using rental_services.Server.Models.DTOs;
-  using rental_services.Server.Utils;
+using rental_services.Server.Utils;
 
 namespace rental_services.Server.Controllers
 {
@@ -35,7 +35,7 @@ namespace rental_services.Server.Controllers
                 return BadRequest("Ảnh không được để trống.");
             
             // upload this image to the server  
-            var imageUrl = await UploadImageToServer(image);
+            // var imageUrl = await UploadImageToServer(image);
 
             string extractedText;
             try
@@ -64,14 +64,14 @@ namespace rental_services.Server.Controllers
 
             var parser = new GplxParser(extractedText);
             var gplxData = parser.Parse();
-            gplxData.ImageUrl = imageUrl;
+            // gplxData.ImageUrl = imageUrl;
 
             // Chỉ trả về dữ liệu đã extract, không lưu database
             return Ok(new
             {
                 message = "Xử lý OCR thành công. Vui lòng xem xét và xác nhận thông tin.",
                 extractedData = gplxData,
-                imageUrl = imageUrl
+                // imageUrl = imageUrl
             });
         }
 
@@ -88,7 +88,7 @@ namespace rental_services.Server.Controllers
             try
             {
                 // Lưu dữ liệu vào database khi user confirm
-                await _ocrService.ProcessGplxDataAsync(userSub, gplxData, gplxData.ImageUrl ?? "");
+                await _ocrService.ProcessGplxDataAsync(userSub, gplxData);
                 
                 return Ok(new
                 {
@@ -108,34 +108,34 @@ namespace rental_services.Server.Controllers
         }
 
         private async Task<string> UploadImageToServer(IFormFile image)
-{
-    try
-    {
-        var client = new HttpClient();
-        string imgbbApiKey = Environment.GetEnvironmentVariable("IMGBB_API_KEY") ?? throw new InvalidOperationException("Environment Variable 'IMGBB_API_KEY' not found.");
-        string requestUrl = "https://api.imgbb.com/1/upload?key=" + imgbbApiKey; 
-        var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
-        var streamContent = new StreamContent(image.OpenReadStream());
-        streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(image.ContentType);
-        request.Content = new MultipartFormDataContent();
-        ((MultipartFormDataContent)request.Content).Add(streamContent, "image", image.FileName);
-        var response = await client.SendAsync(request);
-        var responseBody = await response.Content.ReadAsStringAsync();
-
-        var jsonResponse = JsonDocument.Parse(responseBody);
-        if (!jsonResponse.RootElement.TryGetProperty("data", out var data) ||
-            !data.TryGetProperty("image", out var imageObj) ||
-            !imageObj.TryGetProperty("url", out var urlProp))
         {
-            throw new Exception("Không lấy được URL ảnh từ imgbb.");
+            try
+            {
+                var client = new HttpClient();
+                string imgbbApiKey = Environment.GetEnvironmentVariable("IMGBB_API_KEY") ?? throw new InvalidOperationException("Environment Variable 'IMGBB_API_KEY' not found.");
+                string requestUrl = "https://api.imgbb.com/1/upload?key=" + imgbbApiKey; 
+                var request = new HttpRequestMessage(HttpMethod.Post, requestUrl);
+                var streamContent = new StreamContent(image.OpenReadStream());
+                streamContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue(image.ContentType);
+                request.Content = new MultipartFormDataContent();
+                ((MultipartFormDataContent)request.Content).Add(streamContent, "image", image.FileName);
+                var response = await client.SendAsync(request);
+                var responseBody = await response.Content.ReadAsStringAsync();
+
+                var jsonResponse = JsonDocument.Parse(responseBody);
+                if (!jsonResponse.RootElement.TryGetProperty("data", out var data) ||
+                    !data.TryGetProperty("image", out var imageObj) ||
+                    !imageObj.TryGetProperty("url", out var urlProp))
+                {
+                    throw new Exception("Không lấy được URL ảnh từ imgbb.");
+                }
+                return urlProp.GetString();
+            }
+            catch (Exception ex)
+            {
+                // Log lỗi nếu cần
+                throw new Exception("Lỗi khi upload ảnh lên imgbb: " + ex.Message, ex);
+            }
         }
-        return urlProp.GetString();
-    }
-    catch (Exception ex)
-    {
-        // Log lỗi nếu cần
-        throw new Exception("Lỗi khi upload ảnh lên imgbb: " + ex.Message, ex);
-    }
-}
     }
 } 
