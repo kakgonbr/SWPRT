@@ -99,6 +99,7 @@ namespace rental_services.Server
                 .AddScoped<IRentalService, RentalService>()
                 .AddScoped<IBannerRepository, BannerRepository>()
                 .AddScoped<IStatisticsRepository, StatisticsRepository>()
+                .AddSingleton<ISystemSettingsService, SystemSettingsService>()
                 .AddScoped<IAdminControlPanelService, AdminControlPanelService>()
                 .AddSingleton<IMaintenanceService, MaintenanceService>();
 

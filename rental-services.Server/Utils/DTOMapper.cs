@@ -130,9 +130,16 @@ namespace rental_services.Server.Utils
             .ForMember(dest => dest.PhoneNumber, opt => opt.Ignore())
             .ForMember(dest => dest.CreationDate, opt => opt.Ignore());
 
-            CreateMap<Banner, BannerDTO>();
+            CreateMap<Banner, BannerDTO>()
+            .ForMember(dest => dest.Type, opt => opt.MapFrom(
+                src => src.Type.ToLower()));
             CreateMap<BannerDTO, Banner>()
+            .ForMember(dest => dest.Type, opt => opt.MapFrom(
+                src => src.Type[0].ToString().ToUpper() + src.Type.Substring(1)
+            ))
             .ForMember(dest => dest.BannerId, opt => opt.Ignore());
+
+            CreateMap<SystemSettingsDTO, ServerInfoDTO>();
         }
     }
 }

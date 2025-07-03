@@ -61,7 +61,7 @@ import {
 import { type PopupBanner } from '../../types/admin'
 
 export default function PopupBannerConfig() {
-    const { banners, createBanner, updateBanner, deleteBanner, toggleBannerStatus } = usePopupBanner()
+    const { banners,loading ,error , createBanner, updateBanner, deleteBanner, toggleBannerStatus } = usePopupBanner()
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [selectedBanner, setSelectedBanner] = useState<PopupBanner | null>(null)
@@ -70,12 +70,12 @@ export default function PopupBannerConfig() {
         message: '',
         type: 'info',
         isActive: true,
-        startDate: new Date().toISOString().slice(0, 16),
-        endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-        displayPages: ['/'],
+        startTime: new Date().toISOString().slice(0, 16),
+        endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+        //displayPages: ['/'],
         priority: 1,
         showOnce: false,
-        backgroundColor: '#3b82f6',
+        background: '#3b82f6',
         textColor: '#ffffff'
     })
 
@@ -88,14 +88,14 @@ export default function PopupBannerConfig() {
                 message: formData.message!,
                 type: formData.type as any,
                 isActive: formData.isActive!,
-                startDate: formData.startDate!,
-                endDate: formData.endDate!,
-                displayPages: formData.displayPages!,
+                startTime: formData.startTime!,
+                endTime: formData.endTime!,
+                //displayPages: formData.displayPages!,
                 buttonText: formData.buttonText,
                 buttonLink: formData.buttonLink,
                 priority: formData.priority!,
                 showOnce: formData.showOnce!,
-                backgroundColor: formData.backgroundColor,
+                background: formData.background,
                 textColor: formData.textColor
             })
             setIsCreateDialogOpen(false)
@@ -109,7 +109,7 @@ export default function PopupBannerConfig() {
         if (!selectedBanner || !formData.title || !formData.message) return
 
         try {
-            await updateBanner(selectedBanner.id, formData)
+            await updateBanner(selectedBanner.bannerId, formData)
             setIsEditDialogOpen(false)
             setSelectedBanner(null)
             resetForm()
@@ -133,14 +133,14 @@ export default function PopupBannerConfig() {
             message: banner.message,
             type: banner.type,
             isActive: banner.isActive,
-            startDate: banner.startDate.slice(0, 16),
-            endDate: banner.endDate.slice(0, 16),
-            displayPages: banner.displayPages,
+            startTime: banner.startTime.slice(0, 16),
+            endTime: banner.endTime.slice(0, 16),
+            //displayPages: banner.displayPages,
             buttonText: banner.buttonText,
             buttonLink: banner.buttonLink,
             priority: banner.priority,
             showOnce: banner.showOnce,
-            backgroundColor: banner.backgroundColor,
+            background: banner.background,
             textColor: banner.textColor
         })
         setIsEditDialogOpen(true)
@@ -152,12 +152,12 @@ export default function PopupBannerConfig() {
             message: '',
             type: 'info',
             isActive: true,
-            startDate: new Date().toISOString().slice(0, 16),
-            endDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
-            displayPages: ['/'],
+            startTime: new Date().toISOString().slice(0, 16),
+            endTime: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().slice(0, 16),
+            //displayPages: ['/'],
             priority: 1,
             showOnce: false,
-            backgroundColor: '#3b82f6',
+            background: '#3b82f6',
             textColor: '#ffffff'
         })
     }
@@ -233,8 +233,8 @@ export default function PopupBannerConfig() {
                     <Input
                         id="startDate"
                         type="datetime-local"
-                        value={formData.startDate}
-                        onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+                        value={formData.startTime}
+                        onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
                     />
                 </div>
                 <div>
@@ -242,8 +242,8 @@ export default function PopupBannerConfig() {
                     <Input
                         id="endDate"
                         type="datetime-local"
-                        value={formData.endDate}
-                        onChange={(e) => setFormData(prev => ({ ...prev, endDate: e.target.value }))}
+                        value={formData.endTime}
+                        onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
                     />
                 </div>
             </div>
@@ -276,13 +276,13 @@ export default function PopupBannerConfig() {
                         <Input
                             id="backgroundColor"
                             type="color"
-                            value={formData.backgroundColor}
-                            onChange={(e) => setFormData(prev => ({ ...prev, backgroundColor: e.target.value }))}
+                            value={formData.background}
+                            onChange={(e) => setFormData(prev => ({ ...prev, background: e.target.value }))}
                             className="w-16 h-10 p-1"
                         />
                         <Input
-                            value={formData.backgroundColor}
-                            onChange={(e) => setFormData(prev => ({ ...prev, backgroundColor: e.target.value }))}
+                            value={formData.background}
+                            onChange={(e) => setFormData(prev => ({ ...prev, background: e.target.value }))}
                             placeholder="#3b82f6"
                             className="flex-1"
                         />
@@ -348,7 +348,7 @@ export default function PopupBannerConfig() {
                         <div
                             className="p-4 rounded text-center"
                             style={{
-                                backgroundColor: formData.backgroundColor,
+                                backgroundColor: formData.background,
                                 color: formData.textColor
                             }}
                         >
@@ -441,13 +441,13 @@ export default function PopupBannerConfig() {
                                         <TableCell colSpan={6} className="text-center py-8">
                                             <div className="flex flex-col items-center gap-2">
                                                 <Megaphone className="h-8 w-8 text-muted-foreground" />
-                                                <p className="text-muted-foreground">No banners created yet</p>
+                                                <p className="text-muted-foreground">{ loading ? (error ? `Error: ${error}` : "Loading...") : "No banners created."}</p>
                                             </div>
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     banners.map((banner) => (
-                                        <TableRow key={banner.id}>
+                                        <TableRow key={banner.bannerId}>
                                             <TableCell>
                                                 <div>
                                                     <div className="font-medium">{banner.title}</div>
@@ -478,7 +478,7 @@ export default function PopupBannerConfig() {
                                                 <div className="text-sm">
                                                     <div className="flex items-center gap-1">
                                                         <Calendar className="h-3 w-3" />
-                                                        {format(new Date(banner.startDate), 'MMM d')} - {format(new Date(banner.endDate), 'MMM d')}
+                                                        {format(new Date(banner.startTime), 'MMM d')} - {format(new Date(banner.endTime), 'MMM d')}
                                                     </div>
                                                 </div>
                                             </TableCell>
@@ -490,7 +490,7 @@ export default function PopupBannerConfig() {
                                                     <Button
                                                         variant="ghost"
                                                         size="icon"
-                                                        onClick={() => toggleBannerStatus(banner.id, !banner.isActive)}
+                                                        onClick={() => toggleBannerStatus(banner.bannerId)}
                                                     >
                                                         {banner.isActive ? (
                                                             <EyeOff className="h-4 w-4" />
@@ -521,7 +521,7 @@ export default function PopupBannerConfig() {
                                                             <AlertDialogFooter>
                                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                                                                 <AlertDialogAction
-                                                                    onClick={() => handleDeleteBanner(banner.id)}
+                                                                    onClick={() => handleDeleteBanner(banner.bannerId)}
                                                                     className="bg-red-600 hover:bg-red-700"
                                                                 >
                                                                     Delete

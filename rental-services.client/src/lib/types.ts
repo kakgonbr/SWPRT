@@ -126,3 +126,10 @@ export interface ChatMessageDTO {
     content: string;
     timestamp: string;
 }
+
+export interface ServerInfo {
+    siteName: string,
+    siteDescription: string,
+    contactEmail: string,
+    supportPhone: string
+}

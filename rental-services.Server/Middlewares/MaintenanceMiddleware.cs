@@ -19,7 +19,7 @@ namespace rental_services.Server.Middlewares
                 && Utils.CustomDateTime.CurrentTime <= maintenanceService.End 
                 && context.Request.Path.StartsWithSegments("/api")
                 && !context.User.IsInRole("Admin")
-                && !(context.Request.Path.StartsWithSegments("/api/serverinfo/maintenance")
+                && !(context.Request.Path.StartsWithSegments("/api/serverinfo")
                 || context.Request.Path.StartsWithSegments("/api/auth/login")))
             {
                 context.Response.StatusCode = StatusCodes.Status503ServiceUnavailable;

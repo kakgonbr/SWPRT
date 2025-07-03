@@ -12,13 +12,13 @@ import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Textarea } from '../ui/textarea'
 import { Switch } from '../ui/switch'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '../ui/select'
+//import {
+//    Select,
+//    SelectContent,
+//    SelectItem,
+//    SelectTrigger,
+//    SelectValue,
+//} from '../ui/select'
 import { Separator } from '../ui/separator'
 import { Settings, Save, RefreshCw } from 'lucide-react'
 import { type SystemSettings as SystemSettingsType } from '../../types/admin'
@@ -152,7 +152,7 @@ export default function SystemSettings() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div>
-                            <Label htmlFor="maxRentalDays">Maximum Rental Days</Label>
+                            <Label htmlFor="maxRentalDays">Maximum Rental Days (1 - 365)</Label>
                             <Input
                                 id="maxRentalDays"
                                 type="number"
@@ -162,7 +162,7 @@ export default function SystemSettings() {
                         </div>
 
                         <div>
-                            <Label htmlFor="minRentalHours">Minimum Rental Hours</Label>
+                            <Label htmlFor="minRentalHours">Minimum Rental Hours (3 - 24)</Label>
                             <Input
                                 id="minRentalHours"
                                 type="number"
@@ -172,7 +172,7 @@ export default function SystemSettings() {
                         </div>
 
                         <div>
-                            <Label htmlFor="cancellationDeadline">Cancellation Deadline (Hours)</Label>
+                            <Label htmlFor="cancellationDeadline">Cancellation Deadline (1 - 240 Hours)</Label>
                             <Input
                                 id="cancellationDeadline"
                                 type="number"
@@ -182,7 +182,7 @@ export default function SystemSettings() {
                         </div>
 
                         <div>
-                            <Label htmlFor="maxConcurrentRentals">Max Concurrent Rentals per User</Label>
+                            <Label htmlFor="maxConcurrentRentals">Max Concurrent Rentals per User (3 - 10)</Label>
                             <Input
                                 id="maxConcurrentRentals"
                                 type="number"
@@ -194,49 +194,49 @@ export default function SystemSettings() {
                 </Card>
 
                 {/* System Configuration */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle>System Configuration</CardTitle>
-                        <CardDescription>
-                            Regional and currency settings
-                        </CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div>
-                            <Label htmlFor="defaultCurrency">Default Currency</Label>
-                            <Select
-                                value={formData.defaultCurrency || ''}
-                                onValueChange={(value) => handleInputChange('defaultCurrency', value)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select currency" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="VND">Vietnamese Dong (VND)</SelectItem>
-                                    <SelectItem value="USD">US Dollar (USD)</SelectItem>
-                                    <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
+                {/*<Card>*/}
+                {/*    <CardHeader>*/}
+                {/*        <CardTitle>System Configuration</CardTitle>*/}
+                {/*        <CardDescription>*/}
+                {/*            Regional and currency settings*/}
+                {/*        </CardDescription>*/}
+                {/*    </CardHeader>*/}
+                {/*    <CardContent className="space-y-4">*/}
+                {/*        <div>*/}
+                {/*            <Label htmlFor="defaultCurrency">Default Currency</Label>*/}
+                {/*            <Select*/}
+                {/*                value={formData.defaultCurrency || ''}*/}
+                {/*                onValueChange={(value) => handleInputChange('defaultCurrency', value)}*/}
+                {/*            >*/}
+                {/*                <SelectTrigger>*/}
+                {/*                    <SelectValue placeholder="Select currency" />*/}
+                {/*                </SelectTrigger>*/}
+                {/*                <SelectContent>*/}
+                {/*                    <SelectItem value="VND">Vietnamese Dong (VND)</SelectItem>*/}
+                {/*                    <SelectItem value="USD">US Dollar (USD)</SelectItem>*/}
+                {/*                    <SelectItem value="EUR">Euro (EUR)</SelectItem>*/}
+                {/*                </SelectContent>*/}
+                {/*            </Select>*/}
+                {/*        </div>*/}
 
-                        <div>
-                            <Label htmlFor="timezone">Timezone</Label>
-                            <Select
-                                value={formData.timezone || ''}
-                                onValueChange={(value) => handleInputChange('timezone', value)}
-                            >
-                                <SelectTrigger>
-                                    <SelectValue placeholder="Select timezone" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Asia/Ho_Chi_Minh">Ho Chi Minh (UTC+7)</SelectItem>
-                                    <SelectItem value="Asia/Bangkok">Bangkok (UTC+7)</SelectItem>
-                                    <SelectItem value="Asia/Singapore">Singapore (UTC+8)</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </CardContent>
-                </Card>
+                {/*        <div>*/}
+                {/*            <Label htmlFor="timezone">Timezone</Label>*/}
+                {/*            <Select*/}
+                {/*                value={formData.timezone || ''}*/}
+                {/*                onValueChange={(value) => handleInputChange('timezone', value)}*/}
+                {/*            >*/}
+                {/*                <SelectTrigger>*/}
+                {/*                    <SelectValue placeholder="Select timezone" />*/}
+                {/*                </SelectTrigger>*/}
+                {/*                <SelectContent>*/}
+                {/*                    <SelectItem value="Asia/Ho_Chi_Minh">Ho Chi Minh (UTC+7)</SelectItem>*/}
+                {/*                    <SelectItem value="Asia/Bangkok">Bangkok (UTC+7)</SelectItem>*/}
+                {/*                    <SelectItem value="Asia/Singapore">Singapore (UTC+8)</SelectItem>*/}
+                {/*                </SelectContent>*/}
+                {/*            </Select>*/}
+                {/*        </div>*/}
+                {/*    </CardContent>*/}
+                {/*</Card>*/}
 
                 {/* Features & Notifications */}
                 <Card>

@@ -49,6 +49,20 @@
             return await _bannerRepository.DeleteAsync(bannerId) != 0;
         }
 
+        public async Task<bool> ToggleBannerStatusAsync(int id)
+        {
+            var dbBanner = await _bannerRepository.GetByIdAsync(id);
+
+            if (dbBanner is null)
+            {
+                return false;
+            }
+
+            dbBanner.IsActive = !dbBanner.IsActive;
+
+            return await _bannerRepository.SaveAsync() != 0;
+        }
+
         public async Task<Models.DTOs.BannerDTO?> GetTopBanner()
         {
             return _mapper.Map<Models.DTOs.BannerDTO>(await _bannerRepository.GetTopBanner());
