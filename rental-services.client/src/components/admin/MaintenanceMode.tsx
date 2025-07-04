@@ -70,8 +70,8 @@ export default function MaintenanceMode() {
         try {
             await setMaintenancePeriod({
                 message: maintenanceMessage,
-                start: startTime && startTime,
-                end: endTime && endTime,
+                start: startTime && startTime.trim() !== "" ? startTime : null,
+                end: endTime && endTime.trim() !== "" ? endTime : null,
             }, rawToken!)
         } catch (e) {
             alert("Failed to set maintenance period.")

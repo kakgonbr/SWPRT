@@ -5,27 +5,27 @@ import { useToast } from '../contexts/toast-context'
 //const API = import.meta.env.VITE_API_BASE_URL;
 
 // Mock data for development
-const MOCK_SETTINGS: SystemSettings = {
-    id: 'sys-001',
-    siteName: 'VroomVroom.vn',
-    siteDescription: 'Premium motorcycle rental service in Vietnam',
-    contactEmail: 'support@vroomvroom.vn',
-    supportPhone: '+84-123-456-789',
-    maxRentalDays: 30,
-    minRentalHours: 4,
-    cancellationDeadlineHours: 24,
-    defaultCurrency: 'VND',
-    timezone: 'Asia/Ho_Chi_Minh',
-    maintenanceMode: false,
-    maintenanceMessage: 'We are currently performing scheduled maintenance. Please check back soon.',
-    emailNotifications: true,
-    smsNotifications: false,
-    autoApprovalEnabled: false,
-    requireIdVerification: true,
-    maxConcurrentRentals: 3,
-    updatedAt: '2024-06-08T10:00:00Z',
-    updatedBy: 'admin@vroomvroom.vn'
-}
+//const MOCK_SETTINGS: SystemSettings = {
+//    //id: 'sys-001',
+//    siteName: 'VroomVroom.vn',
+//    siteDescription: 'Premium motorcycle rental service in Vietnam',
+//    contactEmail: 'support@vroomvroom.vn',
+//    supportPhone: '+84-123-456-789',
+//    maxRentalDays: 30,
+//    minRentalHours: 4,
+//    cancellationDeadlineHours: 24,
+//    //defaultCurrency: 'VND',
+//    //timezone: 'Asia/Ho_Chi_Minh',
+//    //maintenanceMode: false,
+//    //maintenanceMessage: 'We are currently performing scheduled maintenance. Please check back soon.',
+//    emailNotifications: true,
+//    smsNotifications: false,
+//    autoApprovalEnabled: false,
+//    requireIdVerification: true,
+//    //maxConcurrentRentals: 3,
+//    updatedAt: '2024-06-08T10:00:00Z',
+//    updatedBy: 'admin@vroomvroom.vn'
+//}
 
 export const useSystemSettings = () => {
     const [settings, setSettings] = useState<SystemSettings | null>(null)
@@ -33,13 +33,24 @@ export const useSystemSettings = () => {
     const [error, setError] = useState<string | null>(null)
     const { toast } = useToast()
 
+    const getToken = () => localStorage.getItem('token')
+
     useEffect(() => {
         const fetchSettings = async () => {
             try {
                 setLoading(true)
-                // Simulate API call - replace with actual API endpoint
-                await new Promise(resolve => setTimeout(resolve, 1000))
-                setSettings(MOCK_SETTINGS)
+                const token = getToken()
+                const res = await fetch('/api/admin/settings', {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+
+                if (!res.ok) throw new Error('Failed to fetch settings')
+                const data = await res.json()
+                setSettings(data)
             } catch (err) {
                 const errorMessage = err instanceof Error ? err.message : 'Failed to fetch settings'
                 setError(errorMessage)
@@ -59,14 +70,18 @@ export const useSystemSettings = () => {
     const updateSettings = async (newSettings: Partial<SystemSettings>) => {
         setLoading(true)
         try {
-            // Simulate API call - replace with actual API endpoint
-            await new Promise(resolve => setTimeout(resolve, 1000))
+            const token = getToken()
+            const res = await fetch('/api/admin/settings', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(newSettings)
+            })
 
-            const updatedSettings = {
-                ...settings!,
-                ...newSettings,
-                updatedAt: new Date().toISOString()
-            }
+            if (!res.ok) throw new Error('Failed to update settings')
+            const updatedSettings = await res.json()
 
             setSettings(updatedSettings)
 
@@ -90,18 +105,18 @@ export const useSystemSettings = () => {
         }
     }
 
-    const toggleMaintenanceMode = async (enabled: boolean, message?: string) => {
-        return updateSettings({
-            maintenanceMode: enabled,
-            maintenanceMessage: message || settings?.maintenanceMessage
-        })
-    }
+    //const toggleMaintenanceMode = async (enabled: boolean, message?: string) => {
+    //    return updateSettings({
+    //        maintenanceMode: enabled,
+    //        maintenanceMessage: message || settings?.maintenanceMessage
+    //    })
+    //}
 
     return {
         settings,
         loading,
         error,
         updateSettings,
-        toggleMaintenanceMode
+        //toggleMaintenanceMode
     }
 }

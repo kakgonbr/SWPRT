@@ -10,5 +10,6 @@ namespace rental_services.Server.Services
         Task<List<BannerDTO>> GetAllbannersAsync();
         Task<ServerStatisticsDTO> GetStatisticsAsync();
         Task<BannerDTO?> GetTopBanner();
+        Task<bool> ToggleBannerStatusAsync(int id);
     }
 }

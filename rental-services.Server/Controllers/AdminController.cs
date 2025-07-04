@@ -11,11 +11,13 @@ namespace rental_services.Server.Controllers
     {
         private readonly IAdminControlPanelService _adminService;
         private readonly IMaintenanceService _maintenanceService;
+        private readonly ISystemSettingsService _systemSettingsService;
 
-        public AdminController(IAdminControlPanelService bannerService, IMaintenanceService maintenanceService)
+        public AdminController(IAdminControlPanelService bannerService, IMaintenanceService maintenanceService, ISystemSettingsService systemSettingsService)
         {
             _adminService = bannerService;
             _maintenanceService = maintenanceService;
+            _systemSettingsService = systemSettingsService;
         }
 
         [HttpGet("stats")]
@@ -34,9 +36,9 @@ namespace rental_services.Server.Controllers
 
         [HttpPut("banners")]
         [Authorize(Roles = Utils.Config.Role.Admin)]
-        public async Task<ActionResult<string>> AddBannerAsync([FromBody] BannerDTO newBanner)
+        public async Task<ActionResult<BannerDTO>> AddBannerAsync([FromBody] BannerDTO newBanner)
         {
-            return await _adminService.AddBannerAsync(newBanner) ? Ok("Added.") : BadRequest("Failed.");
+            return await _adminService.AddBannerAsync(newBanner) ? Ok(newBanner) : BadRequest("Failed.");
         }
 
         [HttpDelete("banners/{id}")]
@@ -48,9 +50,16 @@ namespace rental_services.Server.Controllers
 
         [HttpPatch("banners")]
         [Authorize(Roles = Utils.Config.Role.Admin)]
-        public async Task<ActionResult<string>> UpdateBannerAsync([FromBody] BannerDTO banner)
+        public async Task<ActionResult<BannerDTO>> UpdateBannerAsync([FromBody] BannerDTO banner)
         {
-            return await _adminService.EditBannerAsync(banner) ? Ok("Updated.") : BadRequest("Failed.");
+            return await _adminService.EditBannerAsync(banner) ? Ok(banner) : BadRequest("Failed.");
+        }
+
+        [HttpPatch("banners/{id}")]
+        [Authorize(Roles = Utils.Config.Role.Admin)]
+        public async Task<ActionResult<BannerDTO>> ToggleBannerStatusAsync(int id)
+        {
+            return await _adminService.ToggleBannerStatusAsync(id) ? Ok("Updated.") : BadRequest("Failed.");
         }
 
         [HttpPost("maintenance")]
@@ -67,6 +76,27 @@ namespace rental_services.Server.Controllers
             _maintenanceService.ClearMaintenancePeriod();
 
             return _maintenanceService.IsActive ? BadRequest("Failed.") : Ok("Cleared.");
+        }
+
+        [HttpGet("settings")]
+        [Authorize(Roles = Utils.Config.Role.Admin)]
+        public ActionResult<SystemSettingsDTO> GetSettings()
+        {
+            return Ok(_systemSettingsService.SystemSettings);
+        }
+
+        [HttpPost("settings")]
+        [Authorize(Roles = Utils.Config.Role.Admin)]
+        public ActionResult<SystemSettingsDTO> UpdateSettings([FromBody] SystemSettingsDTO systemSettings)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            _systemSettingsService.SystemSettings = systemSettings;
+
+            return Ok(_systemSettingsService.SystemSettings);
         }
     }
 }

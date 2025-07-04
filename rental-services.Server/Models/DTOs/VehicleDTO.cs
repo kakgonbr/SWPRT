@@ -8,6 +8,8 @@
 
         public string? Condition { get; set; } = null!;
 
-        public ShopDTO Shop { get; set; } = null!;
+        public ShopDTO? Shop { get; set; } = null!;
+
+        public int ShopId { get; set; }
     }
 }

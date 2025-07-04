@@ -25,10 +25,10 @@ namespace rental_services.Server.Repositories
             return await _rentalContext.Vehicles.FindAsync(id);
         }
 
-        public async Task<int> AddAsync(Models.Vehicle vehicle)
+        public async Task<Models.Vehicle> AddAsync(Models.Vehicle vehicle)
         {
             await _rentalContext.Vehicles.AddAsync(vehicle);
-            return await _rentalContext.SaveChangesAsync();
+            return vehicle;
         }
 
         public async Task<int> UpdateAsync(Models.Vehicle vehicle)
@@ -52,6 +52,11 @@ namespace rental_services.Server.Repositories
             }
 
             return 0;
+        }
+
+        public void DeleteRange(List<Models.Vehicle> toDelete)
+        {
+            _rentalContext.Vehicles.RemoveRange(toDelete);
         }
     }
 }

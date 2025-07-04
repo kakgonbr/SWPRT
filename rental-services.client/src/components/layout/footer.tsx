@@ -1,8 +1,11 @@
 // src/components/layout/Footer.tsx
 import {Link} from 'react-router-dom'
 import {Bike, Facebook, Twitter, Instagram, Mail, Phone} from 'lucide-react'
+import { useServerInfo } from '../../contexts/server-info-context';
 
 export default function Footer() {
+    const { serverInfo, loading, error } = useServerInfo();
+
     return (
         <footer className="bg-muted/50 border-t">
             <div className="container mx-auto px-4 py-12">
@@ -10,7 +13,11 @@ export default function Footer() {
                     <div className="space-y-4">
                         <Link to="/" className="flex items-center space-x-2">
                             <Bike className="h-8 w-8 text-primary"/>
-                            <span className="font-bold text-xl text-primary">VroomVroom.vn</span>
+                            <span className="font-bold text-xl text-primary">{loading
+                                ? "Loading"
+                                : error || !serverInfo?.siteName
+                                    ? "Vroomvroom.vn"
+                                    : serverInfo.siteName}</span>
                         </Link>
                         <p className="text-muted-foreground">
                             Your trusted partner for motorbike rentals in Vietnam. Explore the country on two wheels.
@@ -45,18 +52,30 @@ export default function Footer() {
                         <div className="space-y-2 text-muted-foreground">
                             <div className="flex items-center space-x-2">
                                 <Mail className="h-4 w-4"/>
-                                <span>support@vroomvroom.vn</span>
+                                <span>{loading
+                                    ? "Loading"
+                                    : error || !serverInfo?.contactEmail
+                                        ? "support@vroomvroom.vn"
+                                        : serverInfo.contactEmail}</span>
                             </div>
                             <div className="flex items-center space-x-2">
                                 <Phone className="h-4 w-4"/>
-                                <span>+84 123 456 789</span>
+                                <span>{loading
+                                    ? "Loading"
+                                    : error || !serverInfo?.supportPhone
+                                        ? "Unknown"
+                                        : serverInfo.supportPhone}</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-                    <p>&copy; 2024 VroomVroom.vn. All rights reserved.</p>
+                    <p>&copy; 2025 {loading
+                        ? "Loading"
+                        : error || !serverInfo?.siteName
+                            ? "VroomVroom.vn"
+                            : serverInfo.siteName} . All rights reserved."</p>
                 </div>
             </div>
         </footer>

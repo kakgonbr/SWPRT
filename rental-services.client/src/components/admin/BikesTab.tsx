@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { Edit, Plus, Trash2, Search, MapPin, Eye, ArrowLeft } from 'lucide-react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
@@ -11,43 +11,154 @@ import {
     SelectTrigger,
     SelectValue,
 } from '../ui/select'
+
+import { BikeEditDialog, type IBikeModelForm } from './BikeEditDialog'
 import { useToast } from '../../contexts/toast-context'
-import { MOCK_BIKES } from '../../lib/mock-data'
-import BikeEditDialog from './BikeEditDialog'
 import BikeDeleteDialog from './BikeDeleteDialog'
+import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
+
+const API = import.meta.env.VITE_API_BASE_URL;
 
 export interface Bike {
-    id: string
-    name: string
-    type: string
-    pricePerDay: number
-    imageUrl: string
-    isAvailable: boolean
-    description?: string
-    location?: string
-    quantity?: number
-    engineSize?: string
-    fuelType?: string
-    transmission?: string
-    year?: number
+    modelId: number;
+    displayName: string;
+    description: string;
+    ratePerDay: number;
+    quantity: number;
+    imageFile?: string | null;
+    upFrontPercentage: number;
+    isAvailable: boolean;
+    rating: number;
+    vehicleType: string;
+    shops: string[];
 }
+
+
+interface VehicleTypeDTO  { vehicleTypeId: number; vehicleTypeName: string }
+interface ManufacturerDTO { manufacturerId: number; manufacturerName: string }
+interface ShopDTO         { shopid: number; address: string }
+interface PeripheralDTO   { peripheralId: number; name: string }
+
+/* ---------- option used by the dialog ---------- */
+export interface LookupOption { id: number; label: string }
+
+const fetchList = <T,>(endpoint: string) =>
+    fetch(`${API}${endpoint}`, {
+        method: "GET",
+        headers: {
+            Authorization : `Bearer ${localStorage.getItem("token")}`
+        }
+    }).then(r => {
+    if (!r.ok) throw new Error('Network error');
+    return r.json() as Promise<T>;
+  });
+
+const getVehicleTypes  = () => fetchList<VehicleTypeDTO[]>('/api/bikes/types');
+const getManufacturers = () => fetchList<ManufacturerDTO[]>('/api/bikes/manufacturers');
+const getShops         = () => fetchList<ShopDTO[]>('/api/bikes/shops');
+const getPeripherals   = () => fetchList<PeripheralDTO[]>('/api/bikes/peripherals');
+
+const upsertBike = (p: IBikeModelForm) =>
+  fetch(`${API}/api/bikes`, {
+    method: p.modelId ? 'PATCH' : 'PUT',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem("token")}` },
+    body: JSON.stringify(p)
+  }).then(r => { if (!r.ok) throw new Error('Save failed'); });
 
 export default function BikesTab() {
     const { toast } = useToast()
-    const [bikes, setBikes] = useState<Bike[]>(MOCK_BIKES)
+    const [bikes, setBikes] = useState<Bike[]>()
+    const [error, setError] = useState<string>('');
     const [searchTerm, setSearchTerm] = useState('')
     const [locationFilter, setLocationFilter] = useState<string>('all')
     const [selectedBikeType, setSelectedBikeType] = useState<string | null>(null)
     const [selectedBikeName, setSelectedBikeName] = useState<string | null>(null)
-    const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
     const [selectedBike, setSelectedBike] = useState<Bike | null>(null)
-    const [isCreating, setIsCreating] = useState(false)
-    const [isSaving, setIsSaving] = useState(false)
     const [isDeleting, setIsDeleting] = useState(false)
 
+    const [editOpen, setEditOpen] = useState(false);
+    const [selectedId, setSelected] = useState<number | null>(null);
+
+    /* ---- look‑up queries (NEW syntax) ---- */
+    const { data: vTypes = [] } = useQuery<VehicleTypeDTO[]>({
+        queryKey: ['vehicleTypes'],
+        queryFn: getVehicleTypes,
+    });
+    const { data: mans = [] } = useQuery<ManufacturerDTO[]>({
+        queryKey: ['manufacturers'],
+        queryFn: getManufacturers,
+    });
+    const { data: shops = [] } = useQuery<ShopDTO[]>({
+        queryKey: ['shops'],
+        queryFn: getShops,
+    });
+    const { data: peripherals = [] } = useQuery<PeripheralDTO[]>({
+        queryKey: ['peripherals'],
+        queryFn: getPeripherals,
+    });
+
+    /* ---- map to dialog options ---- */
+    const vehicleTypes: LookupOption[] = useMemo(
+        () => vTypes.map(v => ({ id: v.vehicleTypeId, label: v.vehicleTypeName })), [vTypes]);
+    const manufacturers: LookupOption[] = useMemo(
+        () => mans.map(m => ({ id: m.manufacturerId, label: m.manufacturerName })), [mans]);
+    const shopOptions: LookupOption[] = useMemo(
+        () => shops.map(s => ({ id: s.shopid, label: s.address })), [shops]);
+    const peripheralOptions: LookupOption[] = useMemo(
+        () => peripherals.map(p => ({ id: p.peripheralId, label: p.name })), [peripherals]);
+
+    /* ---- open / close helpers ---- */
+    const openCreate = () => { setSelected(null); setEditOpen(true); };
+    const openEdit = (id: number) => { setSelected(id); setEditOpen(true); };
+    const close = () => setEditOpen(false);
+
+    /* ---- save mutation ---- */
+    const qc = useQueryClient();
+    const mutation = useMutation({
+        mutationFn: upsertBike, onSuccess: () => {
+            close();
+            qc.invalidateQueries({ queryKey: ['bikes'] });
+        }
+    });
+
+    const handleSubmit = useCallback(
+        (payload: IBikeModelForm) => mutation.mutateAsync(payload),
+        [mutation],
+    );
+
+    useEffect(() => {
+        setError("");
+
+        fetch(`${API}/api/bikes`,
+            {
+                method: "GET",
+                headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+            })
+            .then(res => {
+                if (!res.ok) throw new Error('Network response was not ok');
+                return res.json();
+            })
+            .then(data => {
+                setBikes(data as Bike[]);
+            })
+            .catch(err => {
+                setError(err.message);
+            });
+    }, []);
+
+    if (!bikes) {
+        return <div>Loading...</div>;
+    }
+
+    if (error.length != 0) {
+        return <div>Error: {error}</div>;
+    }
+
     // Get unique locations from bikes
-    const locations = Array.from(new Set(bikes.map(bike => bike.location).filter(Boolean)))
+    const locations = Array.from(
+        new Set(bikes.flatMap(bike => bike.shops))
+    );
 
     // Helper function to format bike name as "Type - Location"
 
@@ -57,57 +168,66 @@ export default function BikesTab() {
 
         // Filter by location if selected
         if (locationFilter !== 'all') {
-            filteredBikes = bikes.filter(bike => bike.location === locationFilter)
+            filteredBikes = bikes.filter(bike => bike.shops.includes(locationFilter));
         }
 
         // If viewing specific bike type details
         if (selectedBikeType && locationFilter !== 'all') {
-            return filteredBikes.filter(bike => bike.type === selectedBikeType)
+            return filteredBikes.filter(bike => bike.vehicleType === selectedBikeType)
         }
 
         // If viewing specific bike name details
         if (selectedBikeName && locationFilter !== 'all') {
-            return filteredBikes.filter(bike => bike.name === selectedBikeName)
+            return filteredBikes.filter(bike => bike.displayName === selectedBikeName)
         }
 
         // If location filter is applied, group by type and show quantities
         if (locationFilter !== 'all') {
-            const bikeNames = new Map()
+            const bikeNames = new Map<string, any>();
 
             filteredBikes.forEach(bike => {
-                const existing = bikeNames.get(bike.name)
+                // Check if the bike is available at the selected location
+                if (!bike.shops || !bike.shops.includes(locationFilter)) {
+                    return; // Skip if not at the selected location
+                }
+
+                const existing = bikeNames.get(bike.displayName);
                 if (existing) {
-                    existing.quantity += (bike.quantity || 1)
-                    existing.availableCount += bike.isAvailable ? (bike.quantity || 1) : 0
-                    existing.bikes.push(bike)
+                    existing.quantity += (bike.quantity || 1);
+                    existing.availableCount += bike.isAvailable ? (bike.quantity || 1) : 0;
+                    existing.bikes.push(bike);
                 } else {
-                    bikeNames.set(bike.name, {
-                        name: bike.name, // Use bike name instead of type
-                        type: bike.type, // Keep type for reference
+                    bikeNames.set(bike.displayName, {
+                        displayName: bike.displayName, // Use bike name instead of type
+                        type: bike.vehicleType, // Keep type for reference
                         quantity: bike.quantity || 1,
                         availableCount: bike.isAvailable ? (bike.quantity || 1) : 0,
-                        priceRange: { min: bike.pricePerDay, max: bike.pricePerDay },
+                        priceRange: { min: bike.ratePerDay, max: bike.ratePerDay },
                         bikes: [bike],
-                        imageUrl: bike.imageUrl,
-                        location: bike.location
-                    })
+                        imageUrl: bike.imageFile,
+                        // You could keep a list of locations/shops here if you want
+                        shops: bike.shops
+                    });
                 }
 
                 // Update price range
-                const nameData = bikeNames.get(bike.name)
-                nameData.priceRange.min = Math.min(nameData.priceRange.min, bike.pricePerDay)
-                nameData.priceRange.max = Math.max(nameData.priceRange.max, bike.pricePerDay)
-            })
+                const nameData = bikeNames.get(bike.displayName);
+                nameData.priceRange.min = Math.min(nameData.priceRange.min, bike.ratePerDay);
+                nameData.priceRange.max = Math.max(nameData.priceRange.max, bike.ratePerDay);
+            });
 
-            return Array.from(bikeNames.values())
+            return Array.from(bikeNames.values());
         }
+
 
         // Regular filtering for individual bikes with actual names
         return filteredBikes.filter(bike => {
-            return bike.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                bike.type.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                (bike.location && bike.location.toLowerCase().includes(searchTerm.toLowerCase()))
-        })
+            return bike.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                bike.vehicleType.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                (bike.shops && bike.shops.some(
+                    shop => shop.toLowerCase().includes(searchTerm.toLowerCase())
+                ));
+        });
     }
 
     const filteredData = getFilteredData()
@@ -115,17 +235,17 @@ export default function BikesTab() {
     const isViewingTypeDetails = selectedBikeType !== null
     const isViewingBikeDetails = selectedBikeName !== null
 
-    const handleCreateBike = () => {
-        setSelectedBike(null)
-        setIsCreating(true)
-        setIsEditDialogOpen(true)
-    }
+    //const handleCreateBike = () => {
+    //    setSelectedBike(null)
+    //    setIsCreating(true)
+    //    setIsEditDialogOpen(true)
+    //}
 
-    const handleEditBike = (bike: Bike) => {
-        setSelectedBike(bike)
-        setIsCreating(false)
-        setIsEditDialogOpen(true)
-    }
+    //const handleEditBike = (bike: Bike) => {
+    //    setSelectedBike(bike)
+    //    setIsCreating(false)
+    //    setIsEditDialogOpen(true)
+    //}
 
     const handleDeleteBike = (bike: Bike) => {
         setSelectedBike(bike)
@@ -149,62 +269,36 @@ export default function BikesTab() {
         setSelectedBikeName(null) // Reset bike name selection when location changes
     }
 
-    const handleSaveBike = async (bikeDataArray: Partial<Bike>[]) => {
-        setIsSaving(true)
-        try {
-            if (isCreating) {
-                // Create multiple bikes for different locations
-                const newBikes: Bike[] = bikeDataArray.map(bikeData => {
-                    const { id, ...bikeDataWithoutId } = bikeData as Bike
-                    return {
-                        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`, // Unique ID for each bike
-                        ...bikeDataWithoutId
-                    }
-                })
-
-                // Add all new bikes to state
-                setBikes(prev => [...prev, ...newBikes])
-
-                toast({
-                    title: "Bikes Created",
-                    description: `${newBikes.length} bike${newBikes.length !== 1 ? 's' : ''} added successfully to ${new Set(newBikes.map(b => b.location)).size} location${new Set(newBikes.map(b => b.location)).size !== 1 ? 's' : ''}.`,
-                })
-            } else if (selectedBike) {
-                // Update existing bike (single bike only)
-                const updatedBike = { ...selectedBike, ...bikeDataArray[0] }
-                setBikes(prev => prev.map(bike =>
-                    bike.id === selectedBike.id ? updatedBike : bike
-                ))
-                toast({
-                    title: "Bike Updated",
-                    description: "Bike information has been updated successfully.",
-                })
-            }
-
-            setIsEditDialogOpen(false)
-            setSelectedBike(null)
-        } catch (error) {
-            console.error('Error saving bike:', error)
-            toast({
-                title: "Save Failed",
-                description: "Failed to save bike information. Please try again.",
-                variant: "destructive"
-            })
-        } finally {
-            setIsSaving(false)
-        }
-    }
-
     const handleConfirmDelete = async () => {
         if (!selectedBike) return
 
         setIsDeleting(true)
         try {
-            setBikes(prev => prev.filter(bike => bike.id !== selectedBike.id))
-            toast({
-                title: "Bike Deleted",
-                description: "Bike has been removed from the system.",
-            })
+            await fetch(`${API}/api/bikes/${selectedBike.modelId}`,
+                {
+                    method: "DELETE",
+                    headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
+                })
+                .then(res => {
+                    if (!res.ok) throw new Error('Network response was not ok');
+                    setBikes(prev =>
+                        prev!.map(bike =>
+                            bike.modelId === selectedBike.modelId
+                                ? { ...bike, isAvailable: false }
+                                : bike
+                        )
+                    );
+                    toast({
+                        title: "Bike Deleted",
+                        description: "Bike has been removed from the system.",
+                    })
+                })
+                .catch(err => {
+                    toast({
+                        title: "Failed to delete model.",
+                        description: err,
+                    })
+                });
 
             setIsDeleteDialogOpen(false)
             setSelectedBike(null)
@@ -218,12 +312,6 @@ export default function BikesTab() {
         } finally {
             setIsDeleting(false)
         }
-    }
-
-    const handleCancelEdit = () => {
-        setIsEditDialogOpen(false)
-        setSelectedBike(null)
-        setIsCreating(false)
     }
 
     const handleCancelDelete = () => {
@@ -265,7 +353,7 @@ export default function BikesTab() {
                                 {getViewDescription()}
                             </CardDescription>
                         </div>
-                        <Button onClick={handleCreateBike}>
+                        <Button onClick={openCreate}>
                             <Plus className="h-4 w-4 mr-2" />
                             Add New Bike
                         </Button>
@@ -334,9 +422,6 @@ export default function BikesTab() {
                                                 src={nameData.imageUrl.split('"')[0]}
                                                 alt={nameData.name}
                                                 className="w-16 h-16 object-cover rounded"
-                                                onError={(e) => {
-                                                    e.currentTarget.src = '/placeholder-bike.png'
-                                                }}
                                             />
                                             <div>
                                                 <p className="text-lg font-medium">{nameData.name}</p>
@@ -377,31 +462,24 @@ export default function BikesTab() {
                         ) : (
                             // Show individual bikes - this handles both "All Locations" view and bike details view
                             filteredData.map((bike: Bike) => (
-                                <div key={bike.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                                <div key={bike.modelId} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                                     <div className="flex items-center space-x-4">
                                         <img
-                                            src={bike.imageUrl.split('"')[0]}
-                                            alt={bike.name}
+                                            src={bike.imageFile ? bike.imageFile.split('"')[0] : '/images/placeholder-bike.png'}
+                                            alt={bike.displayName}
                                             className="w-16 h-16 object-cover rounded"
-                                            onError={(e) => {
-                                                e.currentTarget.src = '/placeholder-bike.png'
-                                            }}
                                         />
                                         <div>
-                                            <p className="font-medium">{bike.name}</p>
-                                            <p className="text-sm text-muted-foreground">{bike.type}</p>
+                                            <p className="font-medium">{bike.displayName}</p>
+                                            <p className="text-sm text-muted-foreground">{bike.vehicleType}</p>
                                             <p className="text-sm text-muted-foreground">
                                                 Quantity: <span className="font-medium">{bike.quantity || 1}</span>
                                             </p>
-                                            <p className="text-sm font-semibold">${bike.pricePerDay}/day</p>
-                                            {bike.location && (
-                                                <p className="text-xs text-muted-foreground">📍 {bike.location}</p>
-                                            )}
-                                            {bike.engineSize && (
-                                                <p className="text-xs text-muted-foreground">Engine: {bike.engineSize}</p>
-                                            )}
-                                            {bike.transmission && (
-                                                <p className="text-xs text-muted-foreground">Transmission: {bike.transmission}</p>
+                                            <p className="text-sm font-semibold">${bike.ratePerDay}/day</p>
+                                            {bike.shops && bike.shops.length > 0 && (
+                                                <p className="text-xs text-muted-foreground">
+                                                    📍 {bike.shops.join(', ')}
+                                                </p>
                                             )}
                                         </div>
                                     </div>
@@ -412,7 +490,7 @@ export default function BikesTab() {
                                         <Button
                                             variant="outline"
                                             size="sm"
-                                            onClick={() => handleEditBike(bike)}
+                                            onClick={() => openEdit(bike.modelId)}
                                         >
                                             <Edit className="h-4 w-4 mr-1" />
                                             Edit
@@ -420,6 +498,7 @@ export default function BikesTab() {
                                         <Button
                                             variant="outline"
                                             size="sm"
+                                            disabled={!bike.isAvailable}
                                             onClick={() => handleDeleteBike(bike)}
                                             className="text-destructive hover:text-destructive"
                                         >
@@ -436,12 +515,15 @@ export default function BikesTab() {
 
             {/* Edit/Create Dialog */}
             <BikeEditDialog
-                isOpen={isEditDialogOpen}
-                onClose={handleCancelEdit}
-                bike={selectedBike}
-                isCreating={isCreating}
-                onSave={handleSaveBike}
-                isSaving={isSaving}
+                isOpen={editOpen}
+                onClose={close}
+                bikeId={selectedId}
+                vehicleTypes={vehicleTypes}
+                manufacturers={manufacturers}
+                shops={shopOptions}
+                peripherals={peripheralOptions}
+                onSubmit={handleSubmit}
+                isSaving={mutation.isPending}
             />
 
             {/* Delete Confirmation Dialog */}

@@ -91,6 +91,9 @@ namespace rental_services.Server
                 .AddScoped<IVehicleModelRepository, VehicleModelRepository>()
                 .AddScoped<IVehicleRepository, VehicleRepository>()
                 .AddScoped<IPeripheralRepository, PeripheralRepository>()
+                .AddScoped<IShopRepository, ShopRepository>()
+                .AddScoped<IManufacturerRepository, ManufacturerRepository>()
+                .AddScoped<IVehicleTypeRepository, VehicleTypeRepository>()
                 .AddScoped<IBikeService, BikeService>()
                 .AddScoped<IOcrService, OcrService>()
                 .AddScoped<IChatRepository, ChatRepository>()
@@ -99,6 +102,7 @@ namespace rental_services.Server
                 .AddScoped<IRentalService, RentalService>()
                 .AddScoped<IBannerRepository, BannerRepository>()
                 .AddScoped<IStatisticsRepository, StatisticsRepository>()
+                .AddSingleton<ISystemSettingsService, SystemSettingsService>()
                 .AddScoped<IAdminControlPanelService, AdminControlPanelService>()
                 .AddSingleton<IMaintenanceService, MaintenanceService>();
 
