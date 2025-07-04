@@ -45,8 +45,7 @@ import {
     TrendingUp,
     BarChart3
 } from 'lucide-react'
-import { useToast } from '../../hooks/use-toast'
-
+import { useToast } from '../../contexts/toast-context'
 interface CustomerFeedback {
     id: string
     title: string

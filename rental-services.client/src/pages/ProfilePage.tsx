@@ -31,7 +31,7 @@ import { Avatar, AvatarFallback } from "../components/ui/avatar";
 import { Separator } from "../components/ui/separator";
 import { Badge } from "../components/ui/badge";
 import { useAuth } from "../contexts/auth-context";
-import { useToast } from "../hooks/use-toast";
+import { useToast } from "../contexts/toast-context";
 import { format } from "date-fns";
 import ChangePasswordDialog from "../components/ChangePasswordDialog";
 import IdReviewDialog from "../components/IdReviewDialog";
@@ -92,12 +92,12 @@ export default function ProfilePage() {
       email: user.email,
       dateOfBirth: String(user.dateOfBirth) || "",
       address: user.address || "",
-        licenseId: user.driverLicenses?.at(0)?.licenseId || "",
+      licenseId: user.driverLicenses?.at(0)?.licenseId || "",
     });
   }, [user, isAuthenticated, loading, navigate]);
 
   useEffect(() => {
-      if (user?.driverLicenses?.at(0)?.imageLicenseUrl) {
+    if (user?.driverLicenses?.at(0)?.imageLicenseUrl) {
       setUploadedImageUrl(user.driverLicenses.at(0)!.imageLicenseUrl!);
     }
   }, [user]);
@@ -211,7 +211,7 @@ export default function ProfilePage() {
 
     try {
       const response = await fetch(
-          `${API}/api/ocr/upload-license`,
+        `${API}/api/ocr/upload-license`,
         {
           method: "POST",
           headers: {
@@ -526,9 +526,8 @@ export default function ProfilePage() {
                     value={formData.licenseId}
                     onChange={handleInputChange}
                     disabled={!isEditing || isFieldLocked("licenseId")}
-                    className={`pl-10 ${
-                      isFieldLocked("licenseId") ? "bg-gray-50" : ""
-                    }`}
+                    className={`pl-10 ${isFieldLocked("licenseId") ? "bg-gray-50" : ""
+                      }`}
                   />
                 </div>
                 {isFieldLocked("licenseId") && (

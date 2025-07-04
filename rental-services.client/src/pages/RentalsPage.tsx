@@ -26,7 +26,7 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '../components/ui/alert-dialog'
-import { useToast } from '../hooks/use-toast'
+import { useToast } from '../contexts/toast-context'
 import { format, differenceInHours } from 'date-fns'
 import { useAuth } from '../contexts/auth-context'
 import { MOCK_RENTALS } from '../lib/mock-data'
