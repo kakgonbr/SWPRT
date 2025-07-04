@@ -11,8 +11,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '../ui/select'
-import { useToast } from '../../hooks/use-toast'
+
 import { BikeEditDialog, type IBikeModelForm } from './BikeEditDialog'
+import { useToast } from '../../contexts/toast-context'
 import BikeDeleteDialog from './BikeDeleteDialog'
 import { useQuery, useQueryClient, useMutation } from '@tanstack/react-query'
 

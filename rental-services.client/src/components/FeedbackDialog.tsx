@@ -11,7 +11,7 @@ import { Button } from './ui/button'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
 import { Textarea } from './ui/textarea'
-import { useToast } from '../hooks/use-toast'
+import { useToast } from '../contexts/toast-context'
 import { Star, Heart } from 'lucide-react'
 
 interface FeedbackDialogProps {
@@ -159,8 +159,8 @@ export function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps) {
                                     >
                                         <Star
                                             className={`w-6 h-6 ${star <= systemRating
-                                                    ? 'fill-yellow-400 text-yellow-400'
-                                                    : 'text-gray-300 hover:text-yellow-300'
+                                                ? 'fill-yellow-400 text-yellow-400'
+                                                : 'text-gray-300 hover:text-yellow-300'
                                                 }`}
                                         />
                                     </button>
