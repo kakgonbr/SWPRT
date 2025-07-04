@@ -60,6 +60,198 @@ import {
 } from 'lucide-react'
 import { type PopupBanner } from '../../types/admin'
 
+interface BannerFormProps {
+    formData: Partial<PopupBanner>;
+    setFormData: React.Dispatch<React.SetStateAction<Partial<PopupBanner>>>;
+}
+
+export function BannerForm({ formData, setFormData }: BannerFormProps) {
+    return (<div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>   
+                <Label htmlFor="title">Banner Title</Label>
+                <Input
+                    id="title"
+                    value={formData.title}
+                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                    placeholder="Enter banner title..."
+                />
+            </div>
+            <div>
+                <Label htmlFor="type">Banner Type</Label>
+                <Select
+                    value={formData.type}
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as any }))}
+                >
+                    <SelectTrigger>
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="info">Info</SelectItem>
+                        <SelectItem value="warning">Warning</SelectItem>
+                        <SelectItem value="success">Success</SelectItem>
+                        <SelectItem value="error">Error</SelectItem>
+                        <SelectItem value="promotion">Promotion</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+        </div>
+
+        <div>
+            <Label htmlFor="message">Message</Label>
+            <Textarea
+                id="message"
+                value={formData.message}
+                onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+                placeholder="Enter banner message..."
+                rows={3}
+            />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <Label htmlFor="startDate">Start Date</Label>
+                <Input
+                    id="startDate"
+                    type="datetime-local"
+                    value={formData.startTime}
+                    onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
+                />
+            </div>
+            <div>
+                <Label htmlFor="endDate">End Date</Label>
+                <Input
+                    id="endDate"
+                    type="datetime-local"
+                    value={formData.endTime}
+                    onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
+                />
+            </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <Label htmlFor="buttonText">Button Text (Optional)</Label>
+                <Input
+                    id="buttonText"
+                    value={formData.buttonText || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, buttonText: e.target.value }))}
+                    placeholder="e.g., Learn More"
+                />
+            </div>
+            <div>
+                <Label htmlFor="buttonLink">Button Link (Optional)</Label>
+                <Input
+                    id="buttonLink"
+                    value={formData.buttonLink || ''}
+                    onChange={(e) => setFormData(prev => ({ ...prev, buttonLink: e.target.value }))}
+                    placeholder="e.g., /bikes"
+                />
+            </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <Label htmlFor="backgroundColor">Background Color</Label>
+                <div className="flex gap-2">
+                    <Input
+                        id="backgroundColor"
+                        type="color"
+                        value={formData.background}
+                        onChange={(e) => setFormData(prev => ({ ...prev, background: e.target.value }))}
+                        className="w-16 h-10 p-1"
+                    />
+                    <Input
+                        value={formData.background}
+                        onChange={(e) => setFormData(prev => ({ ...prev, background: e.target.value }))}
+                        placeholder="#3b82f6"
+                        className="flex-1"
+                    />
+                </div>
+            </div>
+            <div>
+                <Label htmlFor="textColor">Text Color</Label>
+                <div className="flex gap-2">
+                    <Input
+                        id="textColor"
+                        type="color"
+                        value={formData.textColor}
+                        onChange={(e) => setFormData(prev => ({ ...prev, textColor: e.target.value }))}
+                        className="w-16 h-10 p-1"
+                    />
+                    <Input
+                        value={formData.textColor}
+                        onChange={(e) => setFormData(prev => ({ ...prev, textColor: e.target.value }))}
+                        placeholder="#ffffff"
+                        className="flex-1"
+                    />
+                </div>
+            </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <Label htmlFor="priority">Priority (1-10)</Label>
+                <Input
+                    id="priority"
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={formData.priority}
+                    onChange={(e) => setFormData(prev => ({ ...prev, priority: parseInt(e.target.value) }))}
+                />
+            </div>
+            <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="isActive">Active</Label>
+                    <Switch
+                        id="isActive"
+                        checked={formData.isActive}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
+                    />
+                </div>
+                <div className="flex items-center justify-between">
+                    <Label htmlFor="showOnce">Show Only Once</Label>
+                    <Switch
+                        id="showOnce"
+                        checked={formData.showOnce}
+                        onCheckedChange={(checked) => setFormData(prev => ({ ...prev, showOnce: checked }))}
+                    />
+                </div>
+            </div>
+        </div>
+
+        {/* Preview */}
+        {formData.title && formData.message && (
+            <div>
+                <Label>Preview</Label>
+                <div className="border rounded-lg p-4 mt-2">
+                    <div
+                        className="p-4 rounded text-center"
+                        style={{
+                            backgroundColor: formData.background,
+                            color: formData.textColor
+                        }}
+                    >
+                        <h4 className="font-semibold mb-2">{formData.title}</h4>
+                        <p className="mb-3">{formData.message}</p>
+                        {formData.buttonText && (
+                            <button
+                                className="px-4 py-2 rounded border border-current hover:bg-white/10 transition-colors"
+                                style={{ borderColor: formData.textColor }}
+                            >
+                                {formData.buttonText}
+                            </button>
+                        )}
+                    </div>
+                </div>
+            </div>
+        )}
+    </div>
+    )
+}
+
+
 export default function PopupBannerConfig() {
     const { banners,loading ,error , createBanner, updateBanner, deleteBanner, toggleBannerStatus } = usePopupBanner()
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false)
@@ -184,190 +376,6 @@ export default function PopupBannerConfig() {
         }
     }
 
-    const BannerForm = () => (
-        <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <Label htmlFor="title">Banner Title</Label>
-                    <Input
-                        id="title"
-                        value={formData.title}
-                        onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                        placeholder="Enter banner title..."
-                    />
-                </div>
-                <div>
-                    <Label htmlFor="type">Banner Type</Label>
-                    <Select
-                        value={formData.type}
-                        onValueChange={(value) => setFormData(prev => ({ ...prev, type: value as any }))}
-                    >
-                        <SelectTrigger>
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="info">Info</SelectItem>
-                            <SelectItem value="warning">Warning</SelectItem>
-                            <SelectItem value="success">Success</SelectItem>
-                            <SelectItem value="error">Error</SelectItem>
-                            <SelectItem value="promotion">Promotion</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
-
-            <div>
-                <Label htmlFor="message">Message</Label>
-                <Textarea
-                    id="message"
-                    value={formData.message}
-                    onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
-                    placeholder="Enter banner message..."
-                    rows={3}
-                />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <Label htmlFor="startDate">Start Date</Label>
-                    <Input
-                        id="startDate"
-                        type="datetime-local"
-                        value={formData.startTime}
-                        onChange={(e) => setFormData(prev => ({ ...prev, startTime: e.target.value }))}
-                    />
-                </div>
-                <div>
-                    <Label htmlFor="endDate">End Date</Label>
-                    <Input
-                        id="endDate"
-                        type="datetime-local"
-                        value={formData.endTime}
-                        onChange={(e) => setFormData(prev => ({ ...prev, endTime: e.target.value }))}
-                    />
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <Label htmlFor="buttonText">Button Text (Optional)</Label>
-                    <Input
-                        id="buttonText"
-                        value={formData.buttonText || ''}
-                        onChange={(e) => setFormData(prev => ({ ...prev, buttonText: e.target.value }))}
-                        placeholder="e.g., Learn More"
-                    />
-                </div>
-                <div>
-                    <Label htmlFor="buttonLink">Button Link (Optional)</Label>
-                    <Input
-                        id="buttonLink"
-                        value={formData.buttonLink || ''}
-                        onChange={(e) => setFormData(prev => ({ ...prev, buttonLink: e.target.value }))}
-                        placeholder="e.g., /bikes"
-                    />
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <Label htmlFor="backgroundColor">Background Color</Label>
-                    <div className="flex gap-2">
-                        <Input
-                            id="backgroundColor"
-                            type="color"
-                            value={formData.background}
-                            onChange={(e) => setFormData(prev => ({ ...prev, background: e.target.value }))}
-                            className="w-16 h-10 p-1"
-                        />
-                        <Input
-                            value={formData.background}
-                            onChange={(e) => setFormData(prev => ({ ...prev, background: e.target.value }))}
-                            placeholder="#3b82f6"
-                            className="flex-1"
-                        />
-                    </div>
-                </div>
-                <div>
-                    <Label htmlFor="textColor">Text Color</Label>
-                    <div className="flex gap-2">
-                        <Input
-                            id="textColor"
-                            type="color"
-                            value={formData.textColor}
-                            onChange={(e) => setFormData(prev => ({ ...prev, textColor: e.target.value }))}
-                            className="w-16 h-10 p-1"
-                        />
-                        <Input
-                            value={formData.textColor}
-                            onChange={(e) => setFormData(prev => ({ ...prev, textColor: e.target.value }))}
-                            placeholder="#ffffff"
-                            className="flex-1"
-                        />
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                    <Label htmlFor="priority">Priority (1-10)</Label>
-                    <Input
-                        id="priority"
-                        type="number"
-                        min="1"
-                        max="10"
-                        value={formData.priority}
-                        onChange={(e) => setFormData(prev => ({ ...prev, priority: parseInt(e.target.value) }))}
-                    />
-                </div>
-                <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="isActive">Active</Label>
-                        <Switch
-                            id="isActive"
-                            checked={formData.isActive}
-                            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, isActive: checked }))}
-                        />
-                    </div>
-                    <div className="flex items-center justify-between">
-                        <Label htmlFor="showOnce">Show Only Once</Label>
-                        <Switch
-                            id="showOnce"
-                            checked={formData.showOnce}
-                            onCheckedChange={(checked) => setFormData(prev => ({ ...prev, showOnce: checked }))}
-                        />
-                    </div>
-                </div>
-            </div>
-
-            {/* Preview */}
-            {formData.title && formData.message && (
-                <div>
-                    <Label>Preview</Label>
-                    <div className="border rounded-lg p-4 mt-2">
-                        <div
-                            className="p-4 rounded text-center"
-                            style={{
-                                backgroundColor: formData.background,
-                                color: formData.textColor
-                            }}
-                        >
-                            <h4 className="font-semibold mb-2">{formData.title}</h4>
-                            <p className="mb-3">{formData.message}</p>
-                            {formData.buttonText && (
-                                <button
-                                    className="px-4 py-2 rounded border border-current hover:bg-white/10 transition-colors"
-                                    style={{ borderColor: formData.textColor }}
-                                >
-                                    {formData.buttonText}
-                                </button>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
-        </div>
-    )
 
     return (
         <div className="space-y-6">
@@ -395,7 +403,7 @@ export default function PopupBannerConfig() {
                                 Create a new popup banner to display to users
                             </DialogDescription>
                         </DialogHeader>
-                        <BannerForm />
+                        <BannerForm formData={formData} setFormData={setFormData} />
                         <DialogFooter>
                             <Button
                                 variant="outline"
@@ -549,7 +557,7 @@ export default function PopupBannerConfig() {
                             Modify the banner settings and content
                         </DialogDescription>
                     </DialogHeader>
-                    <BannerForm />
+                    <BannerForm formData={formData} setFormData={setFormData} />
                     <DialogFooter>
                         <Button
                             variant="outline"

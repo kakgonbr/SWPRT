@@ -28,42 +28,47 @@ import NotFoundPage from './pages/NotFoundPage'
 import StaffDashboard from './pages/staff/StaffDashboard'
 import ForgotPasswordPage from './pages/auth/ForgotPassword.tsx'
 import { MaintenanceBanner } from './components/MaintenanceBanner.tsx'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+
+const queryClient = new QueryClient()
 
 function App() {
     return (
         <ErrorBoundary>
             <Router>
-                <AuthProvider>
-                    <ChatWidgetProvider>
-                        <ServerInfoProvider>
-                            <div className="min-h-screen flex flex-col">
-                                <Header />
-                                <MaintenanceBanner />
-                                <main className="flex-grow">
-                                    <Routes>
-                                        <Route path="/" element={<HomePage />} />
-                                        <Route path="/bikes" element={<BikesPage />} />
-                                        <Route path="/bikes/:id" element={<BikeDetailsPage />} />
-                                        <Route path="/checkout/:id" element={<CheckoutPage />} />
-                                        <Route path="/rentals" element={<RentalsPage />} />
-                                        <Route path="/profile" element={<ProfilePage />} />
-                                        <Route path="/location-finder" element={<LocationFinderPage />} />
-                                        <Route path="/auth/login" element={<LoginPage />} />
-                                        <Route path="/auth/signup" element={<SignupPage />} />
-                                        <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-                                        <Route path="/admin" element={<AdminDashboard />} />
-                                        <Route path="/admin/control-panel" element={<AdminControlPanel />} />
-                                        <Route path='/staff' element={<StaffDashboard />} />
-                                        <Route path="*" element={<NotFoundPage />} />
-                                    </Routes>
-                                </main>
-                                <Footer />
-                            </div>
-                            <ChatWidget />
-                            <Toaster />
-                        </ ServerInfoProvider>
-                    </ChatWidgetProvider>
-                </AuthProvider>
+                <QueryClientProvider client={queryClient}>
+                    <AuthProvider>
+                        <ChatWidgetProvider>
+                            <ServerInfoProvider>
+                                <div className="min-h-screen flex flex-col">
+                                    <Header />
+                                    <MaintenanceBanner />
+                                    <main className="flex-grow">
+                                        <Routes>
+                                            <Route path="/" element={<HomePage />} />
+                                            <Route path="/bikes" element={<BikesPage />} />
+                                            <Route path="/bikes/:id" element={<BikeDetailsPage />} />
+                                            <Route path="/checkout/:id" element={<CheckoutPage />} />
+                                            <Route path="/rentals" element={<RentalsPage />} />
+                                            <Route path="/profile" element={<ProfilePage />} />
+                                            <Route path="/location-finder" element={<LocationFinderPage />} />
+                                            <Route path="/auth/login" element={<LoginPage />} />
+                                            <Route path="/auth/signup" element={<SignupPage />} />
+                                            <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+                                            <Route path="/admin" element={<AdminDashboard />} />
+                                            <Route path="/admin/control-panel" element={<AdminControlPanel />} />
+                                            <Route path='/staff' element={<StaffDashboard />} />
+                                            <Route path="*" element={<NotFoundPage />} />
+                                        </Routes>
+                                    </main>
+                                    <Footer />
+                                </div>
+                                <ChatWidget />
+                                <Toaster />
+                            </ ServerInfoProvider>
+                        </ChatWidgetProvider>
+                    </AuthProvider>
+                </QueryClientProvider>
             </Router>
         </ErrorBoundary>
     )

@@ -10,6 +10,8 @@
         public string Description { get; set; } = null!;
 
         public long RatePerDay { get; set; }
+        
+        public int Quantity { get; set; }
 
         public string? ImageFile { get; set; }
 

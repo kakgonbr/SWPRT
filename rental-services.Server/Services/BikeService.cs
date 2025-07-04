@@ -1,6 +1,8 @@
+using Microsoft.EntityFrameworkCore;
 using rental_services.Server.Models;
 using rental_services.Server.Models.DTOs;
 using System;
+using System.Collections.Generic;
 
 namespace rental_services.Server.Services
 {
@@ -9,16 +11,27 @@ namespace rental_services.Server.Services
         private Repositories.IVehicleModelRepository _vehicleModelRepository;
         private Repositories.IVehicleRepository _vehicleRepository;
         private Repositories.IPeripheralRepository _peripheralRepository;
+        private Repositories.IShopRepository _shopRepository;
+        private Repositories.IVehicleTypeRepository _vehicleTypeRepository;
+        private Repositories.IManufacturerRepository _manufacturerRepository;
         private AutoMapper.IMapper _mapper;
         private readonly ILogger<BikeService> _logger;
 
-        public BikeService(Repositories.IVehicleModelRepository vehicleModelRepository, Repositories.IVehicleRepository vehicleRepository, AutoMapper.IMapper mapper, Repositories.IPeripheralRepository peripheralRepository, ILogger<BikeService> logger)
+        public BikeService(Repositories.IVehicleModelRepository vehicleModelRepository,
+            Repositories.IVehicleRepository vehicleRepository, AutoMapper.IMapper mapper,
+            Repositories.IPeripheralRepository peripheralRepository, ILogger<BikeService> logger,
+            Repositories.IShopRepository shopRepository, Repositories.IVehicleTypeRepository vehicleTypeRepository,
+            Repositories.IManufacturerRepository manufacturerRepository
+            )
         {
             _vehicleModelRepository = vehicleModelRepository;
             _vehicleRepository = vehicleRepository;
             _mapper = mapper;
             _peripheralRepository = peripheralRepository;
             _logger = logger;
+            _shopRepository = shopRepository;
+            _vehicleTypeRepository = vehicleTypeRepository;
+            _manufacturerRepository = manufacturerRepository;
         }
 
         public async Task<List<Models.VehicleModel>> GetVehicleModelsAsync()
@@ -113,6 +126,32 @@ namespace rental_services.Server.Services
                     }
 
                     dbVehicleModel.Peripherals.Add(dbPeripheral);
+                }
+            }
+
+            var incomingIds = vehicleModel.Vehicles?.Select(v => v.VehicleId).ToHashSet() ?? new();
+            var toDelete = dbVehicleModel.Vehicles
+                          .Where(v => !incomingIds.Contains(v.VehicleId))
+            .ToList();
+
+            _vehicleRepository.DeleteRange(toDelete);
+
+            if (vehicleModel.Vehicles is not null)
+            {
+                foreach (var vDto in vehicleModel.Vehicles)
+                {
+                    var dbVehicle = await _vehicleRepository.GetByIdAsync(vDto.VehicleId);
+
+                    if (dbVehicle is null)
+                    {
+                        dbVehicle = await _vehicleRepository.AddAsync(_mapper.Map<Vehicle>(vDto));
+                    }
+                    else
+                    {
+                        _mapper.Map(vDto, dbVehicle);
+                    }
+
+                    dbVehicleModel.Vehicles.Add(dbVehicle);
                 }
             }
 
@@ -224,14 +263,14 @@ namespace rental_services.Server.Services
             dbVehicle.ModelId = modelId;
             dbVehicle.VehicleId = 0;
 
-            return await _vehicleRepository.AddAsync(dbVehicle) != 0;
+            return await _vehicleRepository.AddAsync(dbVehicle) != null;
         }
 
         public async Task<bool> DeletePhysicalAsync(int id)
         {
             return await _vehicleRepository.DeleteAsync(id) != 0;
         }
-        
+
         public List<VehicleModelDTO> FilterModelByVehicleType(List<VehicleModelDTO> vehicleModels, string? type)
         {
             if (string.IsNullOrEmpty(type))
@@ -253,6 +292,26 @@ namespace rental_services.Server.Services
                 //.Where(vm => vm.Shop.Equals(shop, StringComparison.OrdinalIgnoreCase))
                 .Where(vm => vm.Shops.Any(s => s.Equals(shop, StringComparison.OrdinalIgnoreCase)))
                 .ToList();
+        }
+
+        public async Task<List<ShopDTO>> GetAllShopsAsync()
+        {
+            return _mapper.Map<List<ShopDTO>>(await _shopRepository.GetAllAsync());
+        }
+
+        public async Task<List<ManufacturerDTO>> GetAllManufacturersAsync()
+        {
+            return _mapper.Map<List<ManufacturerDTO>>(await _manufacturerRepository.GetAllAsync());
+        }
+
+        public async Task<List<VehicleTypeDTO>> GetAllVehicleTypesAsync()
+        {
+            return _mapper.Map<List<VehicleTypeDTO>>(await _vehicleTypeRepository.GetAllAsync());
+        }
+
+        public async Task<List<PeripheralDTO>> GetAllPeripheralsAsync()
+        {
+            return _mapper.Map<List<PeripheralDTO>>(await _peripheralRepository.GetAllAsync());
         }
     }
 }
