@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { type SystemSettings } from '../types/admin'
-import { useToast } from './use-toast'
+import { useToast } from '../contexts/toast-context'
 
 // Mock data for development
 const MOCK_SETTINGS: SystemSettings = {

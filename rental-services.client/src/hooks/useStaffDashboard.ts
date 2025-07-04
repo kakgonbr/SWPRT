@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../contexts/auth-context'
-import { useToast } from './use-toast'
+import { useToast } from '../contexts/toast-context'
 import {
     MOCK_CUSTOMER_MESSAGES,
     MOCK_STAFF_STATS,

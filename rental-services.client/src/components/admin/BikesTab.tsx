@@ -11,7 +11,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '../ui/select'
-import { useToast } from '../../hooks/use-toast'
+import { useToast } from '../../contexts/toast-context'
 import { MOCK_BIKES } from '../../lib/mock-data'
 import BikeEditDialog from './BikeEditDialog'
 import BikeDeleteDialog from './BikeDeleteDialog'

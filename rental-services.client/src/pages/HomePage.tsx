@@ -6,7 +6,7 @@ import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
-import { useToast } from '../hooks/use-toast'
+import { useToast } from '../contexts/toast-context'
 import { MOCK_BIKES } from '../lib/mock-data'
 
 export default function HomePage() {
@@ -193,7 +193,7 @@ export default function HomePage() {
                 </div>
             </section>
 
-            {/* Features Section */}    
+            {/* Features Section */}
             <section className="py-16 bg-muted/30">
                 <div className="container mx-auto px-4">
                     <div className="text-center mb-12">

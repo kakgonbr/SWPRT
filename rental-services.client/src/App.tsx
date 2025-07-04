@@ -3,6 +3,9 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { Toaster } from './components/ui/toaster'
 import { AuthProvider } from './contexts/auth-context'
 import { ChatWidgetProvider } from './contexts/chat-widget-context'
+import { ToastProvider as UIToastProvider } from './components/ui/toast'
+import { ToastProvider } from './contexts/toast-context'
+
 import Footer from './components/layout/footer.tsx'
 import Header from './components/layout/header.tsx'
 import ChatWidget from './components/chat/ChatWidget'
@@ -32,32 +35,36 @@ function App() {
         <ErrorBoundary>
             <Router>
                 <AuthProvider>
-                    <ChatWidgetProvider>
-                        <div className="min-h-screen flex flex-col">
-                            <Header />
-                            <main className="flex-grow">
-                                <Routes>
-                                    <Route path="/" element={<HomePage />} />
-                                    <Route path="/bikes" element={<BikesPage />} />
-                                    <Route path="/bikes/:id" element={<BikeDetailsPage />} />
-                                    <Route path="/checkout/:id" element={<CheckoutPage />} />
-                                    <Route path="/rentals" element={<RentalsPage />} />
-                                    <Route path="/profile" element={<ProfilePage />} />
-                                    <Route path="/location-finder" element={<LocationFinderPage />} />
-                                    <Route path="/auth/login" element={<LoginPage />} />
-                                    <Route path="/auth/signup" element={<SignupPage />} />
-                                    <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
-                                    <Route path="/admin" element={<AdminDashboard />} />
-                                    <Route path="/admin/control-panel" element={<AdminControlPanel />} />
-                                    <Route path='/staff' element={<StaffDashboard />} />
-                                    <Route path="*" element={<NotFoundPage />} />
-                                </Routes>
-                            </main>
-                            <Footer />
-                        </div>
-                        <ChatWidget />
-                        <Toaster />
-                    </ChatWidgetProvider>
+                    <ToastProvider>
+                        <UIToastProvider swipeDirection="right">
+                            <ChatWidgetProvider>
+                                <div className="min-h-screen flex flex-col">
+                                    <Header />
+                                    <main className="flex-grow">
+                                        <Routes>
+                                            <Route path="/" element={<HomePage />} />
+                                            <Route path="/bikes" element={<BikesPage />} />
+                                            <Route path="/bikes/:id" element={<BikeDetailsPage />} />
+                                            <Route path="/checkout/:id" element={<CheckoutPage />} />
+                                            <Route path="/rentals" element={<RentalsPage />} />
+                                            <Route path="/profile" element={<ProfilePage />} />
+                                            <Route path="/location-finder" element={<LocationFinderPage />} />
+                                            <Route path="/auth/login" element={<LoginPage />} />
+                                            <Route path="/auth/signup" element={<SignupPage />} />
+                                            <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
+                                            <Route path="/admin" element={<AdminDashboard />} />
+                                            <Route path="/admin/control-panel" element={<AdminControlPanel />} />
+                                            <Route path='/staff' element={<StaffDashboard />} />
+                                            <Route path="*" element={<NotFoundPage />} />
+                                        </Routes>
+                                    </main>
+                                    <Footer />
+                                </div>
+                                <ChatWidget />
+                                <Toaster />
+                            </ChatWidgetProvider>
+                        </UIToastProvider>
+                    </ToastProvider>
                 </AuthProvider>
             </Router>
         </ErrorBoundary>
