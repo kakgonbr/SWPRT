@@ -129,6 +129,10 @@ namespace rental_services.Server.Utils
             .ForMember(dest => dest.DriverLicenses, opt => opt.Ignore())
             .ForMember(dest => dest.PhoneNumber, opt => opt.Ignore())
             .ForMember(dest => dest.CreationDate, opt => opt.Ignore());
+
+            CreateMap<Banner, BannerDTO>();
+            CreateMap<BannerDTO, Banner>()
+            .ForMember(dest => dest.BannerId, opt => opt.Ignore());
         }
     }
 }

@@ -5,6 +5,6 @@ namespace rental_services.Server.Services
 {
     public interface IOcrService
     {
-        Task ProcessGplxDataAsync(string userSub, GplxData gplxData, string imageUrl);
+        Task ProcessGplxDataAsync(string userSub, GplxData gplxData);
     }
 } 

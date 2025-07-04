@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react'
 import { type SystemSettings } from '../types/admin'
 import { useToast } from '../contexts/toast-context'
 
+//const API = import.meta.env.VITE_API_BASE_URL;
+
 // Mock data for development
 const MOCK_SETTINGS: SystemSettings = {
     id: 'sys-001',
