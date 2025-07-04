@@ -15,7 +15,7 @@ namespace rental_services.Server.Services
             _context = context;
         }
 
-        public async Task ProcessGplxDataAsync(string userSub, GplxData gplxData, string imageUrl)
+        public async Task ProcessGplxDataAsync(string userSub, GplxData gplxData)
         {
             var licenseType = await _context.DriverLicenseTypes
                 .FirstOrDefaultAsync(lt => lt.LicenseTypeCode == gplxData.LicenseClass);

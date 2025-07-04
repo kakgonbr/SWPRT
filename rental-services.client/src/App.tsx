@@ -29,6 +29,7 @@ import ErrorBoundary from './components/ErrorBoundary'
 import NotFoundPage from './pages/NotFoundPage'
 import StaffDashboard from './pages/staff/StaffDashboard'
 import ForgotPasswordPage from './pages/auth/ForgotPassword.tsx'
+import { MaintenanceBanner } from './components/MaintenanceBanner.tsx'
 
 function App() {
     return (
