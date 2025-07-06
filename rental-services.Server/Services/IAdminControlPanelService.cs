@@ -8,6 +8,7 @@ namespace rental_services.Server.Services
         Task<bool> DeleteBannerAsync(int bannerId);
         Task<bool> EditBannerAsync(BannerDTO editBanner);
         Task<List<BannerDTO>> GetAllbannersAsync();
+        Task<List<ServerStatisticsDTO>> GetOfDurationAsync(int? days = null);
         Task<ServerStatisticsDTO> GetStatisticsAsync();
         Task<BannerDTO?> GetTopBanner();
         Task<bool> ToggleBannerStatusAsync(int id);
