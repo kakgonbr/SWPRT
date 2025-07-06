@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using rental_services.Server.Models.DTOs;
 using rental_services.Server.Services;
+using System.Text;
 
 namespace rental_services.Server.Controllers
 {
@@ -97,6 +98,25 @@ namespace rental_services.Server.Controllers
             _systemSettingsService.SystemSettings = systemSettings;
 
             return Ok(_systemSettingsService.SystemSettings);
+        }
+
+        [HttpGet("csv/{days?}")]
+        [Authorize(Roles = Utils.Config.Role.Admin)]
+        public async Task<ActionResult<SystemSettingsDTO>> GetCSVReports(int? days)
+        {
+            List<ServerStatisticsDTO> statistics = await _adminService.GetOfDurationAsync(days);
+
+            var csv = new StringBuilder()
+                .AppendLine("day,users,rentals,revenue");
+
+            for (int d = 0; d < statistics.Count; ++d)
+            {
+                csv.AppendLine(string.Join(",", DateOnly.FromDateTime(DateTime.Now).AddDays(-d), statistics[d].TotalUsers, statistics[d].ActiveRentals, statistics[d].MonthlyRevenue));
+            }
+
+            var bytes = Encoding.UTF8.GetBytes(csv.ToString());
+
+            return File(bytes, "text/csv", "report.csv");
         }
     }
 }

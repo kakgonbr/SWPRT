@@ -16,14 +16,79 @@ namespace rental_services.Server.Repositories
             // sql uses its own time, no custom time needed
             var currentDate = DateOnly.FromDateTime(DateTime.Now);
 
-            Models.DTOs.ServerStatisticsDTO serverStatistics = new();
+            Models.DTOs.ServerStatisticsDTO serverStatistics = new()
+            {
+                TotalUsers = await _rentalContext.Users.Where(u => u.IsActive).CountAsync(),
+                RecentUsers = await _rentalContext.Users.Where(u => u.IsActive && u.CreationDate.AddDays(30) > currentDate).CountAsync(),
+                TotalBikes = await _rentalContext.VehicleModels.CountAsync(),
+                AvailableBikes = await _rentalContext.VehicleModels.Where(vm => vm.IsAvailable).CountAsync(),
+                ActiveRentals = await _rentalContext.Bookings.Where(b => !b.Status.Equals("Awaiting Payment") && !b.Status.Equals("Cancelled") && b.StartDate > currentDate && b.EndDate < currentDate).CountAsync(),
+                MonthlyRevenue = await _rentalContext.Payments.Where(p => p.PaymentDate.AddDays(30) > currentDate).Select(p => p.AmountPaid).SumAsync()
+            };
 
-            serverStatistics.TotalUsers = await _rentalContext.Users.Where(u => u.IsActive).CountAsync();
-            serverStatistics.RecentUsers = await _rentalContext.Users.Where(u => u.IsActive && u.CreationDate.AddDays(30) > currentDate).CountAsync();
-            serverStatistics.TotalBikes = await _rentalContext.VehicleModels.CountAsync();
-            serverStatistics.AvailableBikes = await _rentalContext.VehicleModels.Where(vm => vm.IsAvailable).CountAsync();
-            serverStatistics.ActiveRentals = await _rentalContext.Bookings.Where(b => !b.Status.Equals("Awaiting Payment") && !b.Status.Equals("Cancelled") && b.StartDate > currentDate && b.EndDate < currentDate).CountAsync();
-            serverStatistics.MonthlyRevenue = await _rentalContext.Payments.Where(p => p.PaymentDate.AddDays(30) > currentDate).Select(p => p.AmountPaid).SumAsync();
+            return serverStatistics;
+        }
+
+        public async Task<List<Models.DTOs.ServerStatisticsDTO>> GetOfDuration(int? days = null)
+        {
+            var currentDate = DateOnly.FromDateTime(DateTime.Now);
+
+            List<Models.DTOs.ServerStatisticsDTO> serverStatistics = new();
+
+            Models.DTOs.ServerStatisticsDTO currentStatistics = new();
+
+            if (days is null || days == 0)
+            {
+                int d = 0;
+
+                do
+                {
+                    currentStatistics = new();
+
+                    currentStatistics.TotalUsers = await _rentalContext.Users
+                        .Where(u => u.IsActive &&
+                                    EF.Functions.DateDiffDay(u.CreationDate, currentDate) == d)
+                        .CountAsync();
+
+                    currentStatistics.ActiveRentals = await _rentalContext.Bookings
+                        .Where(b => b.Status != "Awaiting Payment" &&
+                                    b.Status != "Cancelled" &&
+                                    EF.Functions.DateDiffDay(b.StartDate, currentDate) == d)
+                        .CountAsync();
+
+                    currentStatistics.MonthlyRevenue = await _rentalContext.Payments
+                        .Where(p => EF.Functions.DateDiffDay(p.PaymentDate, currentDate) == d)
+                        .SumAsync(p => (decimal?)p.AmountPaid) ?? 0m;
+
+                    serverStatistics.Add(currentStatistics);
+
+                    ++d;
+                }
+                while (currentStatistics.TotalUsers != 0 && currentStatistics.ActiveRentals != 0 && currentStatistics.MonthlyRevenue != 0);
+                return serverStatistics;
+            }
+            
+            for (int d = 0; d <= days; ++d)
+            {
+                currentStatistics = new();
+
+                currentStatistics.TotalUsers = await _rentalContext.Users
+                    .Where(u => u.IsActive &&
+                                EF.Functions.DateDiffDay(u.CreationDate, currentDate) == d)
+                    .CountAsync();
+
+                currentStatistics.ActiveRentals = await _rentalContext.Bookings
+                    .Where(b => b.Status != "Awaiting Payment" &&
+                                b.Status != "Cancelled" &&
+                                EF.Functions.DateDiffDay(b.StartDate, currentDate) == d)
+                    .CountAsync();
+
+                currentStatistics.MonthlyRevenue = await _rentalContext.Payments
+                    .Where(p => EF.Functions.DateDiffDay(p.PaymentDate, currentDate) == d)
+                    .SumAsync(p => (decimal?)p.AmountPaid) ?? 0m;
+
+                serverStatistics.Add(currentStatistics);
+            }
 
             return serverStatistics;
         }

@@ -72,5 +72,10 @@
         {
             return await _statisticsRepository.GetStatistics();
         }
+
+        public async Task<List<Models.DTOs.ServerStatisticsDTO>> GetOfDurationAsync(int? days = null)
+        {
+            return await _statisticsRepository.GetOfDuration(days);
+        }
     }
 }
