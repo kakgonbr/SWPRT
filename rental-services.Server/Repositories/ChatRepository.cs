@@ -27,12 +27,29 @@ namespace rental_services.Server.Repositories
                 .FirstOrDefaultAsync(c => c.ChatId == chatId);
         }
 
-        public async Task<List<ChatMessage>> GetMessagesForChatAsync(int chatId)
+        // Paginated and filtered message fetching
+        public async Task<List<ChatMessage>> GetMessagesForChatAsync(int chatId, DateTime? after = null, DateTime? before = null, int? limit = null)
         {
-            return await _context.ChatMessages
-                .Where(m => m.ChatId == chatId)
-                .OrderBy(m => m.ChatMessageId)
-                .ToListAsync();
+            var query = _context.ChatMessages.Where(m => m.ChatId == chatId);
+
+            if (after.HasValue)
+            {
+                query = query.Where(m => m.SendTime > after.Value);
+            }
+            if (before.HasValue)
+            {
+                query = query.Where(m => m.SendTime < before.Value);
+            }
+
+            query = query.OrderByDescending(m => m.SendTime);
+
+            if (limit.HasValue)
+            {
+                query = query.Take(limit.Value);
+            }
+
+            // Return in ascending order for UI
+            return (await query.ToListAsync()).OrderBy(m => m.SendTime).ToList();
         }
 
         public async Task<Chat> AddChatAsync(Chat chat)
@@ -72,6 +89,12 @@ namespace rental_services.Server.Repositories
             return _context.Chats
                 .Include(c => c.ChatMessages)
                 .FirstOrDefaultAsync(c => c.UserId == userId);
+        }
+
+        public async Task<int> UpdateChatAsync(Chat chat)
+        {
+            _context.Chats.Update(chat);
+            return await _context.SaveChangesAsync();
         }
     }
 }

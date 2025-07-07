@@ -1,11 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
+import type { UIEvent } from 'react'
 import { Send, User } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { useAuth } from '../../contexts/auth-context'
 import { format } from 'date-fns'
-import { ChatSignalRService } from '../../services/chat-signalr'
-import type { ChatDTO, ChatMessageDTO } from '../../lib/types'
+import { useChatMessages } from '../../hooks/useChatMessages'
+import type { ChatDTO } from '../../lib/types'
 
 const API = import.meta.env.VITE_API_BASE_URL;
 /*const API = "http://localhost:5000";*/
@@ -13,14 +14,51 @@ const API = import.meta.env.VITE_API_BASE_URL;
 export default function StaffChat({ onBack }: { onBack: () => void }) {
     const { user } = useAuth()
     const [message, setMessage] = useState('')
-    const [messages, setMessages] = useState<ChatMessageDTO[]>([])
     const [chat, setChat] = useState<ChatDTO | null>(null)
-    const [signalR, setSignalR] = useState<ChatSignalRService | null>(null)
+    const [loadingChat, setLoadingChat] = useState(true)
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const messagesContainerRef = useRef<HTMLDivElement>(null)
+    const loadingOlderRef = useRef(false)
+    const token = localStorage.getItem('token') || ''
+    const { messages, signalR, loading, hasMore, loadOlderMessages } = useChatMessages(token, chat)
+
+    // Track previous first and last message IDs:
+    //if last message changes (new messages), scroll to bottom
+    //if first message changes (load older messages), not scroll
+    const prevFirstMsgId = useRef<number | null>(null);
+    const prevLastMsgId = useRef<number | null>(null);
+
+    const firstLoadDone = useRef(false);
 
     useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }, [messages])
+        if (messages.length === 0) {
+            // No messages, reset
+            prevFirstMsgId.current = null;
+            prevLastMsgId.current = null;
+            firstLoadDone.current = false;
+            return;
+        }
+
+        // Scroll to bottom on FIRST LOAD
+        if (!firstLoadDone.current) {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+            firstLoadDone.current = true;
+        } else {
+            // Dynamic scroll for new incoming message at bottom
+            const firstMsgId = messages[0].chatMessageId;
+            const lastMsgId = messages[messages.length - 1].chatMessageId;
+            if (
+                prevLastMsgId.current !== null &&
+                lastMsgId !== prevLastMsgId.current &&
+                (prevFirstMsgId.current === firstMsgId || messages.length === 1)
+            ) {
+                // New message at the end, scroll to bottom
+                messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            }
+            prevFirstMsgId.current = firstMsgId;
+            prevLastMsgId.current = lastMsgId;
+        }
+    }, [messages]);
 
     useEffect(() => {
         if (!user) return
@@ -48,23 +86,26 @@ export default function StaffChat({ onBack }: { onBack: () => void }) {
             }
             if (!myChat) return
             setChat(myChat)
-            //3. Fetch messages for this chat
-            const msgRes = await fetch(`${API}/api/chats/${myChat.chatId}/messages`, {
-                headers: { Authorization: `Bearer ${token}` }
-            })
-            const msgs: ChatMessageDTO[] = await msgRes.json()
-            setMessages(msgs)
-            //4. Setup SignalR
-            const s = new ChatSignalRService(token)
-            await s.start()
-            await s.joinChat(myChat.chatId)
-            s.onReceiveMessage((msg: ChatMessageDTO) => setMessages(prev => [...prev, msg]))
-            setSignalR(s)
+            setLoadingChat(false)
         }
         chatApi()
-        // Cleanup
-        return () => { signalR?.connection?.stop() }
     }, [user])
+
+    // Infinite scroll-up handler
+    const handleScroll = async (e: UIEvent<HTMLDivElement>) => {
+        const container = e.currentTarget
+        if (container.scrollTop === 0 && hasMore && !loading && !loadingOlderRef.current) {
+            loadingOlderRef.current = true
+            const prevHeight = container.scrollHeight
+            await loadOlderMessages()
+            setTimeout(() => {
+                if (container) {
+                    container.scrollTop = container.scrollHeight - prevHeight
+                }
+                loadingOlderRef.current = false
+            }, 0)
+        }
+    }
 
     const handleSendMessage = async () => {
         if (!message.trim() || !chat || !signalR) return
@@ -83,7 +124,14 @@ export default function StaffChat({ onBack }: { onBack: () => void }) {
 
     return (
         <div className="flex flex-col h-full">
-            <div className="flex-1 overflow-y-auto p-3 space-y-3">
+            <div
+                className="flex-1 overflow-y-auto p-3 space-y-3"
+                ref={messagesContainerRef}
+                onScroll={handleScroll}
+            >
+                {loadingChat || loading ? (
+                    <div className="text-center text-muted-foreground py-4">Loading conversation...</div>
+                ) : null}
                 {messages.map((msg) => (
                     <div
                         key={msg.chatMessageId}
@@ -105,7 +153,7 @@ export default function StaffChat({ onBack }: { onBack: () => void }) {
                                     {msg.content}
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    {format(new Date(msg.timestamp), 'HH:mm')}
+                                    {format(new Date(msg.sendTime), 'yyyy-MM-dd HH:mm')}
                                 </p>
                             </div>
                             {msg.senderId === user?.userId && (
@@ -123,7 +171,7 @@ export default function StaffChat({ onBack }: { onBack: () => void }) {
                     <Input
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
-                        onKeyPress={handleKeyPress}
+                        onKeyDown={handleKeyPress}
                         placeholder={chatPlaceholder}
                         className="flex-1"
                     />

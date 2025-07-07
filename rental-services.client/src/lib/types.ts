@@ -124,7 +124,7 @@ export interface ChatMessageDTO {
     chatId: number;
     senderId: number;
     content: string;
-    timestamp: string;
+    sendTime: string;
 }
 
 export interface ServerInfo {
