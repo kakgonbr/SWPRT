@@ -21,14 +21,10 @@ namespace rental_services.Server.Services
             return _mapper.Map<List<ChatDTO>>(chats);
         }
 
-        public async Task<List<ChatMessageDTO>> GetMessagesForChatAsync(int chatId, int userId, bool isCustomer)
+        public async Task<List<ChatMessageDTO>> GetMessagesForChatAsync(int chatId, DateTime? after = null, DateTime? before = null, int? limit = null)
         {
-            var chat = await _chatRepository.GetChatByIdAsync(chatId);
-            if (chat == null) 
-                return new List<ChatMessageDTO>();
-            if (isCustomer && chat.UserId != userId) 
-                return new List<ChatMessageDTO>();
-            return _mapper.Map<List<ChatMessageDTO>>(chat.ChatMessages.OrderBy(m => m.ChatMessageId).ToList());
+            var messages = await _chatRepository.GetMessagesForChatAsync(chatId, after, before, limit);
+            return _mapper.Map<List<ChatMessageDTO>>(messages);
         }
 
         public async Task<ChatDTO> CreateChatAsync(int userId, string? subject, string? priority)
@@ -78,6 +74,14 @@ namespace rental_services.Server.Services
             }
             var chat = await _chatRepository.GetChatByUserIdAsync(userId);
             return chat == null ? null : _mapper.Map<ChatDTO>(chat);
+        }
+
+        public async Task<ChatDTO?> UpdateChatAsync(ChatDTO chatDTO)
+        {
+            if (chatDTO is null)
+                return null;    
+            var chat = _mapper.Map<Chat>(chatDTO);
+            return await _chatRepository.UpdateChatAsync(chat) > 0 ? chatDTO : null;
         }
     }
 }
