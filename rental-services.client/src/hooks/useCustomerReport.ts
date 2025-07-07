@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useToast } from './use-toast'
+import { useToast } from '../contexts/toast-context'
 import { type CustomerReport, type ReportFormData } from '../types/customer-reports'
 import type { Rental } from '../lib/types'
 

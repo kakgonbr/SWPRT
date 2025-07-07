@@ -12,6 +12,7 @@ using rental_services.Server.Services;
 using rental_services.Server.Repositories;
 using Microsoft.Extensions.FileProviders;
 using System.Runtime.InteropServices;
+using rental_services.Server.Middlewares;
 
 namespace rental_services.Server
 {
@@ -90,19 +91,27 @@ namespace rental_services.Server
                 .AddScoped<IVehicleModelRepository, VehicleModelRepository>()
                 .AddScoped<IVehicleRepository, VehicleRepository>()
                 .AddScoped<IPeripheralRepository, PeripheralRepository>()
+                .AddScoped<IShopRepository, ShopRepository>()
+                .AddScoped<IManufacturerRepository, ManufacturerRepository>()
+                .AddScoped<IVehicleTypeRepository, VehicleTypeRepository>()
                 .AddScoped<IBikeService, BikeService>()
                 .AddScoped<IOcrService, OcrService>()
                 .AddScoped<IChatRepository, ChatRepository>()
                 .AddScoped<IChatService, ChatService>()
                 .AddScoped<IBookingRepository, BookingRepository>()
-                .AddScoped<IRentalService, RentalService>();
-          
+                .AddScoped<IRentalService, RentalService>()
+                .AddScoped<IBannerRepository, BannerRepository>()
+                .AddScoped<IStatisticsRepository, StatisticsRepository>()
+                .AddSingleton<ISystemSettingsService, SystemSettingsService>()
+                .AddScoped<IAdminControlPanelService, AdminControlPanelService>()
+                .AddSingleton<IMaintenanceService, MaintenanceService>();
+
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
             {
                 options.AddPolicy("AllowLocalhost3000", policy =>
                 {
-                    policy.WithOrigins("http://localhost:3000")
+                    policy.WithOrigins("http://localhost:3000", "http://localhost:3001", "http://localhost:3002")
                         .AllowAnyHeader()
                         .AllowAnyMethod()
                         .AllowCredentials();
@@ -145,6 +154,10 @@ namespace rental_services.Server
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseMiddleware<MaintenanceMiddleware>();
+
+            app.MapFallbackToFile("index.html");
             //
             //app.UseHttpsRedirection(); // nginx handles https
             app.MapControllers();
@@ -152,7 +165,6 @@ namespace rental_services.Server
             // Add SignalR endpoint
             app.MapHub<Controllers.Realtime.ChatHub>("/hubs/chat");
             
-            app.MapFallbackToFile("wwwroot/index.html");
             app.Run();
         }
     }

@@ -1,5 +1,5 @@
 ﻿import { useState } from 'react'
-import { useToast } from './use-toast'
+import { useToast } from '../contexts/toast-context'
 import type { User, UserRole } from '../lib/types'
 
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -17,12 +17,12 @@ interface UserFormData {
 
 export const useUserManagement = () => {
     const { toast } = useToast()
-    
+
     // User edit dialog state
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false)
     const [selectedUser, setSelectedUser] = useState<User | null>(null)
     const [editFormData, setEditFormData] = useState<UserFormData>({
-        userId : -1,
+        userId: -1,
         fullName: '',
         email: '',
         role: 'renter',
@@ -52,7 +52,7 @@ export const useUserManagement = () => {
     const handleSaveUser = async () => {
         if (!selectedUser || selectedUser.userId == -1) return
 
-        setIsSaving(true)        
+        setIsSaving(true)
 
         try {
             const response = await fetch(`${API}/api/users`, {

@@ -24,6 +24,9 @@ namespace rental_services.Server.Utils
                 src => src.Reviews.Any()
                     ? Math.Round(src.Reviews.Average(r => r.Rate), 1)
                     : 0
+            ))
+            .ForMember(dest => dest.Quantity, opt => opt.MapFrom(
+                src => src.Vehicles.Count    
             ));
 
             // database to detailed view
@@ -56,13 +59,12 @@ namespace rental_services.Server.Utils
             // admin detailed view to database
             CreateMap<VehicleDetailsDTO, VehicleModel>()
             .ForMember(dest => dest.Peripherals, opt => opt.Ignore()) // handled manually
-            .ForMember(dest => dest.Vehicles, opt => opt.Ignore())
+            .ForMember(dest => dest.Vehicles, opt => opt.Ignore()) // also handled manually
             .ForMember(dest => dest.Reviews, opt => opt.Ignore())
             .ForMember(dest => dest.Manufacturer, opt => opt.Ignore())
             //.ForMember(dest => dest.Shop, opt => opt.Ignore())
-            .ForMember(dest => dest.VehicleType, opt => opt.Ignore())
-            .ForMember(dest => dest.PeripheralsNavigation, opt => opt.Ignore())
-            .ForMember(dest => dest.Vehicles, opt => opt.Ignore());
+            .ForMember(dest => dest.VehicleType, opt => opt.Ignore()) // changed by setting id instead.
+            .ForMember(dest => dest.PeripheralsNavigation, opt => opt.Ignore());
 
             // shop
             CreateMap<Shop, ShopDTO>();
@@ -130,6 +132,20 @@ namespace rental_services.Server.Utils
             .ForMember(dest => dest.DriverLicenses, opt => opt.Ignore())
             .ForMember(dest => dest.PhoneNumber, opt => opt.Ignore())
             .ForMember(dest => dest.CreationDate, opt => opt.Ignore());
+
+            CreateMap<Banner, BannerDTO>()
+            .ForMember(dest => dest.Type, opt => opt.MapFrom(
+                src => src.Type.ToLower()));
+            CreateMap<BannerDTO, Banner>()
+            .ForMember(dest => dest.Type, opt => opt.MapFrom(
+                src => src.Type[0].ToString().ToUpper() + src.Type.Substring(1)
+            ))
+            .ForMember(dest => dest.BannerId, opt => opt.Ignore());
+
+            CreateMap<SystemSettingsDTO, ServerInfoDTO>();
+
+            CreateMap<Manufacturer, ManufacturerDTO>();
+            CreateMap<VehicleType, VehicleTypeDTO>();
         }
     }
 }

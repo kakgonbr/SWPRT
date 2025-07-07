@@ -47,8 +47,7 @@ import {
     Clock,
     MessageSquare
 } from 'lucide-react'
-import { useToast } from '../../hooks/use-toast'
-
+import { useToast } from '../../contexts/toast-context'
 interface CustomerReport {
     id: string
     issueType: string

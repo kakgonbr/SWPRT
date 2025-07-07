@@ -129,4 +129,31 @@ public class BikesController : ControllerBase
         return Ok(_bikeService.FilterModelByShop(vehicleModels, shop));
     }
 
+    [HttpGet("shops")]
+    [Authorize(Roles = Utils.Config.Role.Admin)]
+    public async Task<ActionResult<List<ShopDTO>>> GetAllShopsAsync()
+    {
+        return Ok(await _bikeService.GetAllShopsAsync());
+    }
+
+    [HttpGet("types")]
+    [Authorize(Roles = Utils.Config.Role.Admin)]
+    public async Task<ActionResult<List<VehicleTypeDTO>>> GetAllVehicleTypesAsync()
+    {
+        return Ok(await _bikeService.GetAllVehicleTypesAsync());
+    }
+
+    [HttpGet("manufacturers")]
+    [Authorize(Roles = Utils.Config.Role.Admin)]
+    public async Task<ActionResult<List<ManufacturerDTO>>> GetAllManufacturersAsync()
+    {
+        return Ok(await _bikeService.GetAllManufacturersAsync());
+    }
+
+    [HttpGet("peripherals")]
+    [Authorize(Roles = Utils.Config.Role.Admin)]
+    public async Task<ActionResult<List<PeripheralDTO>>> GetAllPeripheralsAsync()
+    {
+        return Ok(await _bikeService.GetAllPeripheralsAsync());
+    }
 }
