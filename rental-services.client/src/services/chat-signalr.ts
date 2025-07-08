@@ -2,7 +2,6 @@ import * as signalR from "@microsoft/signalr";
 import type { ChatDTO, ChatMessageDTO } from "../lib/types";
 
 const API = import.meta.env.VITE_API_BASE_URL;
-/*const API = "http://localhost:5000";*/
 
 export class ChatSignalRService {
     connection: signalR.HubConnection;

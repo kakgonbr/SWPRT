@@ -16,7 +16,7 @@ export default function ChatDialog({ isOpen, onClose, chat }: ChatDialogProps) {
     const { user } = useAuth()
     const token = localStorage.getItem('token') || ''
     const { messages, signalR, loading, hasMore, loadOlderMessages } = useChatMessages(token, chat)
-    const [reply, setReply] = useState('')
+    const [message, setMessage] = useState('')
     const messagesEndRef = useRef<HTMLDivElement>(null)
     const messagesContainerRef = useRef<HTMLDivElement>(null)
     const loadingOlderRef = useRef(false)
@@ -38,7 +38,7 @@ export default function ChatDialog({ isOpen, onClose, chat }: ChatDialogProps) {
             return;
         }
 
-        // Scroll to bottom on FIRST LOAD
+        // Scroll to bottom on first load
         if (!firstLoadDone.current) {
             messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
             firstLoadDone.current = true;
@@ -75,16 +75,16 @@ export default function ChatDialog({ isOpen, onClose, chat }: ChatDialogProps) {
         }
     }
 
-    const handleSend = async () => {
-        if (!reply.trim() || !chat || !signalR) return
-        await signalR.sendMessage(chat.chatId, reply.trim())
-        setReply('')
+    const handleSendMessage = async () => {
+        if (!message.trim() || !chat || !signalR) return
+        await signalR.sendMessage(chat.chatId, message.trim())
+        setMessage('')
     }
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault()
-            handleSend()
+            handleSendMessage()
         }
     }
 
@@ -152,12 +152,12 @@ export default function ChatDialog({ isOpen, onClose, chat }: ChatDialogProps) {
                     <div className="flex space-x-2">
                         <input
                             className="flex-1 border rounded px-2 py-1"
-                            value={reply}
-                            onChange={e => setReply(e.target.value)}
+                            value={message}
+                            onChange={e => setMessage(e.target.value)}
                             onKeyDown={handleKeyPress}
-                            placeholder="Type your reply..."
+                            placeholder="Type your message..."
                         />
-                        <button className="bg-primary text-white px-3 py-1 rounded" onClick={handleSend} disabled={!reply.trim()}>Send</button>
+                        <button className="bg-primary text-white px-3 py-1 rounded" onClick={handleSendMessage} disabled={!message.trim()}>Send</button>
                     </div>
                 </div>
             </div>

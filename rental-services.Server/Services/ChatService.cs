@@ -83,5 +83,15 @@ namespace rental_services.Server.Services
             var chat = _mapper.Map<Chat>(chatDTO);
             return await _chatRepository.UpdateChatAsync(chat) > 0 ? chatDTO : null;
         }
+
+        public async Task<List<ChatDTO>> GetChatsByStaffAsync(int staffId, int skip, int take)
+        {
+            if (staffId < 0 || skip < 0 || take <= 0)
+            {
+                return [];
+            }
+            var chats = await _chatRepository.GetChatsByStaffAsync(staffId, skip, take);
+            return _mapper.Map<List<ChatDTO>>(chats);
+        }
     }
 }

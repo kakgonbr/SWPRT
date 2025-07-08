@@ -96,5 +96,18 @@ namespace rental_services.Server.Repositories
             _context.Chats.Update(chat);
             return await _context.SaveChangesAsync();
         }
+
+        //get chats assigned to a staff or not assigned, paginated, can be filtered by address on later update
+        public async Task<List<Chat>> GetChatsByStaffAsync(int staffId, int page, int pageSize)
+        {
+            return await _context.Chats
+                .Where(c => c.StaffId == staffId || c.StaffId == null)
+                .Include(c => c.User)
+                .Include(c => c.Staff)
+                .Skip((page - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
     }
 }
