@@ -102,7 +102,7 @@ namespace rental_services.Server.Controllers
 
         [HttpGet("csv/{days?}")]
         [Authorize(Roles = Utils.Config.Role.Admin)]
-        public async Task<ActionResult<SystemSettingsDTO>> GetCSVReports(int? days)
+        public async Task<FileContentResult> GetCSVReports(int? days)
         {
             List<ServerStatisticsDTO> statistics = await _adminService.GetOfDurationAsync(days);
 
