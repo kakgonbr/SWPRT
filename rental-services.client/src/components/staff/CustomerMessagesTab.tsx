@@ -20,7 +20,7 @@ const PRIORITY_OPTIONS = [
 export default function CustomerMessagesTab() {
     const { user } = useAuth();
     const token = localStorage.getItem('token') || '';
-    const { chats, setChats, loading, page, setPage } = useStaffChats(token);
+    const { chats, setChats, loading, page, setPage, newCustomerMessages, clearNewCustomerMessage } = useStaffChats(token);
     const [searchTerm, setSearchTerm] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -69,6 +69,13 @@ export default function CustomerMessagesTab() {
             }
         }
         setOpenChat(chat);
+        // Mark as read in backend
+        const API = import.meta.env.VITE_API_BASE_URL;
+        await fetch(`${API}/api/chats/${chat.chatId}/read`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        clearNewCustomerMessage(chat.chatId);
     };
 
     const handleUpdateChat = async (chat: ChatDTO, updates: Partial<ChatDTO>) => {
@@ -102,6 +109,8 @@ export default function CustomerMessagesTab() {
         if (!noMoreChats) 
             setPage(page + 1);
     };
+
+    const showBadge = (chat: ChatDTO) => chat.hasNewCustomerMessage || newCustomerMessages[chat.chatId];
 
     return (
         <div className="card">
@@ -154,7 +163,7 @@ export default function CustomerMessagesTab() {
                             sortedChats.map((chat) => (
                                 <tr
                                     key={chat.chatId}
-                                    className="hover:bg-muted/50 cursor-pointer"
+                                    className="relative hover:bg-muted/50 cursor-pointer"
                                     onClick={() => handleOpenChat(chat)}
                                 >
                                     <td>
@@ -165,7 +174,9 @@ export default function CustomerMessagesTab() {
                                                 </AvatarFallback>
                                             </Avatar>
                                             <div>
-                                                <div className="font-medium">{chat.userName ? chat.userName : `User #${chat.userId}`}</div>
+                                                <div className="font-medium">
+                                                    {chat.userName ? chat.userName : `User #${chat.userId}`}
+                                                </div>
                                             </div>
                                         </div>
                                     </td>
@@ -219,6 +230,12 @@ export default function CustomerMessagesTab() {
                                             {format(new Date(chat.openTime), "MMM d, yyyy HH:mm")}
                                         </div>
                                     </td>
+                                    {showBadge(chat) && (
+                                        <span
+                                            className="absolute top-2 right-2 w-3 h-3 rounded-full bg-red-500"
+                                            title="New customer message"
+                                        />
+                                    )}
                                 </tr>
                             ))
                         )}

@@ -16,5 +16,7 @@ namespace rental_services.Server.Services
         Task<ChatDTO?> GetChatByUserIdAsync(int userId);
         Task<ChatDTO?> UpdateChatAsync(ChatDTO chatDTO); 
         Task<List<ChatDTO>> GetChatsByStaffAsync(int staffId, int skip, int take);
+        Task<bool> MarkCustomerMessagesAsReadAsync(int chatId);
+        Task<int> GetPendingChatsAsync(int staffId);
     }
 }

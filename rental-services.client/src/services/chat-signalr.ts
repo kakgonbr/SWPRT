@@ -42,4 +42,6 @@ export class ChatSignalRService {
     onChatUpdated(callback: (chat: ChatDTO) => void) {
         this.connection.on("ChatUpdated", callback);
     }
+    
+    
 }

@@ -85,7 +85,8 @@ namespace rental_services.Server.Utils
                 .ForMember(dest => dest.ChatMessages, opt => opt.Ignore());
             CreateMap<Chat, ChatDTO>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName))
-                .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.Staff != null ? src.Staff.FullName : string.Empty));
+                .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.Staff != null ? src.Staff.FullName : string.Empty))
+                .ForMember(dest => dest.HasNewCustomerMessage, opt => opt.Ignore());
 
             CreateMap<ChatMessage, ChatMessageDTO>()
                .ForMember(dest => dest.SendTime, opt => opt.MapFrom(src => src.SendTime));
