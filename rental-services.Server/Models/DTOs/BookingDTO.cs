@@ -3,6 +3,7 @@
     public record BookingDTO
     {
         public string Id { get; set; } = null!;
+        public int CustomerId { get; set; }
         public string BikeName { get; set; } = null!;
         public string BikeImageUrl { get; set; } = null!;
         public string CustomerName { get; set; } = null!;

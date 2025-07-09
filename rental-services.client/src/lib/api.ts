@@ -1,6 +1,7 @@
 ﻿//using axios to fetch data from api
 import axios from 'axios';
 import type {VehicleModelDTO} from "./types.ts";
+import type { Booking } from '../types/booking.ts';
 
 const BASE_API_URL = '/api'
 export const bikeApi = {
@@ -26,7 +27,14 @@ export const bikeApi = {
         if (searchTerm !== undefined) {
             params.searchTerm = searchTerm;
         }
-        const response = await axios.get(`/api/bikes/available`, {params: params});
+        const response = await axios.get(`/api/bikes/available`, { params: params });
         return response.data;
+    }
+};
+
+export const rentalAPI = {
+    createBooking: async (booking: Booking): Promise<string> => {
+        const response = axios.post(`${BASE_API_URL}/rentals`, booking);
+        return (await response).data;
     }
 }

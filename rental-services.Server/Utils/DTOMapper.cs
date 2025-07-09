@@ -26,7 +26,7 @@ namespace rental_services.Server.Utils
                     : 0
             ))
             .ForMember(dest => dest.Quantity, opt => opt.MapFrom(
-                src => src.Vehicles.Count    
+                src => src.Vehicles.Count
             ));
 
             // database to detailed view
@@ -89,13 +89,24 @@ namespace rental_services.Server.Utils
 
             CreateMap<ChatMessage, ChatMessageDTO>()
                .ForMember(dest => dest.SendTime, opt => opt.MapFrom(src => src.SendTime));
-                   
+
+            //checkout view to database
+            CreateMap<BookingDTO, Booking>()
+                .ForMember(dest => dest.BookingId, opt => opt.Ignore())
+                .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.CustomerId))
+                .ForMember(dest => dest.User, opt => opt.Ignore())
+                .ForMember(dest => dest.Vehicle, opt => opt.Ignore())
+                .ForMember(dest => dest.Payments, opt => opt.Ignore());
+
             // rental
             // database to view
             // to eagerly load: user, vehicle, model (from vehicle), manufacturer (from model), payments
             CreateMap<Booking, BookingDTO>()
             .ForMember(dest => dest.Id, opt => opt.MapFrom(
                 src => src.BookingId.ToString()
+            ))
+            .ForMember(dest => dest.CustomerId, opt => opt.MapFrom(
+                src => src.UserId.ToString()
             ))
             .ForMember(dest => dest.BikeName, opt => opt.MapFrom(
                 src => $"{src.Vehicle.Model.Manufacturer.ManufacturerName} {src.Vehicle.Model.ModelName}"

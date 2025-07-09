@@ -1,4 +1,7 @@
-﻿namespace rental_services.Server.Services
+﻿using rental_services.Server.Models;
+using rental_services.Server.Models.DTOs;
+
+namespace rental_services.Server.Services
 {
     public class RentalService : IRentalService
     {
@@ -11,6 +14,24 @@
             _bookingRepository = bookingRepository;
             _mapper = mapper;
             _peripheralRepository = peripheralRepository;
+        }
+
+        public async Task<bool> AddBookingAsync(Models.DTOs.BookingDTO booking)
+        {
+            if (booking.StartDate >= booking.EndDate)
+            {
+                return false;
+            }
+            Models.Booking newBooking = _mapper.Map<Models.Booking>(booking);
+            var userBookings = await _bookingRepository.GetOfUserAsync(booking.CustomerId);
+            bool hasOverlap = userBookings.Any(existingBookings =>
+                booking.StartDate < existingBookings.EndDate &&
+                booking.EndDate > existingBookings.StartDate
+            );
+            if (hasOverlap) { return false; }
+
+            int rowEffected = await _bookingRepository.AddAsync(newBooking);
+            return rowEffected > 0;
         }
 
         public async Task<List<Models.DTOs.BookingDTO>> GetAllBookingsAsync()
