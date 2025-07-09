@@ -200,6 +200,7 @@ CREATE TABLE ChatMessages
     SenderId int NOT NULL,
     Content nvarchar(MAX) NOT NULL, -- maybe enforce length checks on the API
     SendTime datetime NOT NULL DEFAULT GETDATE(),
+    IsRead bit NOT NULL DEFAULT 0, 
 
     CONSTRAINT fk_chtmsg_chat FOREIGN KEY (ChatId) REFERENCES Chats,
     CONSTRAINT fk_chtmsg_sender FOREIGN KEY (SenderId) REFERENCES Users
