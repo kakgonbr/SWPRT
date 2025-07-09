@@ -32,65 +32,48 @@ namespace rental_services.Server.Repositories
         public async Task<List<Models.DTOs.ServerStatisticsDTO>> GetOfDuration(int? days = null)
         {
             var currentDate = DateOnly.FromDateTime(DateTime.Now);
+            var serverStatistics = new List<Models.DTOs.ServerStatisticsDTO>();
 
-            List<Models.DTOs.ServerStatisticsDTO> serverStatistics = new();
-
-            Models.DTOs.ServerStatisticsDTO currentStatistics = new();
-
-            if (days is null || days == 0)
+            async Task<Models.DTOs.ServerStatisticsDTO> BuildSnapshotAsync(int daysBack)
             {
-                int d = 0;
-
-                do
+                return new Models.DTOs.ServerStatisticsDTO
                 {
-                    currentStatistics = new();
-
-                    currentStatistics.TotalUsers = await _rentalContext.Users
+                    TotalUsers = await _rentalContext.Users
                         .Where(u => u.IsActive &&
-                                    EF.Functions.DateDiffDay(u.CreationDate, currentDate) == d)
-                        .CountAsync();
+                                    EF.Functions.DateDiffDay(u.CreationDate, currentDate) >= daysBack)
+                        .CountAsync(),
 
-                    currentStatistics.ActiveRentals = await _rentalContext.Bookings
+                    ActiveRentals = await _rentalContext.Bookings
                         .Where(b => b.Status != "Awaiting Payment" &&
                                     b.Status != "Cancelled" &&
-                                    EF.Functions.DateDiffDay(b.StartDate, currentDate) == d)
-                        .CountAsync();
+                                    EF.Functions.DateDiffDay(b.StartDate, currentDate) >= daysBack)
+                        .CountAsync(),
 
-                    currentStatistics.MonthlyRevenue = await _rentalContext.Payments
-                        .Where(p => EF.Functions.DateDiffDay(p.PaymentDate, currentDate) == d)
-                        .SumAsync(p => (decimal?)p.AmountPaid) ?? 0m;
-
-                    serverStatistics.Add(currentStatistics);
-
-                    ++d;
-                }
-                while (currentStatistics.TotalUsers != 0 && currentStatistics.ActiveRentals != 0 && currentStatistics.MonthlyRevenue != 0);
-                return serverStatistics;
+                    MonthlyRevenue = await _rentalContext.Payments
+                        .Where(p => EF.Functions.DateDiffDay(p.PaymentDate, currentDate) >= daysBack)
+                        .SumAsync(p => (decimal?)p.AmountPaid) ?? 0m
+                };
             }
-            
-            for (int d = 0; d <= days; ++d)
+
+            if (days is null or 0)
             {
-                currentStatistics = new();
+                for (var d = 0; ; ++d)
+                {
+                    var snap = await BuildSnapshotAsync(d);
+                    serverStatistics.Add(snap);
 
-                currentStatistics.TotalUsers = await _rentalContext.Users
-                    .Where(u => u.IsActive &&
-                                EF.Functions.DateDiffDay(u.CreationDate, currentDate) == d)
-                    .CountAsync();
-
-                currentStatistics.ActiveRentals = await _rentalContext.Bookings
-                    .Where(b => b.Status != "Awaiting Payment" &&
-                                b.Status != "Cancelled" &&
-                                EF.Functions.DateDiffDay(b.StartDate, currentDate) == d)
-                    .CountAsync();
-
-                currentStatistics.MonthlyRevenue = await _rentalContext.Payments
-                    .Where(p => EF.Functions.DateDiffDay(p.PaymentDate, currentDate) == d)
-                    .SumAsync(p => (decimal?)p.AmountPaid) ?? 0m;
-
-                serverStatistics.Add(currentStatistics);
+                    if (snap.TotalUsers == 0 && snap.ActiveRentals == 0 && snap.MonthlyRevenue == 0)
+                        break;
+                }
+            }
+            else
+            {
+                for (var d = 0; d <= days; ++d)
+                    serverStatistics.Add(await BuildSnapshotAsync(d));
             }
 
             return serverStatistics;
         }
+
     }
 }
