@@ -15,5 +15,6 @@ namespace rental_services.Server.Repositories
         Task<ChatMessage> AddMessageAsync(ChatMessage message);
         Task<int> GetIDBasedOnMail(string email);
         Task<int> UpdateChatAsync(Chat chat);
+        Task<List<Chat>> GetChatsByStaffAsync(int staffId, int page, int pageSize);
     }
 }

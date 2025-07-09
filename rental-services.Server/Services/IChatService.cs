@@ -15,5 +15,6 @@ namespace rental_services.Server.Services
         Task<int> GetIDBasedOnMailForChat(string email);
         Task<ChatDTO?> GetChatByUserIdAsync(int userId);
         Task<ChatDTO?> UpdateChatAsync(ChatDTO chatDTO); 
+        Task<List<ChatDTO>> GetChatsByStaffAsync(int staffId, int skip, int take);
     }
 }

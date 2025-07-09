@@ -115,6 +115,19 @@ namespace rental_services.Server.Controllers
                 return BadRequest("Chat not found or invalid data.");
             return Ok(chat);
         }
+
+        // GET: api/chats/paginated?skip=0&take=5
+        [HttpGet("paginated")]
+        [Authorize(Roles = Utils.Config.Role.Staff)]
+        public async Task<ActionResult<IEnumerable<ChatDTO>>> GetChatsPaginated([FromQuery] int page = 0, [FromQuery] int pageSize = 1)
+        {
+            var userIdClaim = User.FindFirstValue("VroomVroomUserId");
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Forbid("lack claim id in the token");
+            var staffId = int.Parse(userIdClaim);
+            var chats = await _chatService.GetChatsByStaffAsync(staffId, page, pageSize);
+            return Ok(chats);
+        }
     }
 
     public class CreateChatRequest

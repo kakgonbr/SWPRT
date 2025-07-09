@@ -8,15 +8,29 @@ const API = import.meta.env.VITE_API_BASE_URL;
 export function useStaffChats(token: string) {
     const [chats, setChats] = useState<ChatDTO[]>([])
     const [loading, setLoading] = useState(true)
+    const [page, setPage] = useState(1)
     const signalRRef = useRef<ChatSignalRService | null>(null)
 
+    // useEffect(() => {
+    //     if (!token)
+    //         return
+    //     fetch(`${API}/api/chats`, {
+    //         headers: { Authorization: `Bearer ${token}` }
+    //     }).then(res => res.json()).then(setChats).finally(() => setLoading(false))
+    // }, [token])
+
     useEffect(() => {
-        if (!token)
-            return
-        fetch(`${API}/api/chats`, {
+        if (!token) return;
+        setLoading(true);
+        fetch(`${API}/api/chats/paginated?page=${page}`, {
             headers: { Authorization: `Bearer ${token}` }
-        }).then(res => res.json()).then(setChats).finally(() => setLoading(false))
-    }, [token])
+        })
+            .then(async res => {
+                const data = await res.json();
+                setChats(data);
+            })
+            .finally(() => setLoading(false));
+    }, [token, page]);
 
     useEffect(() => {
         if (!token)
@@ -45,5 +59,7 @@ export function useStaffChats(token: string) {
         }
     }, [token])
 
-    return { chats, loading }
+    return {
+        chats, setChats, loading, page, setPage
+    }
 }

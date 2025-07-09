@@ -9,7 +9,6 @@ import { useChatMessages } from '../../hooks/useChatMessages'
 import type { ChatDTO } from '../../lib/types'
 
 const API = import.meta.env.VITE_API_BASE_URL;
-/*const API = "http://localhost:5000";*/
 
 export default function StaffChat({ onBack }: { onBack: () => void }) {
     const { user } = useAuth()
@@ -39,7 +38,7 @@ export default function StaffChat({ onBack }: { onBack: () => void }) {
             return;
         }
 
-        // Scroll to bottom on FIRST LOAD
+        // Scroll to bottom on first load
         if (!firstLoadDone.current) {
             messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
             firstLoadDone.current = true;
