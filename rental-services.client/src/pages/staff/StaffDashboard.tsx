@@ -15,11 +15,14 @@ import CustomerMessagesTab from '../../components/staff/CustomerMessagesTab'
 import RentalManagementTab from '../../components/staff/RentalManagementTab'
 import ReportsManagementTab from '../../components/staff/ReportsManagementTab'
 import RentalApprovalDialog from '../../components/staff/RentalApprovalDialog'
+import { usePendingMessages } from '../../hooks/usePendingMessages'
 
 export default function StaffDashboard() {
     const navigate = useNavigate()
     const { user, isAuthenticated, loading } = useAuth()
     
+    const token = localStorage.getItem('token') || '';
+    const { pendingCount } = usePendingMessages(token);
 
     // Mock new reports count for demonstration
     const newReportsCount = 2
@@ -63,7 +66,7 @@ export default function StaffDashboard() {
             {/* Stats Cards */}
             <StaffStatsCards
                 activeRentals={0}
-                pendingMessages={0} // may want to update this if needed
+                pendingMessages={pendingCount}
             />
 
             {/* Main Content Tabs */}

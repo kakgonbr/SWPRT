@@ -91,7 +91,28 @@ namespace rental_services.Server.Services
                 return [];
             }
             var chats = await _chatRepository.GetChatsByStaffAsync(staffId, skip, take);
-            return _mapper.Map<List<ChatDTO>>(chats);
+            var chatDTOs = _mapper.Map<List<ChatDTO>>(chats);
+            foreach (var chatDTO in chatDTOs)
+            {
+                chatDTO.HasNewCustomerMessage = await _chatRepository.HaveUnreadChatMessagesAsync(chatDTO);
+            }
+            return chatDTOs;
+        }
+
+        public async Task<bool> MarkCustomerMessagesAsReadAsync(int chatId)
+        {
+            return await _chatRepository.MarkCustomerMessagesAsReadAsync(chatId);
+        }
+
+        public async Task<int> GetPendingChatsAsync(int staffId)
+        {
+            var chats = (await _chatRepository.GetAllChatsAsync()).Where(c => c.StaffId == staffId);
+            var chatDTOs = _mapper.Map<List<ChatDTO>>(chats);
+            foreach (var chatDTO in chatDTOs)
+            {
+                chatDTO.HasNewCustomerMessage = await _chatRepository.HaveUnreadChatMessagesAsync(chatDTO);
+            }
+            return chatDTOs.Count(c => c.HasNewCustomerMessage);
         }
     }
 }

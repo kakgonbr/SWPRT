@@ -116,7 +116,8 @@ namespace rental_services.Server.Controllers
             return Ok(chat);
         }
 
-        // GET: api/chats/paginated?skip=0&take=5
+        // GET: api/chats/paginated?page=1
+        // get chats assigned to the staff and not assigned to anyone paginated
         [HttpGet("paginated")]
         [Authorize(Roles = Utils.Config.Role.Staff)]
         public async Task<ActionResult<IEnumerable<ChatDTO>>> GetChatsPaginated([FromQuery] int page = 0, [FromQuery] int pageSize = 1)
@@ -126,6 +127,33 @@ namespace rental_services.Server.Controllers
                 return Forbid("lack claim id in the token");
             var staffId = int.Parse(userIdClaim);
             var chats = await _chatService.GetChatsByStaffAsync(staffId, page, pageSize);
+            return Ok(chats);
+        }
+
+        //POST: api/chats/{chatId}/read
+        // mark customer messages as read
+        [HttpPost("{chatId}/read")]
+        [Authorize(Roles = Utils.Config.Role.Staff)]
+        public async Task<IActionResult> MarkMessagesAsRead(int chatId)
+        {
+            var result = await _chatService.MarkCustomerMessagesAsReadAsync(chatId);
+            if (!result)
+                return BadRequest("Chat not found or invalid data.");
+            await _hubContext.Clients.All.SendAsync("ChatRead");
+            return Ok();
+        }
+
+        //GET: api/chats/pending
+        // get all pending chats for staff
+        [HttpGet("pending")]
+        [Authorize(Roles = Utils.Config.Role.Staff)]
+        public async Task<ActionResult<int>> GetPendingChats()
+        {
+            var userIdClaim = User.FindFirstValue("VroomVroomUserId");
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Forbid("lack claim id in the token");
+            var staffId = int.Parse(userIdClaim);
+            var chats = await _chatService.GetPendingChatsAsync(staffId);
             return Ok(chats);
         }
     }

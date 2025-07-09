@@ -117,6 +117,7 @@ export interface ChatDTO {
     subject: string;
     userName: string;
     staffName: string;
+    hasNewCustomerMessage: boolean;
 }
 
 export interface ChatMessageDTO {
