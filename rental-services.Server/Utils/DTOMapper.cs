@@ -147,6 +147,12 @@ namespace rental_services.Server.Utils
 
             CreateMap<Manufacturer, ManufacturerDTO>();
             CreateMap<VehicleType, VehicleTypeDTO>();
+
+            CreateMap<Report, ReportDTO>()
+                .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.Description))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName))
+                .ForMember(dest => dest.UserEmail, opt => opt.MapFrom(src => src.User.Email));
+            CreateMap<ReportDTO, Report>();
         }
     }
 }
