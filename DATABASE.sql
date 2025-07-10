@@ -232,9 +232,11 @@ CREATE TABLE Reports
     Body nvarchar(MAX) NOT NULL,
     ImagePath varchar(256) NOT NULL,
     ReportTime datetime NOT NULL DEFAULT GETDATE(),
+    Status varchar(10) NOT NULL DEFAULT 'Unresolved',
 
     CONSTRAINT fk_rep_user FOREIGN KEY (UserId) REFERENCES Users,
-    CONSTRAINT fk_rep_type FOREIGN KEY (TypeId) REFERENCES ReportTypes
+    CONSTRAINT fk_rep_type FOREIGN KEY (TypeId) REFERENCES ReportTypes,
+    CONSTRAINT ck_rep_status CHECK (Status IN ('Unresolved', 'Resolved', 'In Progress'))
 )
 
 CREATE TABLE Banners

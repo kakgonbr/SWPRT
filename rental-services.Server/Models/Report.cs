@@ -19,6 +19,8 @@ public partial class Report
 
     public DateTime ReportTime { get; set; }
 
+    public string Status { get; set; } = null!;
+
     public virtual ReportType Type { get; set; } = null!;
 
     public virtual User User { get; set; } = null!;

@@ -104,7 +104,9 @@ namespace rental_services.Server
                 .AddScoped<IStatisticsRepository, StatisticsRepository>()
                 .AddSingleton<ISystemSettingsService, SystemSettingsService>()
                 .AddScoped<IAdminControlPanelService, AdminControlPanelService>()
-                .AddSingleton<IMaintenanceService, MaintenanceService>();
+                .AddSingleton<IMaintenanceService, MaintenanceService>()
+                .AddScoped<IReportRepository, ReportRepository>()
+                .AddScoped<IReportService, ReportService>();
 
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
