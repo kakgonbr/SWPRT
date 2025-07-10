@@ -5,7 +5,9 @@ using System.Net;
 namespace rental_services.Server.Controllers
 {
     /// <summary>
-    /// Adapted from https://github.com/kakgonbr/PRJ-TOMCAT-WEB/blob/main/src/main/java/controller/IPNServlet.java
+    /// Adapted from https://github.com/kakgonbr/PRJ-TOMCAT-WEB/blob/main/src/main/java/controller/IPNServlet.java<br></br>
+    /// Called only by VNPAY, although there is nothing preventing ordinary users from doing so.<br></br>
+    /// Used for informing the status of a payment, sometimes this can fail, make sure there is a timeout mechanism for falling back
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
