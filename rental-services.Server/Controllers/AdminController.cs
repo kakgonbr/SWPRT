@@ -14,12 +14,14 @@ namespace rental_services.Server.Controllers
         private readonly IAdminControlPanelService _adminService;
         private readonly IMaintenanceService _maintenanceService;
         private readonly ISystemSettingsService _systemSettingsService;
+        private readonly ILogger<AdminController> _logger;
 
-        public AdminController(IAdminControlPanelService bannerService, IMaintenanceService maintenanceService, ISystemSettingsService systemSettingsService)
+        public AdminController(IAdminControlPanelService bannerService, IMaintenanceService maintenanceService, ISystemSettingsService systemSettingsService, ILogger<AdminController> logger)
         {
             _adminService = bannerService;
             _maintenanceService = maintenanceService;
             _systemSettingsService = systemSettingsService;
+            _logger = logger;
         }
 
         [HttpGet("stats")]
@@ -118,7 +120,16 @@ namespace rental_services.Server.Controllers
 
             // now using proxy_set_header X-Forwarded-For $remote_addr;
             // there is only 1 ip after nginx stripped
-            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            string? ip = HttpContext.Connection.RemoteIpAddress?
+                .MapToIPv4()
+                .ToString();
+
+            //if (ip == "::1")
+            //{
+            //    ip = "127.0.0.1";
+            //}
+
+            _logger.LogInformation("IP: {Ip}", ip);
 
             return ip is null ? null :  VNPayService.GetLink(ip, null, 10_000 * 100, "vn", Utils.Config.VnpConfig.GetRandomNumber(10));
         }
