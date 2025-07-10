@@ -24,9 +24,9 @@ namespace rental_services.Server.Controllers
         [Authorize(Policy = "AdminOrStaff")]
         public async Task<ActionResult<List<Models.DTOs.BookingDTO>>> GetAll()
         {
-            return await _rentalService.GetAllBookingsAsync();
-        }
+            return await _rentalService.GetAllBookingsAsync();}
 
+        
         // GET /rentals/{id}
         [HttpGet("{id}")]
         [Authorize]

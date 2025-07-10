@@ -170,11 +170,11 @@ CREATE TABLE AvailableModelPeripherals
 CREATE TABLE BookingPeripherals
 (
     PeripheralId int NOT NULL,
-    ModelId int NOT NULL,
+    BookingId int NOT NULL,
 
-    CONSTRAINT pk_bookperi PRIMARY KEY (PeripheralId, ModelId),
+    CONSTRAINT pk_bookperi PRIMARY KEY (PeripheralId, BookingId),
     CONSTRAINT fk_bookperi_peri FOREIGN KEY (PeripheralId) REFERENCES Peripherals,
-    CONSTRAINT fk_bookperi_modl FOREIGN KEY (ModelId) REFERENCES VehicleModels
+    CONSTRAINT fk_bookperi_book FOREIGN KEY (BookingId) REFERENCES Bookings
 )
 
 CREATE TABLE Chats
@@ -432,7 +432,7 @@ VALUES
 
 -- Insert into BookingPeripherals (sample, assuming schema error, should be BookingId)
 -- Proceeding with ModelId as per schema
-INSERT INTO BookingPeripherals (PeripheralId, ModelId)
+INSERT INTO BookingPeripherals (PeripheralId, BookingId)
 VALUES 
     (1, 1), (2, 1), (3, 1), -- Model 1 in bookings
     (1, 2), (2, 2), (5, 2); -- Model 2 in bookings

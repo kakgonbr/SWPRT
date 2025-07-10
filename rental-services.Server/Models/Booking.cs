@@ -22,4 +22,6 @@ public partial class Booking
     public virtual User User { get; set; } = null!;
 
     public virtual Vehicle Vehicle { get; set; } = null!;
+
+    public virtual ICollection<Peripheral> Peripherals { get; set; } = new List<Peripheral>();
 }
