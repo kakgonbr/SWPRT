@@ -118,7 +118,7 @@ namespace rental_services.Server.Controllers
 
             // now using proxy_set_header X-Forwarded-For $remote_addr;
             // there is only 1 ip after nginx stripped
-            string? ip = HttpContext.Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Trim();
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
 
             return ip is null ? null :  VNPayService.GetLink(ip, null, 10_000 * 100, "vn", Utils.Config.VnpConfig.GetRandomNumber(10));
         }

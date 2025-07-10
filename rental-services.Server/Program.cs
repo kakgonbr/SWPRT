@@ -35,6 +35,13 @@ namespace rental_services.Server
             // schedulers
             //builder.Services.AddHostedService<Utils.FileCleanupService>();
 
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.KnownProxies.Add(IPAddress.Parse("127.0.0.1")); // Replace with NGINX IP if needed
+            });
+
+
             // Bind JWT config
             string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new InvalidOperationException("Environment Variable 'JWT_KEY' not found.");
             string jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? throw new InvalidOperationException("Environment Variable 'JWT_ISSUER' not found.");
@@ -133,11 +140,7 @@ namespace rental_services.Server
             app.UseStaticFiles();
 
             // nginx
-            app.UseForwardedHeaders(new ForwardedHeadersOptions
-            {
-                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
-                KnownProxies = { IPAddress.Parse("127.0.0.1") } // nginx is on the same vps
-            });
+            app.UseForwardedHeaders();
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Directory.Exists(@"C:\images"))
             {
