@@ -23,6 +23,8 @@ import { cn } from '../lib/utils'
 import { bikeApi } from "../lib/api.ts";
 import { type VehicleModelDTO } from '../lib/types'
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 export default function CheckoutPage() {
     const navigate = useNavigate()
     const { user, isAuthenticated, loading } = useAuth()
@@ -173,16 +175,40 @@ export default function CheckoutPage() {
 
         try {
             // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000))
+            //await new Promise(resolve => setTimeout(resolve, 2000))
 
-            const locationName = bike.shop
+            //const locationName = bike.shop
 
-            toast({
-                title: "Booking Confirmed!",
-                description: `Your rental for ${bike.displayName} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')} at ${locationName}.`,
-            })
+            //toast({
+            //    title: "Booking Confirmed!",
+            //    description: `Your rental for ${bike.displayName} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')} at ${locationName}.`,
+            //})
 
-            navigate('/rentals')
+            //navigate('/rentals')
+
+            // TODO
+            const response = await fetch(`${API}/api/`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'text/plain'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`API call failed with status ${response.status}`);
+            }
+
+            // Read plain text response
+            const rawText: string = await response.text();
+
+            // Handle possible null or empty string
+            const result: string | null = rawText.trim().length > 0 ? rawText.trim() : null;
+
+            if (result !== null) {
+                window.location.href = result;
+            } else {
+                throw new Error("Cannot get payment URL.")
+            }
         } catch (error) {
             toast({
                 title: "Booking Failed",
@@ -504,8 +530,8 @@ export default function CheckoutPage() {
                                 </div>
 
                                 <div className="flex items-start space-x-2">
-                                    <Checkbox id="insurance" />
-                                    <Label htmlFor="insurance" className="text-sm cursor-pointer">
+                                    <Checkbox id="understandInsurance" />
+                                    <Label htmlFor="understandInsurance" className="text-sm cursor-pointer">
                                         I understand the insurance coverage and liability
                                     </Label>
                                 </div>

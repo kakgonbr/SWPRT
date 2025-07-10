@@ -32,6 +32,4 @@ public partial class VehicleModel
     public virtual ICollection<Vehicle> Vehicles { get; set; } = new List<Vehicle>();
 
     public virtual ICollection<Peripheral> Peripherals { get; set; } = new List<Peripheral>();
-
-    public virtual ICollection<Peripheral> PeripheralsNavigation { get; set; } = new List<Peripheral>();
 }
