@@ -13,6 +13,8 @@ using rental_services.Server.Repositories;
 using Microsoft.Extensions.FileProviders;
 using System.Runtime.InteropServices;
 using rental_services.Server.Middlewares;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
 
 namespace rental_services.Server
 {
@@ -129,6 +131,13 @@ namespace rental_services.Server
             // Use files
             app.UseDefaultFiles();
             app.UseStaticFiles();
+
+            // nginx
+            app.UseForwardedHeaders(new ForwardedHeadersOptions
+            {
+                ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+                KnownProxies = { IPAddress.Parse("127.0.0.1") } // nginx is on the same vps
+            });
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Directory.Exists(@"C:\images"))
             {
