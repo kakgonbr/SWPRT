@@ -55,7 +55,7 @@ namespace rental_services.Server.Services
 
             var gmt7 = GetGmtPlus7Now();
             p["vnp_CreateDate"] = gmt7.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
-            p["vnp_ExpireDate"] = gmt7.AddMinutes(5).ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
+            p["vnp_ExpireDate"] = gmt7.AddMinutes(VnpConfig.PAYMENT_TIMEOUT_MIN).ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture);
 
             var sortedKeys = p.Keys.OrderBy(k => k, StringComparer.Ordinal).ToList();
 
