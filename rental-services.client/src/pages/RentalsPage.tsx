@@ -150,7 +150,7 @@ export default function RentalsPage() {
                 setRentals([]);
 
                 toast({
-                    title: "Booking Failed",
+                    title: "Fetch failed",
                     description: `There was an error fetching bookings: ${err.message}. Please try again.`,
                     variant: "destructive",
                 })
@@ -323,7 +323,7 @@ export default function RentalsPage() {
                             (
                                 <Button variant="outline"
                                     size="sm"
-                                    className="flex-1 text-orange-600 border-orange-200 hover:bg-orange-50" asChild onClick={async () => {
+                                    className="flex-1 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={async () => {
                                     try {
                                         const response = await fetch(`${API}/api/rentals/pay`, {
                                             method: 'GET',
@@ -359,7 +359,7 @@ export default function RentalsPage() {
                             )
                         :
                             (
-                                <Button variant = "outline" size = "sm" className = "flex-1" asChild>
+                                <Button variant = "outline" size = "sm" className = "flex-1">
                                     <Link to={`/bikes/${rental.bikeId}`}>View Details</Link>
                                 </Button>
                             )}
