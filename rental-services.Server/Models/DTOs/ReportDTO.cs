@@ -8,10 +8,10 @@
         public string Title { get; set; } = null!;
         public string Body { get; set; } = null!;
         public string ImagePath { get; set; } = null!;
-        public DateTime ReportTime { get; set; }
-        public string Status { get; set; } = null!;
-        public string TypeName { get; set; } = null!;
-        public string UserName { get; set; } = null!;
-        public string UserEmail { get; set; } = null!;
+        public DateTime ReportTime { get; set; } = DateTime.Now;
+        public string? Status { get; set; }
+        public string? TypeName { get; set; } 
+        public string? UserName { get; set; } 
+        public string? UserEmail { get; set; } 
     }
 }

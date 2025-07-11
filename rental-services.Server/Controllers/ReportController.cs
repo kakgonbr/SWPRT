@@ -1,5 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.IdentityModel.Tokens;
 using rental_services.Server.Models.DTOs;
 using rental_services.Server.Services;
 
@@ -17,6 +19,7 @@ namespace rental_services.Server.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = Utils.Config.Role.Staff)]
         public async Task<ActionResult<List<ReportDTO>>> GetAllReports()
         {
             var reports = await _reportService.GetAllReportsAsync();
@@ -24,6 +27,7 @@ namespace rental_services.Server.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = Utils.Config.Role.Staff)]
         public async Task<ActionResult<ReportDTO?>> GetReportById(int id)
         {
             if (id <= 0)
@@ -38,24 +42,30 @@ namespace rental_services.Server.Controllers
             return Ok(report);
         }
 
-        [HttpGet("type/{typeId}")]
-        public async Task<ActionResult<List<ReportDTO>>> GetReportsByTypeId(int typeId)
+        [HttpGet("paginated")]
+        [Authorize(Roles = Utils.Config.Role.Staff)]
+        public async Task<ActionResult<List<ReportDTO>>> GetReportsPaginated(int page, int pageSize = 1)
         {
-            if (typeId < 0)
-            {
-                return BadRequest("Type ID must be greater than zero.");
-            }
-            var reports = await _reportService.GetReportsByTypeIdAsync(typeId);
-            return reports == null ? NotFound("reporst is null") : Ok(reports);
+            var reports = await _reportService.GetReportsPaginatedAsync(page, pageSize);
+            return Ok(reports);
         }
 
         [HttpPost]
-        public async Task<ActionResult<string>> AddReport(ReportDTO reportDTO)
+        [Authorize]
+        public async Task<ActionResult<ReportDTO>> AddReport([FromBody]ReportDTO reportDTO)
         {
             if (reportDTO is null)
                 return BadRequest("Report data is null.");
-            return await _reportService.CreateReportAsync(reportDTO) ? Ok("Report created successfully.") : BadRequest("Failed to create report.");
+            return await _reportService.CreateReportAsync(reportDTO) ? Ok(reportDTO) : BadRequest("Failed to create report.");
         }
 
+        [HttpPost("update")]
+        [Authorize]
+        public async Task<ActionResult<ReportDTO>> UpdateReport([FromBody]ReportDTO reportDTO)
+        {
+            if (reportDTO is null)
+                return BadRequest("Report data is null.");
+            return await _reportService.UpdateReportAsync(reportDTO) ? Ok(reportDTO) : BadRequest("Failed to update report.");
+        }
     }
 }

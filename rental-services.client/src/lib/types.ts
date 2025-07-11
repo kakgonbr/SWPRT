@@ -134,3 +134,17 @@ export interface ServerInfo {
     contactEmail: string,
     supportPhone: string
 }
+
+export interface ReportDTO {
+    reportId: number;
+    userId: number;
+    typeId: number;
+    title: string;
+    body: string;
+    imagePath?: string; 
+    reportTime: string;
+    status: string;
+    typeName?: string;
+    userName?: string;
+    userEmail?: string;
+}

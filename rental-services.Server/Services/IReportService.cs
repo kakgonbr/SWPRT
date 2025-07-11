@@ -6,8 +6,8 @@ namespace rental_services.Server.Services
     {
         Task<List<ReportDTO>> GetAllReportsAsync();
         Task<ReportDTO?> GetReportByIdAsync(int reportId);
-        Task<List<ReportDTO>> GetReportsByTypeIdAsync(int typeId);
         Task<bool> CreateReportAsync(ReportDTO reportDTO);
-
+        Task<bool> UpdateReportAsync(ReportDTO reportDTO);
+        Task<List<ReportDTO>> GetReportsPaginatedAsync(int page, int pageSize);
     }
 }

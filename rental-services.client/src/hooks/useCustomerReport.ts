@@ -1,61 +1,106 @@
-import { useState } from 'react'
-import { useToast } from '../contexts/toast-context'
-import { type CustomerReport, type ReportFormData } from '../types/customer-reports'
-import type { Rental } from '../lib/types'
+export interface SubmitReportParams {
+    userId: number;
+    typeId: number;
+    title: string;
+    body: string;
+    image: File;
+}
 
-export const useCustomerReport = () => {
-    const [isSubmitting, setIsSubmitting] = useState(false)
-    const { toast } = useToast()
+const API = import.meta.env.VITE_API_BASE_URL;
 
-    const submitReport = async (rental: Rental, formData: ReportFormData, userInfo: { id: string, name: string, email: string }) => {
-        setIsSubmitting(true)
+export const useCustomerReport = (token: string) => {
+
+    const submitReport = async (params: SubmitReportParams) => {
         try {
-            // Simulate API call - replace with actual API endpoint
-            await new Promise(resolve => setTimeout(resolve, 2000))
-
-            const newReport: CustomerReport = {
-                id: `report-${Date.now()}`,
-                rentalId: rental.id,
-                bikeId: rental.bikeId,
-                bikeName: rental.bikeName,
-                userId: userInfo.id,
-                userName: userInfo.name,
-                userEmail: userInfo.email,
-                issueType: formData.issueType as any,
-                severity: formData.severity as any,
-                title: formData.title,
-                description: formData.description,
-                location: formData.location,
-                imageUrls: formData.imageUrls,
-                submittedAt: new Date().toISOString(),
-                status: 'new',
-                priority: formData.severity as any,
+            // 1. Upload image
+            const formData = new FormData();
+            formData.append('file', params.image);
+            const imageRes = await fetch(`${API}/api/images`, {
+                headers: { Authorization: `Bearer ${token}` },
+                method: 'POST',
+                body: formData
+            });
+            if (!imageRes.ok) {
+                return { success: false, message: 'Upload image failed.' };
             }
-
-            // TODO: Send to API and add to staff reports system
-            console.log('New customer report:', newReport)
-
-            toast({
-                title: "Report Submitted Successfully",
-                description: "Your issue has been reported to our staff. We'll contact you soon with updates.",
-            })
-
-            return newReport
+            const imageData = await imageRes.json();
+            const imagePath = imageData.url || '';
+            if (!imagePath) {
+                return { success: false, message: 'No image url returned.' };
+            }
+            // 2. Submit report
+            const reportDTO = {
+                userId: params.userId,
+                typeId: params.typeId,
+                title: params.title,
+                body: params.body,
+                imagePath,
+                reportTime: new Date().toISOString(),
+                status: 'Unresolved'
+            };
+            const reportRes = await fetch(`${API}/api/report`, {
+                headers: { 
+                    Authorization: `Bearer ${token}`, 
+                    'Content-Type': 'application/json'
+                },
+                method: 'POST',
+                body: JSON.stringify(reportDTO)
+            });
+            if (reportRes.ok) {
+                return { success: true };
+            } else {
+                return { success: false, message: 'Create report failed.' };
+            }
         } catch (error) {
-            console.error('Error submitting report:', error)
-            toast({
-                title: "Submission Failed",
-                description: "Failed to submit your report. Please try again or contact support.",
-                variant: "destructive"
-            })
-            throw error
-        } finally {
-            setIsSubmitting(false)
+            return { success: false, message: 'Error occurred while submitting report.' };
         }
-    }
+    };
 
-    return {
-        submitReport,
-        isSubmitting
-    }
+    const fetchReportsPaginated = async (page: number) => {
+        try {
+            const res = await fetch(`${API}/api/report/paginated?page=${page}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) 
+                return { success: false, message: 'Failed to fetch reports.' };
+            const data = await res.json();
+            return { success: true, data };
+        } catch {
+            return { success: false, message: 'Error fetching reports.' };
+        }
+    };
+
+    const fetchReportById = async (id: number) => {
+        try {
+            const res = await fetch(`${API}/api/report/${id}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (!res.ok) 
+                return { success: false, message: 'Failed to fetch report.' };
+            const data = await res.json();
+            return { success: true, data };
+        } catch {
+            return { success: false, message: 'Error fetching report.' };
+        }
+    };
+
+    const updateReportStatus = async (reportDTO: any) => {
+        try {
+            const res = await fetch(`${API}/api/report/update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Authorization: `Bearer ${token}`
+                },
+                body: JSON.stringify(reportDTO)
+            });
+            if (!res.ok) 
+                return { success: false, message: 'Failed to update report.' };
+            return { success: true };
+        } catch {
+            return { success: false, message: 'Error updating report.' };
+        }
+    };
+
+    return { submitReport, fetchReportsPaginated, fetchReportById, updateReportStatus };
 }
