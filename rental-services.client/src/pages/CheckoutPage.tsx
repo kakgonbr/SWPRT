@@ -187,10 +187,11 @@ export default function CheckoutPage() {
             //navigate('/rentals')
 
             // TODO
-            const response = await fetch(`${API}/api/`, {
+            const response = await fetch(`${API}/api/rentals/pay`, {
                 method: 'GET',
                 headers: {
-                    'Accept': 'text/plain'
+                    Accept: 'text/plain',
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
                 }
             });
 

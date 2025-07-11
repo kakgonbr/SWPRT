@@ -29,6 +29,8 @@ namespace rental_services.Server.Utils
             public static readonly string VnpTmnCode = Environment.GetEnvironmentVariable("VNP_TMN");
             public static readonly string SecretKey = Environment.GetEnvironmentVariable("VNP_SECRET");
             public static readonly string VnpApiUrl = "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction";
+            public static readonly int PAYMENT_TIMEOUT_MIN = 15;
+            public static readonly int PAYMENT_MAX_TRIES = 3;
 
             public static string Md5(string message) => Hash(message, MD5.Create());
             public static string Sha256(string message) => Hash(message, SHA256.Create());

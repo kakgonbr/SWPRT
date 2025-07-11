@@ -8,6 +8,7 @@ namespace rental_services.Server.Controllers
     [Route("api/[controller]")]
     public partial class RentalsController : ControllerBase
     {
+        
         private readonly Services.IRentalService _rentalService;
         private readonly Services.IUserService _userService;
         private readonly ILogger<RentalsController> _logger;
@@ -49,6 +50,37 @@ namespace rental_services.Server.Controllers
         public async Task<ActionResult<string>> UpdateRentalStatus([FromBody] Models.DTOs.BookingStatusDTO rentalStatus)
         {
             return await _rentalService.UpdateStatusAsync(rentalStatus.Id, rentalStatus.Status) ? Ok("Updated.") : BadRequest("Failed.");
+        }
+
+        // GET /rentals/pay
+        [HttpGet("pay")]
+        [Authorize]
+        // TODO: ADD FROMBODY json
+        public async Task<ActionResult<string?>> SubmitAndGetPaymentLink()
+        {
+            string? sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            Models.User? dbUser = null;
+
+            if (sub is null || (dbUser = await _userService.GetUserBySubAsync(sub)) is null)
+            {
+                return Unauthorized();
+            }
+
+            string? ip = HttpContext.Connection.RemoteIpAddress?
+                .MapToIPv4()
+                .ToString();
+
+            if (ip is null)
+            {
+                return BadRequest();
+            }
+
+            if (!await _rentalService.CreateRentalAsync(dbUser.UserId, 1, DateOnly.FromDateTime(DateTime.Now).AddDays(3), DateOnly.FromDateTime(DateTime.Now).AddDays(30)))
+            {
+                return BadRequest();
+            }
+
+            return await _rentalService.GetPaymentLinkAsync(dbUser.UserId, ip);
         }
     }
 }
