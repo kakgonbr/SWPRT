@@ -1,6 +1,4 @@
-﻿using System.Diagnostics;
-
-namespace rental_services.Server.Services
+﻿namespace rental_services.Server.Services
 {
     public class RentalService : IRentalService
     {
@@ -55,12 +53,12 @@ namespace rental_services.Server.Services
         private readonly Repositories.IPeripheralRepository _peripheralRepository;
         private readonly Repositories.IVehicleModelRepository _vehicleModelRepository;
         private readonly AutoMapper.IMapper _mapper;
-        private readonly ILogger _logger;
+        private readonly ILogger<RentalService> _logger;
         private readonly HashSet<RentalTracker> rentalTrackers = new();
 
         public RentalService(Repositories.IBookingRepository bookingRepository, AutoMapper.IMapper mapper,
             Repositories.IPeripheralRepository peripheralRepository, Repositories.IVehicleModelRepository vehicleModelRepository,
-            ILogger logger)
+            ILogger<RentalService> logger)
         {
             _bookingRepository = bookingRepository;
             _mapper = mapper;
