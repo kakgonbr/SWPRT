@@ -5,8 +5,9 @@ import { Label } from '../ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
 import { Textarea } from '../ui/textarea';
 import { useToast } from '../../contexts/toast-context';
-import { useCustomerReport } from '../../hooks/useCustomerReport';
+//import { useCustomerReport } from '../../hooks/useCustomerReport';
 import type { ReportDTO } from '../../lib/types';
+import { useStaffReport } from '../../contexts/StaffReportProvider';
 
 const STATUS_OPTIONS = [
     { value: 'Unresolved', label: 'Unresolved' },
@@ -25,8 +26,9 @@ export default function ReportDetailDialog({
     reportId: number | null;
     onStatusChange?: (newStatus: string) => void;
 }) {
-    const token = localStorage.getItem('token') || '';
-    const { fetchReportById, updateReportStatus } = useCustomerReport(token);
+    //const token = localStorage.getItem('token') || '';
+    //const { fetchReportById, updateReportStatus } = useCustomerReport(token);
+    const { fetchReportById, updateReportStatus } = useStaffReport();
     
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
@@ -61,7 +63,8 @@ export default function ReportDetailDialog({
             setStatus(newStatus);
             setReport(updatedReport);
             toast({ title: 'Success', description: 'Status updated successfully.' });
-            if (onStatusChange) onStatusChange(newStatus);
+            if (onStatusChange)
+                onStatusChange(newStatus);
         } else {
             toast({ title: 'Error', description: res.message, variant: 'destructive' });
         }

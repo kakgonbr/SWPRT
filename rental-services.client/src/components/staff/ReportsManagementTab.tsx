@@ -19,8 +19,8 @@ import { Button } from '../ui/button'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select'
 import { useToast } from '../../contexts/toast-context'
 import ReportDetailDialog from './ReportDetailDialog'
-import { useCustomerReport } from '../../hooks/useCustomerReport'
 import type { ReportDTO } from '../../lib/types'    
+import { useStaffReport } from '../../contexts/StaffReportProvider';
 
 const STATUS_OPTIONS = [
     { value: 'Unresolved', label: 'Unresolved' },
@@ -29,8 +29,7 @@ const STATUS_OPTIONS = [
 ];
 
 export default function ReportsManagementTab() {
-    const token = localStorage.getItem('token') || '';
-    const { fetchReportsPaginated, updateReportStatus } = useCustomerReport(token);
+    const { fetchReportsPaginated, updateReportStatus } = useStaffReport();
     const { toast } = useToast();
     const [reports, setReports] = useState<ReportDTO[]>([]);
     const [page, setPage] = useState(1);

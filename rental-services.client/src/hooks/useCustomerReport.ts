@@ -1,3 +1,4 @@
+
 export interface SubmitReportParams {
     userId: number;
     typeId: number;
@@ -56,51 +57,5 @@ export const useCustomerReport = (token: string) => {
         }
     };
 
-    const fetchReportsPaginated = async (page: number) => {
-        try {
-            const res = await fetch(`${API}/api/report/paginated?page=${page}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (!res.ok) 
-                return { success: false, message: 'Failed to fetch reports.' };
-            const data = await res.json();
-            return { success: true, data };
-        } catch {
-            return { success: false, message: 'Error fetching reports.' };
-        }
-    };
-
-    const fetchReportById = async (id: number) => {
-        try {
-            const res = await fetch(`${API}/api/report/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (!res.ok) 
-                return { success: false, message: 'Failed to fetch report.' };
-            const data = await res.json();
-            return { success: true, data };
-        } catch {
-            return { success: false, message: 'Error fetching report.' };
-        }
-    };
-
-    const updateReportStatus = async (reportDTO: any) => {
-        try {
-            const res = await fetch(`${API}/api/report/update`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify(reportDTO)
-            });
-            if (!res.ok) 
-                return { success: false, message: 'Failed to update report.' };
-            return { success: true };
-        } catch {
-            return { success: false, message: 'Error updating report.' };
-        }
-    };
-
-    return { submitReport, fetchReportsPaginated, fetchReportById, updateReportStatus };
+    return { submitReport };
 }

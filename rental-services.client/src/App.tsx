@@ -6,6 +6,7 @@ import { ChatWidgetProvider } from './contexts/chat-widget-context'
 import { ServerInfoProvider } from './contexts/server-info-context'
 import { ToastProvider as UIToastProvider } from './components/ui/toast'
 import { ToastProvider } from './contexts/toast-context'
+import { StaffReportProvider } from './contexts/StaffReportProvider'
 
 import Footer from './components/layout/footer.tsx'
 import Header from './components/layout/header.tsx'
@@ -63,7 +64,11 @@ function App() {
                                                     <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
                                                     <Route path="/admin" element={<AdminDashboard />} />
                                                     <Route path="/admin/control-panel" element={<AdminControlPanel />} />
-                                                    <Route path='/staff' element={<StaffDashboard />} />
+                                                    <Route path='/staff' element={
+                                                        <StaffReportProvider>
+                                                            <StaffDashboard />
+                                                        </StaffReportProvider>
+                                                    } />
                                                     <Route path="*" element={<NotFoundPage />} />
                                                 </Routes>
                                             </main>

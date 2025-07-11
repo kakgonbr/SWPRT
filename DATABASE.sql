@@ -212,7 +212,7 @@ CREATE TABLE Feedbacks
     UserId int NOT NULL,
     Title nvarchar(256) NOT NULL,
     Body nvarchar(MAX) NOT NULL,
-    ImagePath varchar(256) NOT NULL,
+    ImagePath varchar(256),
 
     CONSTRAINT fk_fdbck_user FOREIGN KEY (UserId) REFERENCES Users
 )
@@ -232,7 +232,7 @@ CREATE TABLE Reports
     Body nvarchar(MAX) NOT NULL,
     ImagePath varchar(256) NOT NULL,
     ReportTime datetime NOT NULL DEFAULT GETDATE(),
-    Status varchar(10) NOT NULL DEFAULT 'Unresolved',
+    Status varchar(20) NOT NULL DEFAULT 'Unresolved',
 
     CONSTRAINT fk_rep_user FOREIGN KEY (UserId) REFERENCES Users,
     CONSTRAINT fk_rep_type FOREIGN KEY (TypeId) REFERENCES ReportTypes,
