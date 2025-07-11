@@ -1,35 +1,40 @@
 namespace rental_services.Server.Utils
 {
-    /// <summary>
-    /// UNUSED
-    /// Runs every few days, clean files older than 30 days in the directory stated in the config
-    /// </summary>
     public class RentalTrackerCleanup : BackgroundService
     {
+        private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<RentalTrackerCleanup> _logger;
-        private readonly Services.IRentalService _rentalService;
+        private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
 
-        public RentalTrackerCleanup(ILogger<RentalTrackerCleanup> logger, Services.IRentalService rentalService)
+        public RentalTrackerCleanup(IServiceProvider serviceProvider, ILogger<RentalTrackerCleanup> logger)
         {
+            _serviceProvider = serviceProvider;
             _logger = logger;
-            _rentalService = rentalService;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
+            _logger.LogInformation("RentalTrackerCleanup started.");
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    await _rentalService.CleanupPendingAsync();
+                    using (var scope = _serviceProvider.CreateScope())
+                    {
+                        var rentalService = scope.ServiceProvider.GetRequiredService<Services.IRentalService>();
+                        await rentalService.CleanupPendingAsync();
+                    }
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error cleaning up rental trackers: {Message}", ex.Message);
+                    _logger.LogError(ex, "Error during cleanup");
                 }
 
-                await Task.Delay(Config.Image.CleanupInterval, stoppingToken);
+                await Task.Delay(_interval, stoppingToken);
             }
+
+            _logger.LogInformation("RentalTrackerCleanup stopped.");
         }
     }
 }
