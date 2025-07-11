@@ -20,6 +20,7 @@ namespace rental_services.Server.Repositories
             return await _rentalContext.Bookings
                 .Include(b => b.User)
                 .Include(b => b.Payments)
+                .Include(b => b.Peripherals)
                 .Include(b => b.Vehicle)
                     .ThenInclude(v => v.Model)
                         .ThenInclude(v => v.Manufacturer)
@@ -31,6 +32,7 @@ namespace rental_services.Server.Repositories
             return await _rentalContext.Bookings
                 .Include(b => b.User)
                 .Include(b => b.Payments)
+                .Include(b => b.Peripherals)
                 .Include(b => b.Vehicle)
                     .ThenInclude(v => v.Model)
                         .ThenInclude(v => v.Manufacturer)
@@ -42,6 +44,7 @@ namespace rental_services.Server.Repositories
             return await _rentalContext.Bookings
                 .Include(b => b.User)
                 .Include(b => b.Payments)
+                .Include(b => b.Peripherals)
                 .Include(b => b.Vehicle)
                     .ThenInclude(v => v.Model)
                         .ThenInclude(v => v.Manufacturer)

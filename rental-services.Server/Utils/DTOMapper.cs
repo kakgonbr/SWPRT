@@ -63,8 +63,7 @@ namespace rental_services.Server.Utils
             .ForMember(dest => dest.Reviews, opt => opt.Ignore())
             .ForMember(dest => dest.Manufacturer, opt => opt.Ignore())
             //.ForMember(dest => dest.Shop, opt => opt.Ignore())
-            .ForMember(dest => dest.VehicleType, opt => opt.Ignore()) // changed by setting id instead.
-            .ForMember(dest => dest.PeripheralsNavigation, opt => opt.Ignore());
+            .ForMember(dest => dest.VehicleType, opt => opt.Ignore()); // changed by setting id instead.
 
             // shop
             CreateMap<Shop, ShopDTO>();
@@ -100,6 +99,9 @@ namespace rental_services.Server.Utils
             ))
             .ForMember(dest => dest.BikeName, opt => opt.MapFrom(
                 src => $"{src.Vehicle.Model.Manufacturer.ManufacturerName} {src.Vehicle.Model.ModelName}"
+            ))
+            .ForMember(dest => dest.BikeId, opt => opt.MapFrom(
+                src => src.Vehicle.Model.ModelId
             ))
             .ForMember(dest => dest.BikeImageUrl, opt => opt.MapFrom(
                 src => src.Vehicle.Model.ImageFile
