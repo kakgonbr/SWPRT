@@ -11,12 +11,15 @@ namespace rental_services.Server.Controllers
     {
         private readonly Services.IRentalService _rentalService;
         private readonly Services.IUserService _userService;
+        private readonly Services.IBikeService _bikeService;
         private readonly ILogger<RentalsController> _logger;
 
-        public RentalsController(ILogger<RentalsController> logger, Services.IRentalService rentalService, Services.IUserService userService)
+        public RentalsController(ILogger<RentalsController> logger, Services.IRentalService rentalService,
+            Services.IUserService userService, Services.IBikeService bikeService)
         {
             _rentalService = rentalService;
             _userService = userService;
+            _bikeService = bikeService;
             _logger = logger;
         }
 
@@ -37,7 +40,6 @@ namespace rental_services.Server.Controllers
             {
                 string? sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
                 Models.User? dbUser = await _userService.GetUserBySubAsync(sub);
-
                 if (dbUser == null)
                 {
                     return Unauthorized();
@@ -49,15 +51,28 @@ namespace rental_services.Server.Controllers
                     return BadRequest("Start date is before the end date");
                 }
 
+                if (!bookingDTO.VehicleId.HasValue && bookingDTO.VehicleModelId > 0)
+                {
+                    var assignedVehicleId = await _bikeService.AssignAvailableVehicleAsync(bookingDTO.VehicleModelId,
+                        bookingDTO.StartDate, bookingDTO.EndDate, bookingDTO.PickupLocation);
+                    if (!assignedVehicleId.HasValue)
+                    {
+                        return BadRequest("No available vehicle left for this model");
+                    }
+                    bookingDTO.VehicleId = assignedVehicleId;
+                }
+
                 bool result = await _rentalService.AddBookingAsync(bookingDTO);
                 if (result)
                 {
                     return Ok("Booking is successfully created");
-                } else
+                }
+                else
                 {
                     return BadRequest("Booking is failed to create, please check for overlap date");
                 }
-            } catch (Exception ex)
+            }
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "booking create error");
                 return StatusCode(500, "Internal Error");
@@ -85,7 +100,9 @@ namespace rental_services.Server.Controllers
         [Authorize(Policy = "AdminOrStaff")]
         public async Task<ActionResult<string>> UpdateRentalStatus([FromBody] Models.DTOs.BookingStatusDTO rentalStatus)
         {
-            return await _rentalService.UpdateStatusAsync(rentalStatus.Id, rentalStatus.Status) ? Ok("Updated.") : BadRequest("Failed.");
+            return await _rentalService.UpdateStatusAsync(rentalStatus.Id, rentalStatus.Status)
+                ? Ok("Updated.")
+                : BadRequest("Failed.");
         }
     }
 }

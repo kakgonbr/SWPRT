@@ -20,8 +20,9 @@ import { useToast } from '../contexts/toast-context.tsx'
 import { RENTAL_OPTIONS } from '../lib/mock-data'
 import { format, differenceInDays } from 'date-fns'
 import { cn } from '../lib/utils'
-import { bikeApi } from "../lib/api.ts";
+import { bikeApi, rentalAPI } from "../lib/api.ts";
 import { type VehicleModelDTO } from '../lib/types'
+import type { Booking } from '../types/booking.ts'
 
 export default function CheckoutPage() {
     const navigate = useNavigate()
@@ -172,14 +173,36 @@ export default function CheckoutPage() {
         setIsSubmitting(true)
 
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000))
+            const booking: Booking = {
+                Id: '',
+                CustomerId: user.userId,
+                CustomerName: user.fullName,
+                CustomerEmail: user.email,
+                VehicleModelId: bike.modelId,
+                BikeName: bike.displayName,
+                BikeImageUrl: bike.imageFile,
+                StartDate: startDate.toISOString().split('T')[0],
+                EndDate: endDate.toISOString().split('T')[0],
+                Status: 'Awaiting Payment',
+                PricePerDay: bike.ratePerDay,
+                //TODO: change the up front percentage to fixed deposit price for each bike
+                Deposit: bike.upFrontPercentage,
+                PickupLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
+                ReturnLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
+                PaymentMethod: 'Credit Card'
+            };         
 
-            const locationName = bike.shop
+            console.log(`passing booking api data: ${booking}`)
+
+            //payment should be complete in order to call this api
+            //update the booking status before calling the api
+            const result = await rentalAPI.createBooking(booking);
+
+            console.log(`booking result ${result}`);
 
             toast({
                 title: "Booking Confirmed!",
-                description: `Your rental for ${bike.displayName} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')} at ${locationName}.`,
+                description: `Your rental for ${bike.displayName} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')} at ${location}.`,
             })
 
             navigate('/rentals')

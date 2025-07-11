@@ -26,5 +26,7 @@ namespace rental_services.Server.Services
         Task<List<ManufacturerDTO>> GetAllManufacturersAsync();
         Task<List<VehicleTypeDTO>> GetAllVehicleTypesAsync();
         Task<List<PeripheralDTO>> GetAllPeripheralsAsync();
+        Task<int?> AssignAvailableVehicleAsync(int modelId, DateOnly startDate, DateOnly endDate,
+            string? shopLocation);
     }
 }

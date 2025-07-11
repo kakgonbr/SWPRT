@@ -16,7 +16,7 @@ namespace rental_services.Server.Services
             _peripheralRepository = peripheralRepository;
         }
 
-        public async Task<bool> AddBookingAsync(Models.DTOs.BookingDTO booking)
+        public async Task<bool> AddBookingAsync (Models.DTOs.BookingDTO booking)
         {
             if (booking.StartDate >= booking.EndDate)
             {
@@ -29,7 +29,6 @@ namespace rental_services.Server.Services
                 booking.EndDate > existingBookings.StartDate
             );
             if (hasOverlap) { return false; }
-
             int rowEffected = await _bookingRepository.AddAsync(newBooking);
             return rowEffected > 0;
         }
@@ -46,6 +45,10 @@ namespace rental_services.Server.Services
 
         public async Task<bool> UpdateStatusAsync(int id, string status)
         {
+            if (Utils.Config.BookingStatus.IsValid(status))
+            {
+                return false;
+            }
             return await _bookingRepository.UpdateStatusAsync(id, status) != 0;
         }
     }
