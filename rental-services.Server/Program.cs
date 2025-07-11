@@ -117,6 +117,8 @@ namespace rental_services.Server
                 .AddScoped<IReportRepository, ReportRepository>()
                 .AddScoped<IReportService, ReportService>();
 
+            builder.Services.AddHostedService<Utils.RentalTrackerCleanup>();
+
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
             {
