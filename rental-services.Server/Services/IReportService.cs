@@ -9,5 +9,6 @@ namespace rental_services.Server.Services
         Task<bool> CreateReportAsync(ReportDTO reportDTO);
         Task<bool> UpdateReportAsync(ReportDTO reportDTO);
         Task<List<ReportDTO>> GetReportsPaginatedAsync(int page, int pageSize);
+        Task<int> GetUnresolvedPendingReportsAsync();
     }
 }

@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.IdentityModel.Tokens;
+using rental_services.Server.Controllers.Realtime;
 using rental_services.Server.Models.DTOs;
 using rental_services.Server.Services;
 
@@ -12,10 +14,12 @@ namespace rental_services.Server.Controllers
     public class ReportController : ControllerBase
     {
         private readonly IReportService _reportService;
+        private readonly IHubContext<StaffStatisticsHub> _hubContext;
 
-        public ReportController(IReportService reportService)
+        public ReportController(IReportService reportService, IHubContext<StaffStatisticsHub> hubContext)
         {
             _reportService = reportService;
+            _hubContext = hubContext;
         }
 
         [HttpGet]
@@ -56,7 +60,13 @@ namespace rental_services.Server.Controllers
         {
             if (reportDTO is null)
                 return BadRequest("Report data is null.");
-            return await _reportService.CreateReportAsync(reportDTO) ? Ok(reportDTO) : BadRequest("Failed to create report.");
+            var result = await _reportService.CreateReportAsync(reportDTO);
+            if (result)
+            {
+                await _hubContext.Clients.All.SendAsync("ReportCreated", reportDTO);
+                return Ok(reportDTO);
+            }
+            return BadRequest("Failed to create report.");
         }
 
         [HttpPost("update")]
@@ -65,7 +75,16 @@ namespace rental_services.Server.Controllers
         {
             if (reportDTO is null)
                 return BadRequest("Report data is null.");
+            await _hubContext.Clients.All.SendAsync("ReportUpdated", reportDTO);
             return await _reportService.UpdateReportAsync(reportDTO) ? Ok(reportDTO) : BadRequest("Failed to update report.");
+        }
+
+        [HttpGet("unresolved")]
+        [Authorize(Roles = Utils.Config.Role.Staff)]
+        public async Task<ActionResult<int>> GetUnresolvedReports()
+        {
+            var reports = await _reportService.GetUnresolvedPendingReportsAsync();
+            return Ok(reports);
         }
     }
 }
