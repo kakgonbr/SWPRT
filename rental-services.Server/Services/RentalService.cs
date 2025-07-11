@@ -1,4 +1,6 @@
-﻿namespace rental_services.Server.Services
+﻿using System.Diagnostics;
+
+namespace rental_services.Server.Services
 {
     public class RentalService : IRentalService
     {
@@ -53,14 +55,18 @@
         private readonly Repositories.IPeripheralRepository _peripheralRepository;
         private readonly Repositories.IVehicleModelRepository _vehicleModelRepository;
         private readonly AutoMapper.IMapper _mapper;
+        private readonly ILogger _logger;
         private readonly HashSet<RentalTracker> rentalTrackers = new();
 
-        public RentalService(Repositories.IBookingRepository bookingRepository, AutoMapper.IMapper mapper, Repositories.IPeripheralRepository peripheralRepository, Repositories.IVehicleModelRepository vehicleModelRepository)
+        public RentalService(Repositories.IBookingRepository bookingRepository, AutoMapper.IMapper mapper,
+            Repositories.IPeripheralRepository peripheralRepository, Repositories.IVehicleModelRepository vehicleModelRepository,
+            ILogger logger)
         {
             _bookingRepository = bookingRepository;
             _mapper = mapper;
             _peripheralRepository = peripheralRepository;
             _vehicleModelRepository = vehicleModelRepository;
+            _logger = logger;
         }
 
         public async Task<List<Models.DTOs.BookingDTO>> GetAllBookingsAsync()
@@ -141,6 +147,8 @@
             {
                 if (tracker.IsExpired)
                 {
+                    _logger.LogInformation("Clearing tracker for {BookingId}", tracker.BookingId);
+
                     await _bookingRepository.DeleteAsync(tracker.BookingId);
                 }
             }
@@ -168,6 +176,8 @@
             {
                 return;
             }
+
+            _logger.LogInformation("Clearing tracker for {BookingId}, tries exceeded", existing.BookingId);
 
             await _bookingRepository.DeleteAsync(bookingId);
 

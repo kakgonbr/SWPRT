@@ -174,19 +174,6 @@ export default function CheckoutPage() {
         setIsSubmitting(true)
 
         try {
-            // Simulate API call
-            //await new Promise(resolve => setTimeout(resolve, 2000))
-
-            //const locationName = bike.shop
-
-            //toast({
-            //    title: "Booking Confirmed!",
-            //    description: `Your rental for ${bike.displayName} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')} at ${locationName}.`,
-            //})
-
-            //navigate('/rentals')
-
-            // TODO
             const response = await fetch(`${API}/api/rentals/pay`, {
                 method: 'GET',
                 headers: {
@@ -199,10 +186,8 @@ export default function CheckoutPage() {
                 throw new Error(`API call failed with status ${response.status}`);
             }
 
-            // Read plain text response
             const rawText: string = await response.text();
 
-            // Handle possible null or empty string
             const result: string | null = rawText.trim().length > 0 ? rawText.trim() : null;
 
             if (result !== null) {

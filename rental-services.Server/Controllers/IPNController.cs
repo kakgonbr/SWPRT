@@ -23,6 +23,8 @@ namespace rental_services.Server.Controllers
         [HttpGet]
         public IActionResult Get()
         {
+            _logger.LogInformation("IPN Received a GET request from {ip}", HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString());
+
             var queryParams = HttpContext.Request.Query;
             var fields = new Dictionary<string, string>(StringComparer.Ordinal);
 
@@ -46,8 +48,8 @@ namespace rental_services.Server.Controllers
             string? payDate = queryParams["vnp_PayDate"];
             string? responseCode = queryParams["vnp_ResponseCode"];
 
-            if (!int.TryParse(txnRef, out int orderId))
-                return BadRequest("Invalid transaction reference");
+            if (txnRef is null)
+                return BadRequest("No order id");
 
             if (!long.TryParse(amountStr, out long rawAmount))
                 return BadRequest("Invalid amount");
@@ -59,9 +61,9 @@ namespace rental_services.Server.Controllers
             bool success = false;
             if (string.Equals(calculatedHash, secureHash, StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogInformation("Order {OrderId}, amount {Amount}, date {Date}", orderId, paidAmount, payDate);
+                _logger.LogInformation("Order {OrderId}, amount {Amount}, date {Date}", txnRef, paidAmount, payDate);
 
-                if (IsOrderValid(orderId, paidAmount))
+                if (IsOrderValid(txnRef, paidAmount))
                 {
                     if (responseCode == "00")
                     {
@@ -89,7 +91,7 @@ namespace rental_services.Server.Controllers
             return Ok();
         }
 
-        private bool IsOrderValid(int orderId, decimal paidAmount)
+        private bool IsOrderValid(string orderId, decimal paidAmount)
         {
             // TODO
             return true;
