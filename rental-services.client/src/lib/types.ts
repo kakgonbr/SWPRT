@@ -117,6 +117,7 @@ export interface ChatDTO {
     subject: string;
     userName: string;
     staffName: string;
+    hasNewCustomerMessage: boolean;
 }
 
 export interface ChatMessageDTO {
@@ -132,4 +133,18 @@ export interface ServerInfo {
     siteDescription: string,
     contactEmail: string,
     supportPhone: string
+}
+
+export interface ReportDTO {
+    reportId: number;
+    userId: number;
+    typeId: number;
+    title: string;
+    body: string;
+    imagePath?: string; 
+    reportTime: string;
+    status: string;
+    typeName?: string;
+    userName?: string;
+    userEmail?: string;
 }

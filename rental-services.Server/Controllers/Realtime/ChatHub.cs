@@ -27,6 +27,11 @@ namespace rental_services.Server.Controllers.Realtime
             var userId = int.Parse(Context.User.FindFirstValue("VroomVroomUserId")!);
             var messageDto = await _chatService.AddMessageAsync(chatId, userId, content);
             await Clients.Group($"chat-{chatId}").SendAsync("ReceiveMessage", messageDto);
+            var userRole = Context.User.FindFirstValue(ClaimTypes.Role);
+            if (userRole != null && userRole.ToLower().Equals("customer"))
+            {
+                await Clients.All.SendAsync("NewCustomerMessage", chatId);
+            }
         }
 
         // Assign staff to a chat

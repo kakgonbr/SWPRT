@@ -11,5 +11,6 @@ namespace rental_services.Server.Models.DTOs
         public string Subject { get; set; } = null!;
         public string UserName { get; set; } = null!;   
         public string StaffName { get; set; } = string.Empty;
+        public bool HasNewCustomerMessage { get; set; } 
     }
 }

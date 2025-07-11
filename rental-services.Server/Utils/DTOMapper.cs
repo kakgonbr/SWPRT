@@ -65,12 +65,12 @@ namespace rental_services.Server.Utils
             // shop
             CreateMap<Shop, ShopDTO>();
             CreateMap<ShopDTO, Shop>()
-                .ForMember(dest => dest.Shopid, opt => opt.Ignore());
+            .ForMember(dest => dest.Shopid, opt => opt.Ignore());
 
             // back and forth
             CreateMap<Vehicle, VehicleDTO>();
             CreateMap<VehicleDTO, Vehicle>()
-                .ForMember(dest => dest.ModelId, opt => opt.Ignore());
+            .ForMember(dest => dest.ModelId, opt => opt.Ignore());
 
             CreateMap<Peripheral, PeripheralDTO>();
             CreateMap<PeripheralDTO, Peripheral>();
@@ -83,6 +83,8 @@ namespace rental_services.Server.Utils
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName))
                 .ForMember(dest => dest.StaffName,
                     opt => opt.MapFrom(src => src.Staff != null ? src.Staff.FullName : string.Empty));
+                .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.Staff != null ? src.Staff.FullName : string.Empty))
+                .ForMember(dest => dest.HasNewCustomerMessage, opt => opt.Ignore());
 
             CreateMap<ChatMessage, ChatMessageDTO>()
                 .ForMember(dest => dest.SendTime, opt => opt.MapFrom(src => src.SendTime));
@@ -126,6 +128,33 @@ namespace rental_services.Server.Utils
                 ))
                 .ForMember(dest => dest.CustomerEmail, opt => opt.MapFrom(src => src.User.Email
                 ));
+            .ForMember(dest => dest.Id, opt => opt.MapFrom(
+                src => src.BookingId.ToString()
+            ))
+            .ForMember(dest => dest.BikeName, opt => opt.MapFrom(
+                src => $"{src.Vehicle.Model.Manufacturer.ManufacturerName} {src.Vehicle.Model.ModelName}"
+            ))
+            .ForMember(dest => dest.BikeId, opt => opt.MapFrom(
+                src => src.Vehicle.Model.ModelId
+            ))
+            .ForMember(dest => dest.BikeImageUrl, opt => opt.MapFrom(
+                src => src.Vehicle.Model.ImageFile
+            ))
+            .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(
+                src => src.User.PhoneNumber
+            ))
+            .ForMember(dest => dest.OrderDate, opt => opt.MapFrom(
+                src => src.Payments.FirstOrDefault() == null ? null : (DateOnly?)src.Payments.FirstOrDefault().PaymentDate
+            ))
+            .ForMember(dest => dest.PricePerDay, opt => opt.MapFrom(
+                src => src.Vehicle.Model.RatePerDay
+            ))
+            .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(
+                src => src.User.FullName
+            ))
+            .ForMember(dest => dest.CustomerEmail, opt => opt.MapFrom(
+                src => src.User.Email
+            ));
 
             CreateMap<DriverLicense, DriverLicenseDto>();
 
@@ -152,6 +181,12 @@ namespace rental_services.Server.Utils
 
             CreateMap<Manufacturer, ManufacturerDTO>();
             CreateMap<VehicleType, VehicleTypeDTO>();
+
+            CreateMap<Report, ReportDTO>()
+                .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.Description))
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName))
+                .ForMember(dest => dest.UserEmail, opt => opt.MapFrom(src => src.User.Email));
+            CreateMap<ReportDTO, Report>();
         }
     }
 }

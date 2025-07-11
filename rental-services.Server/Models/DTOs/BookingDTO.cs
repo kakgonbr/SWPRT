@@ -7,6 +7,7 @@
         public int VehicleModelId { get; set; }
         public int? VehicleId { get; set; }
         public string BikeName { get; set; } = null!;
+        public int BikeId { get; set; }
         public string BikeImageUrl { get; set; } = null!;
         public string CustomerName { get; set; } = null!;
         public string CustomerEmail { get; set; } = null!;
@@ -16,6 +17,7 @@
         public DateOnly? OrderDate { get; set; }
         public string Status { get; set; } = null!;
         public decimal PricePerDay { get; set; }
+        public IEnumerable<PeripheralDTO>? Peripherals { get; set; } = null;
         public string? PickupLocation { get; set; }
         public string? ReturnLocation { get; set; }
         public string? PaymentMethod { get; set; }

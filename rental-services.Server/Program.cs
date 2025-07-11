@@ -13,6 +13,8 @@ using rental_services.Server.Repositories;
 using Microsoft.Extensions.FileProviders;
 using System.Runtime.InteropServices;
 using rental_services.Server.Middlewares;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
 
 namespace rental_services.Server
 {
@@ -32,6 +34,13 @@ namespace rental_services.Server
             builder.Services.AddAutoMapper(typeof(Utils.DTOMapper));
             // schedulers
             //builder.Services.AddHostedService<Utils.FileCleanupService>();
+
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.KnownProxies.Add(IPAddress.Parse("127.0.0.1")); // Replace with NGINX IP if needed
+            });
+
 
             // Bind JWT config
             string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new InvalidOperationException("Environment Variable 'JWT_KEY' not found.");
@@ -104,7 +113,9 @@ namespace rental_services.Server
                 .AddScoped<IStatisticsRepository, StatisticsRepository>()
                 .AddSingleton<ISystemSettingsService, SystemSettingsService>()
                 .AddScoped<IAdminControlPanelService, AdminControlPanelService>()
-                .AddSingleton<IMaintenanceService, MaintenanceService>();
+                .AddSingleton<IMaintenanceService, MaintenanceService>()
+                .AddScoped<IReportRepository, ReportRepository>()
+                .AddScoped<IReportService, ReportService>();
 
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
@@ -129,6 +140,9 @@ namespace rental_services.Server
             // Use files
             app.UseDefaultFiles();
             app.UseStaticFiles();
+
+            // nginx
+            app.UseForwardedHeaders();
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Directory.Exists(@"C:\images"))
             {

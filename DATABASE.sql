@@ -170,11 +170,11 @@ CREATE TABLE AvailableModelPeripherals
 CREATE TABLE BookingPeripherals
 (
     PeripheralId int NOT NULL,
-    ModelId int NOT NULL,
+    BookingId int NOT NULL,
 
-    CONSTRAINT pk_bookperi PRIMARY KEY (PeripheralId, ModelId),
+    CONSTRAINT pk_bookperi PRIMARY KEY (PeripheralId, BookingId),
     CONSTRAINT fk_bookperi_peri FOREIGN KEY (PeripheralId) REFERENCES Peripherals,
-    CONSTRAINT fk_bookperi_modl FOREIGN KEY (ModelId) REFERENCES VehicleModels
+    CONSTRAINT fk_bookperi_book FOREIGN KEY (BookingId) REFERENCES Bookings
 )
 
 CREATE TABLE Chats
@@ -200,6 +200,7 @@ CREATE TABLE ChatMessages
     SenderId int NOT NULL,
     Content nvarchar(MAX) NOT NULL, -- maybe enforce length checks on the API
     SendTime datetime NOT NULL DEFAULT GETDATE(),
+    IsRead bit NOT NULL DEFAULT 0, 
 
     CONSTRAINT fk_chtmsg_chat FOREIGN KEY (ChatId) REFERENCES Chats,
     CONSTRAINT fk_chtmsg_sender FOREIGN KEY (SenderId) REFERENCES Users
@@ -231,9 +232,11 @@ CREATE TABLE Reports
     Body nvarchar(MAX) NOT NULL,
     ImagePath varchar(256) NOT NULL,
     ReportTime datetime NOT NULL DEFAULT GETDATE(),
+    Status varchar(10) NOT NULL DEFAULT 'Unresolved',
 
     CONSTRAINT fk_rep_user FOREIGN KEY (UserId) REFERENCES Users,
-    CONSTRAINT fk_rep_type FOREIGN KEY (TypeId) REFERENCES ReportTypes
+    CONSTRAINT fk_rep_type FOREIGN KEY (TypeId) REFERENCES ReportTypes,
+    CONSTRAINT ck_rep_status CHECK (Status IN ('Unresolved', 'Resolved', 'In Progress'))
 )
 
 CREATE TABLE Banners
@@ -429,7 +432,7 @@ VALUES
 
 -- Insert into BookingPeripherals (sample, assuming schema error, should be BookingId)
 -- Proceeding with ModelId as per schema
-INSERT INTO BookingPeripherals (PeripheralId, ModelId)
+INSERT INTO BookingPeripherals (PeripheralId, BookingId)
 VALUES 
     (1, 1), (2, 1), (3, 1), -- Model 1 in bookings
     (1, 2), (2, 2), (5, 2); -- Model 2 in bookings

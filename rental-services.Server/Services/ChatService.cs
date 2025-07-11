@@ -83,5 +83,36 @@ namespace rental_services.Server.Services
             var chat = _mapper.Map<Chat>(chatDTO);
             return await _chatRepository.UpdateChatAsync(chat) > 0 ? chatDTO : null;
         }
+
+        public async Task<List<ChatDTO>> GetChatsByStaffAsync(int staffId, int skip, int take)
+        {
+            if (staffId < 0 || skip < 0 || take <= 0)
+            {
+                return [];
+            }
+            var chats = await _chatRepository.GetChatsByStaffAsync(staffId, skip, take);
+            var chatDTOs = _mapper.Map<List<ChatDTO>>(chats);
+            foreach (var chatDTO in chatDTOs)
+            {
+                chatDTO.HasNewCustomerMessage = await _chatRepository.HaveUnreadChatMessagesAsync(chatDTO);
+            }
+            return chatDTOs;
+        }
+
+        public async Task<bool> MarkCustomerMessagesAsReadAsync(int chatId)
+        {
+            return await _chatRepository.MarkCustomerMessagesAsReadAsync(chatId);
+        }
+
+        public async Task<int> GetPendingChatsAsync(int staffId)
+        {
+            var chats = (await _chatRepository.GetAllChatsAsync()).Where(c => c.StaffId == staffId);
+            var chatDTOs = _mapper.Map<List<ChatDTO>>(chats);
+            foreach (var chatDTO in chatDTOs)
+            {
+                chatDTO.HasNewCustomerMessage = await _chatRepository.HaveUnreadChatMessagesAsync(chatDTO);
+            }
+            return chatDTOs.Count(c => c.HasNewCustomerMessage);
+        }
     }
 }
