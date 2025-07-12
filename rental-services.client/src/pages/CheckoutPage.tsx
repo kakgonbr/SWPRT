@@ -194,13 +194,13 @@ export default function CheckoutPage() {
                 PaymentMethod: 'Credit Card'
             };         
 
-            console.log(`passing booking api data: ${booking}`)
+            console.log(`passing booking api data: ${booking.CustomerId, booking.CustomerName, booking.VehicleModelId, booking.StartDate}`)
 
             //payment should be complete in order to call this api
             //update the booking status before calling the api
-            const result = await rentalAPI.createBooking(booking);
+            const bookingResult = await rentalAPI.createBooking(booking);
 
-            console.log(`booking result ${result}`);
+            console.log(`booking result ${bookingResult}`);
 
             toast({
                 title: "Booking Confirmed!",

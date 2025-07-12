@@ -60,7 +60,7 @@ namespace rental_services.Server.Utils
                 .ForMember(dest => dest.Manufacturer, opt => opt.Ignore())
                 //.ForMember(dest => dest.Shop, opt => opt.Ignore())
                 .ForMember(dest => dest.VehicleType, opt => opt.Ignore()) // changed by setting id instead.
-                .ForMember(dest => dest.PeripheralsNavigation, opt => opt.Ignore());
+                .ForMember(dest => dest.Peripherals, opt => opt.Ignore());
 
             // shop
             CreateMap<Shop, ShopDTO>();
@@ -82,7 +82,7 @@ namespace rental_services.Server.Utils
             CreateMap<Chat, ChatDTO>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.FullName))
                 .ForMember(dest => dest.StaffName,
-                    opt => opt.MapFrom(src => src.Staff != null ? src.Staff.FullName : string.Empty));
+                    opt => opt.MapFrom(src => src.Staff != null ? src.Staff.FullName : string.Empty))
                 .ForMember(dest => dest.StaffName, opt => opt.MapFrom(src => src.Staff != null ? src.Staff.FullName : string.Empty))
                 .ForMember(dest => dest.HasNewCustomerMessage, opt => opt.Ignore());
 
@@ -91,12 +91,13 @@ namespace rental_services.Server.Utils
 
             //checkout view to database
             CreateMap<BookingDTO, Booking>()
-                .ForMember(dest => dest.BookingId, opt => opt.Ignore())
+                .ForMember(dest => dest.BookingId, opt => opt.Ignore()) // Don't map ID for new bookings
                 .ForMember(dest => dest.UserId, opt => opt.MapFrom(src => src.CustomerId))
-                .ForMember(dest => dest.VehicleId, opt => opt.Ignore())
+                .ForMember(dest => dest.VehicleId, opt => opt.MapFrom(src => src.BikeId.HasValue ? src.BikeId.Value : 0))
                 .ForMember(dest => dest.User, opt => opt.Ignore())
                 .ForMember(dest => dest.Vehicle, opt => opt.Ignore())
-                .ForMember(dest => dest.Payments, opt => opt.Ignore());
+                .ForMember(dest => dest.Payments, opt => opt.Ignore())
+                .ForMember(dest => dest.Peripherals, opt => opt.Ignore());
 
             // rental
             // database to view
@@ -106,7 +107,7 @@ namespace rental_services.Server.Utils
                 ))
                 .ForMember(dest => dest.CustomerId, opt => opt.MapFrom(src => src.UserId.ToString()
                 ))
-                .ForMember(dest => dest.VehicleId, opt => opt.MapFrom(src => src.VehicleId.ToString()
+                .ForMember(dest => dest.BikeId, opt => opt.MapFrom(src => src.VehicleId.ToString()
                 ))
                 .ForMember(dest => dest.BikeName, opt =>
                     opt.MapFrom(src =>
@@ -128,33 +129,6 @@ namespace rental_services.Server.Utils
                 ))
                 .ForMember(dest => dest.CustomerEmail, opt => opt.MapFrom(src => src.User.Email
                 ));
-            .ForMember(dest => dest.Id, opt => opt.MapFrom(
-                src => src.BookingId.ToString()
-            ))
-            .ForMember(dest => dest.BikeName, opt => opt.MapFrom(
-                src => $"{src.Vehicle.Model.Manufacturer.ManufacturerName} {src.Vehicle.Model.ModelName}"
-            ))
-            .ForMember(dest => dest.BikeId, opt => opt.MapFrom(
-                src => src.Vehicle.Model.ModelId
-            ))
-            .ForMember(dest => dest.BikeImageUrl, opt => opt.MapFrom(
-                src => src.Vehicle.Model.ImageFile
-            ))
-            .ForMember(dest => dest.CustomerPhone, opt => opt.MapFrom(
-                src => src.User.PhoneNumber
-            ))
-            .ForMember(dest => dest.OrderDate, opt => opt.MapFrom(
-                src => src.Payments.FirstOrDefault() == null ? null : (DateOnly?)src.Payments.FirstOrDefault().PaymentDate
-            ))
-            .ForMember(dest => dest.PricePerDay, opt => opt.MapFrom(
-                src => src.Vehicle.Model.RatePerDay
-            ))
-            .ForMember(dest => dest.CustomerName, opt => opt.MapFrom(
-                src => src.User.FullName
-            ))
-            .ForMember(dest => dest.CustomerEmail, opt => opt.MapFrom(
-                src => src.User.Email
-            ));
 
             CreateMap<DriverLicense, DriverLicenseDto>();
 

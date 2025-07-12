@@ -45,13 +45,34 @@ namespace rental_services.Server.Controllers
                     return Unauthorized();
                 }
 
+                // Validate booking data
+                if (bookingDTO.VehicleModelId <= 0)
+                {
+                    return BadRequest("Valid vehicle model ID is required");
+                }
+
+                if (string.IsNullOrEmpty(bookingDTO.BikeName))
+                {
+                    return BadRequest("Bike name is required");
+                }
+
+                if (string.IsNullOrEmpty(bookingDTO.CustomerName))
+                {
+                    return BadRequest("Customer name is required");
+                }
+
+                if (string.IsNullOrEmpty(bookingDTO.CustomerEmail))
+                {
+                    return BadRequest("Customer email is required");
+                }
+
                 bookingDTO.CustomerId = dbUser.UserId;
                 if (bookingDTO.StartDate >= bookingDTO.EndDate)
                 {
                     return BadRequest("Start date is before the end date");
                 }
 
-                if (!bookingDTO.VehicleId.HasValue && bookingDTO.VehicleModelId > 0)
+                if (!bookingDTO.BikeId.HasValue && bookingDTO.VehicleModelId > 0)
                 {
                     var assignedVehicleId = await _bikeService.AssignAvailableVehicleAsync(bookingDTO.VehicleModelId,
                         bookingDTO.StartDate, bookingDTO.EndDate, bookingDTO.PickupLocation);
@@ -59,7 +80,7 @@ namespace rental_services.Server.Controllers
                     {
                         return BadRequest("No available vehicle left for this model");
                     }
-                    bookingDTO.VehicleId = assignedVehicleId;
+                    bookingDTO.BikeId = assignedVehicleId;
                 }
 
                 bool result = await _rentalService.AddBookingAsync(bookingDTO);
@@ -69,7 +90,7 @@ namespace rental_services.Server.Controllers
                 }
                 else
                 {
-                    return BadRequest("Booking is failed to create, please check for overlap date");
+                    return BadRequest("Booking is failed to create, error with AddBookingAsync");
                 }
             }
             catch (Exception ex)

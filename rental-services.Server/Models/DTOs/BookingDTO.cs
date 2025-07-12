@@ -5,9 +5,8 @@
         public string Id { get; set; } = null!;
         public int CustomerId { get; set; }
         public int VehicleModelId { get; set; }
-        public int? VehicleId { get; set; }
         public string BikeName { get; set; } = null!;
-        public int BikeId { get; set; }
+        public int? BikeId { get; set; }
         public string BikeImageUrl { get; set; } = null!;
         public string CustomerName { get; set; } = null!;
         public string CustomerEmail { get; set; } = null!;

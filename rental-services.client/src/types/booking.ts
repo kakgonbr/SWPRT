@@ -38,7 +38,7 @@ export interface Booking {
     Status: BookingStatus;
     PricePerDay: number;
     VehicleModelId: number;
-    VehicleId?: number;
+    BikeId?: number;
     BikeName: string;
     BikeImageUrl: string;
     CustomerName: string;
