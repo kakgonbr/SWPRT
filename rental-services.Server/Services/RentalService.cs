@@ -4,10 +4,11 @@
     {
         private Repositories.IBookingRepository _bookingRepository;
         private Repositories.IPeripheralRepository _peripheralRepository;
+        private IBikeService _bikeService;
         private AutoMapper.IMapper _mapper;
         private readonly ILogger<RentalService> _logger;
         private readonly Repositories.IVehicleModelRepository _vehicleModelRepository;
-        private readonly HashSet<RentalTracker> rentalTrackers = new();
+        private static HashSet<RentalTracker> rentalTrackers = new();
 
         /// <summary>
         /// For tracking unpaid bookings
@@ -54,19 +55,26 @@
             {
                 return BookingId;
             }
-            
+
+            public override string ToString()
+            {
+                return $"Tracker: BID : {BookingId}, UID: {UserId}, AMNT: {Amount}, TRIES: {Tries}";
+            }
         }
 
 
         public RentalService(Repositories.IBookingRepository bookingRepository, AutoMapper.IMapper mapper,
             Repositories.IPeripheralRepository peripheralRepository,
             Repositories.IVehicleModelRepository vehicleModelRepository,
+            IBikeService bikeService,
             ILogger<RentalService> logger)
         {
             _bookingRepository = bookingRepository;
             _mapper = mapper;
             _peripheralRepository = peripheralRepository;
             _logger = logger;
+            _vehicleModelRepository = vehicleModelRepository;
+            _bikeService = bikeService;
         }
 
         public async Task<bool> AddBookingAsync(Models.DTOs.BookingDTO booking)
@@ -191,12 +199,19 @@
 
         public async Task<bool> UpdateStatusAsync(int id, string status)
         {
-            if (Utils.Config.BookingStatus.IsValid(status))
+            if (!Utils.Config.BookingStatus.IsValid(status))
             {
                 return false;
             }
 
             return await _bookingRepository.UpdateStatusAsync(id, status) != 0;
+        }
+
+        public enum CreateRentalResult
+        {
+            CREATE_SUCCESS,
+            ALREADY_EXIST,
+            CREATE_FAILURE
         }
 
         /// <summary>
@@ -209,41 +224,63 @@
         /// <param name="end"></param>
         /// <param name="amount"></param>
         /// <returns></returns>
-        public async Task<bool> CreateRentalAsync(int userId, int modelId, DateOnly start, DateOnly end)
+        public async Task<CreateRentalResult> CreateRentalAsync(int userId, int modelId, DateOnly start, DateOnly end, string? pickupLocation)
         {
-            // TODO: CURRENTLY STUB, REPLACE WITH SCHEDULING LOGIC
-            int vehicleId =
-                (await _vehicleModelRepository.GetByIdAsync(modelId))?.Vehicles?.FirstOrDefault()?.ModelId ?? 0;
+            int vehicleId = await _bikeService.AssignAvailableVehicleAsync(modelId, start, end, pickupLocation) ?? 0;
+                //(await _vehicleModelRepository.GetByIdAsync(modelId))?.Vehicles?.FirstOrDefault()?.ModelId ?? 0;
 
-            // TODO: CALCULATE AMOUNT
-            long amount = 10_000;
+            if (vehicleId == 0)
+            {
+                return CreateRentalResult.CREATE_FAILURE;
+            }
+
+            Models.VehicleModel? model = await _vehicleModelRepository.GetByIdAsync(modelId);
+
+            if (model is null)
+            {
+                // cant be
+                return CreateRentalResult.CREATE_FAILURE;
+            }
+
+            // round down? idk
+            long amount = (long)(model.RatePerDay * (model.UpFrontPercentage / 100d));
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
             if (existing is not null)
             {
-                return false;
+                return CreateRentalResult.ALREADY_EXIST;
+            }
+
+            if (!await _bookingRepository.CanBook(userId, vehicleId, start, end))
+            {
+                return CreateRentalResult.CREATE_FAILURE;
             }
 
             Models.Booking newBooking = new Models.Booking()
-                { BookingId = 0, UserId = userId, VehicleId = vehicleId, StartDate = start, EndDate = end };
+                { BookingId = 0, UserId = userId, VehicleId = vehicleId, StartDate = start, EndDate = end, Status = Utils.Config.BookingStatus.AwaitingPayment };
 
+            // would throw and end the request if database validations fail, a little rough but saves quite a bit of code, functionality wise, it is acceptable.
             await _bookingRepository.AddAsync(newBooking);
 
             rentalTrackers.Add(new RentalTracker()
                 { BookingId = newBooking.BookingId, UserId = userId, Amount = amount });
 
-            return true;
+            return CreateRentalResult.CREATE_SUCCESS;
         }
 
         public async Task<string?> GetPaymentLinkAsync(int userId, string userIp)
         {
+            _logger.LogInformation("{Trackers}", rentalTrackers);
+
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
             if (existing is null)
             {
                 return null;
             }
+
+            _logger.LogInformation("{Tracker}", existing);
 
             Models.Booking? dbBooking = await _bookingRepository.GetByIdAsync(existing.BookingId);
 
@@ -271,6 +308,7 @@
                     _logger.LogInformation("Clearing tracker for {BookingId}", tracker.BookingId);
 
                     await _bookingRepository.DeleteAsync(tracker.BookingId);
+                    rentalTrackers.Remove(tracker);
                 }
             }
         }
@@ -320,6 +358,7 @@
                 return false;
             }
 
+
             Models.Booking? dbBooking = await _bookingRepository.GetByIdAsync(existing.BookingId);
 
             if (dbBooking is null)
@@ -327,8 +366,8 @@
                 return false;
             }
 
-            // might move this into a centralized config file instead
-            dbBooking.Status = "Upcoming";
+            rentalTrackers.Remove(existing);
+            dbBooking.Status = Utils.Config.BookingStatus.Upcoming;
 
             return true;
         }
