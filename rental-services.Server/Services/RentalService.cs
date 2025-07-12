@@ -1,6 +1,4 @@
-﻿using rental_services.Server.Models;
-
-namespace rental_services.Server.Services
+﻿namespace rental_services.Server.Services
 {
     public class RentalService : IRentalService
     {
@@ -23,7 +21,7 @@ namespace rental_services.Server.Services
             {
                 _createdAt = DateTime.Now;
             }
-            
+
             public RentalTracker(Models.Booking booking)
             {
                 _createdAt = DateTime.Now;
@@ -64,6 +62,22 @@ namespace rental_services.Server.Services
             }
         }
 
+        public async Task PopulateTrackers()
+        {
+            var untrackedRentals = await _bookingRepository.GetUnpaid();
+
+            // one downside of this is that the database doesnt save the number of tries, so if a tracked rental's tries is 2,
+            // if the application is restarted before it is deleted, it will be reset to 0
+            foreach (var rental in untrackedRentals)
+            {
+                rentalTrackers.Add(new RentalTracker()
+                {
+                    UserId = rental.UserId,
+                    BookingId = rental.BookingId,
+                    Amount = rental.Vehicle.Model.RatePerDay * (rental.Vehicle.Model.UpFrontPercentage / 100)
+                });
+            }
+        }
 
         public RentalService(Repositories.IBookingRepository bookingRepository, AutoMapper.IMapper mapper,
             Repositories.IPeripheralRepository peripheralRepository,
@@ -229,7 +243,7 @@ namespace rental_services.Server.Services
         public async Task<CreateRentalResult> CreateRentalAsync(int userId, int modelId, DateOnly start, DateOnly end, string? pickupLocation)
         {
             int vehicleId = await _bikeService.AssignAvailableVehicleAsync(modelId, start, end, pickupLocation) ?? 0;
-                //(await _vehicleModelRepository.GetByIdAsync(modelId))?.Vehicles?.FirstOrDefault()?.ModelId ?? 0;
+            //(await _vehicleModelRepository.GetByIdAsync(modelId))?.Vehicles?.FirstOrDefault()?.ModelId ?? 0;
 
             if (vehicleId == 0)
             {
@@ -245,7 +259,7 @@ namespace rental_services.Server.Services
             }
 
             // round down? idk
-            long amount = (long)(model.RatePerDay * (model.UpFrontPercentage / 100d));
+            long amount = (model.RatePerDay * (model.UpFrontPercentage / 100));
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
@@ -260,13 +274,13 @@ namespace rental_services.Server.Services
             }
 
             Models.Booking newBooking = new Models.Booking()
-                { BookingId = 0, UserId = userId, VehicleId = vehicleId, StartDate = start, EndDate = end, Status = Utils.Config.BookingStatus.AwaitingPayment };
+            { BookingId = 0, UserId = userId, VehicleId = vehicleId, StartDate = start, EndDate = end, Status = Utils.Config.BookingStatus.AwaitingPayment };
 
             // would throw and end the request if database validations fail, a little rough but saves quite a bit of code, functionality wise, it is acceptable.
             await _bookingRepository.AddAsync(newBooking);
 
             rentalTrackers.Add(new RentalTracker()
-                { BookingId = newBooking.BookingId, UserId = userId, Amount = amount });
+            { BookingId = newBooking.BookingId, UserId = userId, Amount = amount });
 
             return CreateRentalResult.CREATE_SUCCESS;
         }
@@ -307,7 +321,7 @@ namespace rental_services.Server.Services
             return existing is null
                 ? null
                 : VNPayService.GetLink(userIp, null, existing.Amount * 100, null,
-                    string.Join("_", existing.BookingId, existing.Tries));
+                    string.Join("_", existing.BookingId, existing.Tries, DateTime.Now.ToString("HHmmssfff")));
         }
 
         /// <summary>
@@ -381,6 +395,7 @@ namespace rental_services.Server.Services
 
             rentalTrackers.Remove(existing);
             dbBooking.Status = Utils.Config.BookingStatus.Upcoming;
+            // TODO: ADD PAYMENT ENTRY
 
             return true;
         }
