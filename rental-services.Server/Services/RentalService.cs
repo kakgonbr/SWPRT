@@ -1,4 +1,6 @@
-﻿namespace rental_services.Server.Services
+﻿using rental_services.Server.Models;
+
+namespace rental_services.Server.Services
 {
     public class RentalService : IRentalService
     {
@@ -289,6 +291,19 @@
                 return null;
             }
 
+            if (existing.Tries > 3)
+            {
+                _logger.LogInformation("Clearing tracker for {BookingId}, tries exceeded", existing.BookingId);
+
+                await _bookingRepository.DeleteAsync(existing.BookingId);
+
+                rentalTrackers.Remove(new RentalTracker() { BookingId = existing.BookingId });
+
+                return null;
+            }
+
+            existing.Tries += 1;
+
             return existing is null
                 ? null
                 : VNPayService.GetLink(userIp, null, existing.Amount * 100, null,
@@ -328,8 +343,6 @@
             {
                 return;
             }
-
-            existing.Tries += 1;
 
             if (existing.Tries < 3)
             {
