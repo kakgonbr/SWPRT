@@ -74,7 +74,7 @@ namespace rental_services.Server.Controllers
             {
                 message = "Xử lý OCR thành công. Vui lòng xem xét và xác nhận thông tin.",
                 extractedData = gplxData,
-                
+                imageUrl = imageUrl 
             });
         }
 

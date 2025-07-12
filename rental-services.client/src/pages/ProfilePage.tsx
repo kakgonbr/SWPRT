@@ -281,7 +281,7 @@ export default function ProfilePage() {
 
       // Gọi API để confirm và lưu dữ liệu
       const response = await fetch(
-        "http://localhost:5125/api/ocr/confirm-license",
+        `${API}/api/ocr/confirm-license`,
         {
           method: "POST",
           headers: {
