@@ -40,8 +40,10 @@ namespace rental_services.Server.Controllers
         public async Task<ActionResult<ChatDTO>> GetChatByUserId()
         {
             var userId = int.Parse(User.FindFirstValue("VroomVroomUserId")!);
-            return Ok(await _chatService.GetChatByUserIdAsync(userId));
-          
+            var chat = await _chatService.GetChatByUserIdAsync(userId);
+            if (chat is null)
+                return NotFound("Chat not found for the user.");
+            return Ok(chat);
         }
 
         // GET: api/chats/{chatId}/messages

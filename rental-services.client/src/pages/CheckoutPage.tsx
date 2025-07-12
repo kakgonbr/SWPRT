@@ -208,13 +208,13 @@ export default function CheckoutPage() {
             })
 
             // TODO
-            const response = await fetch(`${API}/api/`, {
+            const response = await fetch(`${API}/api/rentals/pay`, {
                 method: 'GET',
                 headers: {
-                    'Accept': 'text/plain'
+                    Accept: 'text/plain',
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
                 }
             });
-
             if (!response.ok) {
                 throw new Error(`API call failed with status ${response.status}`);
             }

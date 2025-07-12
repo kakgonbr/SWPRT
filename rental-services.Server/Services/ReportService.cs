@@ -42,6 +42,11 @@ namespace rental_services.Server.Services
             return _mapper.Map<List<ReportDTO>>(reports);
         }
 
+        public async Task<int> GetUnresolvedPendingReportsAsync()
+        {
+            return (await GetAllReportsAsync()).Count(r => r.Status.ToLower().Equals("In Progress".ToLower()) || r.Status.ToLower().Equals("Unresolved".ToLower()));
+        }
+
         public async Task<bool> UpdateReportAsync(ReportDTO reportDTO)
         {
             var chat = _mapper.Map<Report>(reportDTO);

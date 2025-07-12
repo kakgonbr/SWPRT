@@ -107,7 +107,7 @@ export default function RentalsPage() {
         }
 
         const fetchRentals = async () => {
-            await fetch(`${API}/api/rentals`, {
+            await fetch(`${API}/api/rentals/${user?.userId}`, {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`
                 }
@@ -150,7 +150,7 @@ export default function RentalsPage() {
                 setRentals([]);
 
                 toast({
-                    title: "Booking Failed",
+                    title: "Fetch failed",
                     description: `There was an error fetching bookings: ${err.message}. Please try again.`,
                     variant: "destructive",
                 })
@@ -175,7 +175,7 @@ export default function RentalsPage() {
             
     }, [user, isAuthenticated, loading, navigate, toast])
 
-    const upcomingRentals = rentals.filter(r => r.status === 'Upcoming' || r.status === 'Active')
+    const upcomingRentals = rentals.filter(r => r.status === 'Upcoming' || r.status === 'Active' || r.status === 'Awaiting Payment')
     const pastRentals = rentals.filter(r => r.status === 'Completed' || r.status === 'Cancelled')
 
     const handleCancelClick = (rental: Rental) => {
@@ -318,9 +318,52 @@ export default function RentalsPage() {
                 </CardContent>
                 <CardFooter className="p-4 border-t space-y-2">
                     <div className="flex gap-2 w-full">
-                        <Button variant="outline" size="sm" className="flex-1" asChild>
-                            <Link to={`/bikes/${rental.bikeId}`}>View Details</Link>
-                        </Button>
+
+                        {rental.status === 'Awaiting Payment' ?  
+                            (
+                                <Button variant="outline"
+                                    size="sm"
+                                    className="flex-1 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={async () => {
+                                    try {
+                                        const response = await fetch(`${API}/api/rentals/pay`, {
+                                            method: 'GET',
+                                            headers: {
+                                                Accept: 'text/plain',
+                                                Authorization: `Bearer ${localStorage.getItem("token")}`
+                                            }
+                                        });
+
+                                        if (!response.ok) {
+                                            throw new Error(`API call failed with status ${response.status}`);
+                                        }
+
+                                        const rawText: string = await response.text();
+
+                                        const result: string | null = rawText.trim().length > 0 ? rawText.trim() : null;
+
+                                        if (result !== null) {
+                                            window.location.href = result;
+                                        } else {
+                                            throw new Error("Cannot get payment URL.")
+                                        }
+                                    } catch (error : any) {
+                                        toast({
+                                            title: "Payment link request failed",
+                                            description: `There was an error requesting payment link: ${error.message}, please refresh the page.`,
+                                            variant: "destructive",
+                                        })
+                                    }
+                                }}>
+                                Payment required
+                                </Button>
+                            )
+                        :
+                            (
+                                <Button variant = "outline" size = "sm" className = "flex-1">
+                                    <Link to={`/bikes/${rental.bikeId}`}>View Details</Link>
+                                </Button>
+                            )}
+                        
 
                         {/* Report Issue Button */}
                         {canReportIssue(rental) && (

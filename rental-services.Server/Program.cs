@@ -72,7 +72,7 @@ namespace rental_services.Server
                         {
                             var accessToken = context.Request.Query["access_token"];
                             var path = context.HttpContext.Request.Path;
-                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat"))
+                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat") || path.StartsWithSegments("/hubs/staff"))
                             {
                                 context.Token = accessToken;
                             }
@@ -116,6 +116,8 @@ namespace rental_services.Server
                 .AddSingleton<IMaintenanceService, MaintenanceService>()
                 .AddScoped<IReportRepository, ReportRepository>()
                 .AddScoped<IReportService, ReportService>();
+
+            builder.Services.AddHostedService<Utils.RentalTrackerCleanup>();
 
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
@@ -178,7 +180,8 @@ namespace rental_services.Server
             
             // Add SignalR endpoint
             app.MapHub<Controllers.Realtime.ChatHub>("/hubs/chat");
-            
+            app.MapHub<Controllers.Realtime.StaffStatisticsHub>("/hubs/staff");
+
             app.Run();
         }
     }
