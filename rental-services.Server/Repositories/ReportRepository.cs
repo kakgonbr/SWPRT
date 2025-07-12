@@ -42,5 +42,21 @@ namespace rental_services.Server.Repositories
                 .Include(r => r.Type)
                 .ToListAsync();
         }
+
+        public Task<List<Report>> GetReportsPaginatedAsync(int pageNumber, int pageSize)
+        {
+            return _context.Reports
+                .Include(r => r.User)
+                .Include(r => r.Type)
+                .Skip((pageNumber - 1) * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+        }
+
+        public Task<int> UpdateReportAsync(Report report)
+        {
+            _context.Reports.Update(report);
+            return _context.SaveChangesAsync();
+        }
     }
 }

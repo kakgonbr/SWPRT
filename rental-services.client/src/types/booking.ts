@@ -1,12 +1,17 @@
-﻿namespace rental_services.Server.Models.DTOs
-{
-    public record BookingDTO
-    {
-        public string Id { get; set; } = null!;
+﻿
+export type BookingStatus =
+    | 'Pending'
+    | 'Awaiting Payment'
+    | 'Confirmed'
+    | 'Upcoming'
+    | 'Active'
+    | 'Completed'
+    | 'Cancelled';
+export interface Booking {
+    /*
+     public string Id { get; set; } = null!;
         public int CustomerId { get; set; }
-        public int VehicleModelId { get; set; }
         public string BikeName { get; set; } = null!;
-        public int? BikeId { get; set; }
         public string BikeImageUrl { get; set; } = null!;
         public string CustomerName { get; set; } = null!;
         public string CustomerEmail { get; set; } = null!;
@@ -16,7 +21,6 @@
         public DateOnly? OrderDate { get; set; }
         public string Status { get; set; } = null!;
         public decimal PricePerDay { get; set; }
-        public IEnumerable<PeripheralDTO>? Peripherals { get; set; } = null;
         public string? PickupLocation { get; set; }
         public string? ReturnLocation { get; set; }
         public string? PaymentMethod { get; set; }
@@ -24,5 +28,27 @@
         public decimal? Deposit { get; set; }
         public decimal? Tax { get; set; }
         public decimal? Discount { get; set; }
-    }
+    */
+
+    Id: string;
+    CustomerId: number;
+    StartDate: string;
+    EndDate: string;
+    OrderDate?: string;
+    Status: BookingStatus;
+    PricePerDay: number;
+    VehicleModelId: number;
+    BikeId?: number;
+    BikeName: string;
+    BikeImageUrl: string;
+    CustomerName: string;
+    CustomerEmail: string;
+    CustomerPhone?: string;
+    PickupLocation?: string;
+    ReturnLocation?: string;
+    PaymentMethod?: string;
+    Notes?: string;
+    Deposit?: number;
+    Tax?: number;
+    Discount?: number;
 }

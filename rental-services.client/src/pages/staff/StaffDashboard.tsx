@@ -16,6 +16,7 @@ import RentalManagementTab from '../../components/staff/RentalManagementTab'
 import ReportsManagementTab from '../../components/staff/ReportsManagementTab'
 import RentalApprovalDialog from '../../components/staff/RentalApprovalDialog'
 import { usePendingMessages } from '../../hooks/usePendingMessages'
+import { useStaffReport } from '../../contexts/StaffReportProvider';
 
 export default function StaffDashboard() {
     const navigate = useNavigate()
@@ -23,9 +24,9 @@ export default function StaffDashboard() {
     
     const token = localStorage.getItem('token') || '';
     const { pendingCount } = usePendingMessages(token);
+    const { unresolvedCount } = useStaffReport();
 
-    // Mock new reports count for demonstration
-    const newReportsCount = 2
+    const needResolvedReportsCount =  unresolvedCount ;
 
     // Authentication check
     useEffect(() => {
@@ -83,11 +84,9 @@ export default function StaffDashboard() {
                     <TabsTrigger value="reports" className="flex items-center gap-2">
                         <AlertTriangle className="h-4 w-4" />
                         Issue Reports
-                        {newReportsCount > 0 && (
                             <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs">
-                                {newReportsCount}
+                                { needResolvedReportsCount }
                             </Badge>
-                        )}
                     </TabsTrigger>
                 </TabsList>
 

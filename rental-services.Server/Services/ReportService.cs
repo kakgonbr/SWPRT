@@ -34,10 +34,25 @@ namespace rental_services.Server.Services
             return report == null ? null : _mapper.Map<ReportDTO>(report);
         }
 
-        public async Task<List<ReportDTO>> GetReportsByTypeIdAsync(int typeId)
+        public async Task<List<ReportDTO>> GetReportsPaginatedAsync(int page, int pageSize)
         {
-            var reports = await _reportRepository.GetReportsByTypeIdAsync(typeId);
+            if (page < 0 || pageSize < 0)
+                return [];
+            var reports = await _reportRepository.GetReportsPaginatedAsync(page, pageSize);
             return _mapper.Map<List<ReportDTO>>(reports);
+        }
+
+        public async Task<int> GetUnresolvedPendingReportsAsync()
+        {
+            return (await GetAllReportsAsync()).Count(r => r.Status.ToLower().Equals("In Progress".ToLower()) || r.Status.ToLower().Equals("Unresolved".ToLower()));
+        }
+
+        public async Task<bool> UpdateReportAsync(ReportDTO reportDTO)
+        {
+            var chat = _mapper.Map<Report>(reportDTO);
+            if (chat is null)
+                return false;
+            return await _reportRepository.UpdateReportAsync(chat) > 0 ? true : false;
         }
     }
 }
