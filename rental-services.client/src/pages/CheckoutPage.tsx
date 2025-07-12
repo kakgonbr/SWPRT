@@ -20,8 +20,9 @@ import { useToast } from '../contexts/toast-context.tsx'
 import { RENTAL_OPTIONS } from '../lib/mock-data'
 import { format, differenceInDays } from 'date-fns'
 import { cn } from '../lib/utils'
-import { bikeApi } from "../lib/api.ts";
+import { bikeApi, rentalAPI } from "../lib/api.ts";
 import { type VehicleModelDTO } from '../lib/types'
+import type { Booking } from '../types/booking.ts'
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -174,6 +175,39 @@ export default function CheckoutPage() {
         setIsSubmitting(true)
 
         try {
+            const booking: Booking = {
+                Id: '',
+                CustomerId: user.userId,
+                CustomerName: user.fullName,
+                CustomerEmail: user.email,
+                VehicleModelId: bike.modelId,
+                BikeName: bike.displayName,
+                BikeImageUrl: bike.imageFile,
+                StartDate: startDate.toISOString().split('T')[0],
+                EndDate: endDate.toISOString().split('T')[0],
+                Status: 'Awaiting Payment',
+                PricePerDay: bike.ratePerDay,
+                //TODO: change the up front percentage to fixed deposit price for each bike
+                Deposit: bike.upFrontPercentage,
+                PickupLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
+                ReturnLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
+                PaymentMethod: 'Credit Card'
+            };         
+
+            console.log(`passing booking api data: ${booking.CustomerId, booking.CustomerName, booking.VehicleModelId, booking.StartDate}`)
+
+            //payment should be complete in order to call this api
+            //update the booking status before calling the api
+            const bookingResult = await rentalAPI.createBooking(booking);
+
+            console.log(`booking result ${bookingResult}`);
+
+            toast({
+                title: "Booking Confirmed!",
+                description: `Your rental for ${bike.displayName} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')} at ${location}.`,
+            })
+
+            // TODO
             const response = await fetch(`${API}/api/rentals/pay`, {
                 method: 'GET',
                 headers: {
@@ -181,13 +215,14 @@ export default function CheckoutPage() {
                     Authorization: `Bearer ${localStorage.getItem("token")}`
                 }
             });
-
             if (!response.ok) {
                 throw new Error(`API call failed with status ${response.status}`);
             }
 
+            // Read plain text response
             const rawText: string = await response.text();
 
+            // Handle possible null or empty string
             const result: string | null = rawText.trim().length > 0 ? rawText.trim() : null;
 
             if (result !== null) {

@@ -3,6 +3,7 @@ using rental_services.Server.Models;
 using rental_services.Server.Models.DTOs;
 using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.JavaScript;
 
 namespace rental_services.Server.Services
 {
@@ -22,7 +23,7 @@ namespace rental_services.Server.Services
             Repositories.IPeripheralRepository peripheralRepository, ILogger<BikeService> logger,
             Repositories.IShopRepository shopRepository, Repositories.IVehicleTypeRepository vehicleTypeRepository,
             Repositories.IManufacturerRepository manufacturerRepository
-            )
+        )
         {
             _vehicleModelRepository = vehicleModelRepository;
             _vehicleRepository = vehicleRepository;
@@ -131,8 +132,8 @@ namespace rental_services.Server.Services
 
             var incomingIds = vehicleModel.Vehicles?.Select(v => v.VehicleId).ToHashSet() ?? new();
             var toDelete = dbVehicleModel.Vehicles
-                          .Where(v => !incomingIds.Contains(v.VehicleId))
-            .ToList();
+                .Where(v => !incomingIds.Contains(v.VehicleId))
+                .ToList();
 
             _vehicleRepository.DeleteRange(toDelete);
 
@@ -203,12 +204,14 @@ namespace rental_services.Server.Services
             return await _vehicleModelRepository.SaveAsync() != 0;
         }
 
-        public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly? startDate, DateOnly? endDate, string? address, string? searchTerm)
+        public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly? startDate,
+            DateOnly? endDate, string? address, string? searchTerm)
         {
             if (startDate == null || endDate == null || startDate.Value > endDate.Value)
             {
                 throw new ArgumentException("Start date cannot be after end date or one of them are null");
             }
+
             List<VehicleModel> vehicleModels;
             if (string.IsNullOrEmpty(searchTerm))
             {
@@ -218,6 +221,7 @@ namespace rental_services.Server.Services
             {
                 vehicleModels = await _vehicleModelRepository.GetAllEagerShopTypeAsync(searchTerm);
             }
+
             var result = new List<VehicleModel>();
             foreach (var model in vehicleModels)
             {
@@ -228,7 +232,8 @@ namespace rental_services.Server.Services
 
                 var shopList = model.Vehicles.Select(v => v.Shop).ToList();
 
-                if (!string.IsNullOrEmpty(address) && !shopList.Any(s => s.Address.Contains(address, StringComparison.OrdinalIgnoreCase)))
+                if (!string.IsNullOrEmpty(address) &&
+                    !shopList.Any(s => s.Address.Contains(address, StringComparison.OrdinalIgnoreCase)))
                 {
                     continue;
                 }
@@ -246,15 +251,51 @@ namespace rental_services.Server.Services
                             break;
                         }
                     }
+
                     if (isAvailable)
                         availableCount++;
                 }
+
                 if (availableCount > 1)
                 {
                     result.Add(model);
                 }
             }
+
             return _mapper.Map<List<Models.DTOs.VehicleModelDTO>>(result);
+        }
+
+        public async Task<int?> AssignAvailableVehicleAsync(int modelId, DateOnly startDate, DateOnly endDate,
+            string? shopLocation)
+        {
+            var vehicles = await _vehicleModelRepository.GetOfModelEagerBookingAsync(modelId);
+
+            if (!string.IsNullOrEmpty(shopLocation))
+            {
+                vehicles = vehicles
+                    .Where(v => v.Shop.Address.Contains(shopLocation, StringComparison.OrdinalIgnoreCase)).ToList();
+            }
+
+            foreach (var vehicle in vehicles)
+            {
+                bool isAvailable = true;
+
+                foreach (var booking in vehicle.Bookings)
+                {
+                    if (!(booking.EndDate < startDate || booking.StartDate > endDate))
+                    {
+                        isAvailable = false;
+                        break;
+                    }
+                }
+
+                if (isAvailable)
+                {
+                    return vehicle.VehicleId;
+                }
+            }
+
+            return null;
         }
 
         public async Task<bool> AddPhysicalAsync(int modelId, Models.DTOs.VehicleDTO vehicle)
@@ -277,6 +318,7 @@ namespace rental_services.Server.Services
             {
                 return vehicleModels;
             }
+
             return vehicleModels
                 .Where(vm => vm.VehicleType.Equals(type, StringComparison.OrdinalIgnoreCase))
                 .ToList();
@@ -288,6 +330,7 @@ namespace rental_services.Server.Services
             {
                 return vehicleModels;
             }
+
             return vehicleModels
                 //.Where(vm => vm.Shop.Equals(shop, StringComparison.OrdinalIgnoreCase))
                 .Where(vm => vm.Shops.Any(s => s.Equals(shop, StringComparison.OrdinalIgnoreCase)))
