@@ -14,5 +14,7 @@ namespace rental_services.Server.Services
         Task<bool> UpdateStatusAsync(int id, string status);
         Task<bool> AddBookingAsync(Models.DTOs.BookingDTO bookingDTO);
         Task<RentalService.CreateRentalResult> CreateRentalAsync(int userId, int modelId, DateOnly start, DateOnly end, string? pickupLocation);
+        Task PopulateTrackers();
+        Task<bool> HandleCancelAndRefundAsync(int userId, int bookingId);
     }
 }

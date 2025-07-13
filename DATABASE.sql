@@ -141,10 +141,10 @@ CREATE TABLE Bookings
 
 CREATE TABLE Payments
 (
-    PaymentId int PRIMARY KEY IDENTITY(1, 1),
+    PaymentId varchar(100) PRIMARY KEY,
     BookingId int NOT NULL,
     AmountPaid bigint NOT NULL,
-    PaymentDate date NOT NULL DEFAULT GETDATE(),
+    PaymentDate datetime NOT NULL DEFAULT GETDATE(),
 
     CONSTRAINT fk_pay_bookings FOREIGN KEY (BookingId) REFERENCES Bookings,
     CONSTRAINT ck_pay_amount CHECK (AmountPaid > 0)
@@ -410,11 +410,11 @@ VALUES
     (5, 8, '2025-06-05', '2025-06-30', 'Upcoming')
 
 -- Insert into Payments (20 rows: 1 per booking)
-INSERT INTO Payments (BookingId, AmountPaid, PaymentDate)
+INSERT INTO Payments (PaymentId, BookingId, AmountPaid, PaymentDate)
 VALUES 
-	(1, 600000, '2025-06-03'), 
-	(2, 600000, '2025-06-04'),
-    (3, 580000, '2025-06-05')
+	('1_0', 1, 600000, '2025-06-03'), 
+	('2_0', 2, 600000, '2025-06-04'),
+    ('3_0', 3, 580000, '2025-06-05')
 
 -- Insert into Peripherals (10 rows)
 INSERT INTO Peripherals (Name, RatePerDay)

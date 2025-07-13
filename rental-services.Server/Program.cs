@@ -96,6 +96,7 @@ namespace rental_services.Server
             // Register services and repositories
             builder.Services
                 .AddScoped<IUserRepository, UserRepository>()
+                .AddScoped<IPaymentRepository, PaymentRepository>()
                 .AddScoped<IUserService, UserService>()
                 .AddScoped<IVehicleModelRepository, VehicleModelRepository>()
                 .AddScoped<IVehicleRepository, VehicleRepository>()
