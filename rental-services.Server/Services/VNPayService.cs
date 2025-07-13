@@ -246,7 +246,7 @@ namespace rental_services.Server.Services
         private static string UrlEncodeAscii(string value) =>
             WebUtility.UrlEncode(value ?? string.Empty);
 
-        private static DateTime GetGmtPlus7Now()
+        public static DateTime GetGmtPlus7Now()
         {
             string tzId = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                           ? "SE Asia Standard Time"

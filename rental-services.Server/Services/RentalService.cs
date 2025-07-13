@@ -1,9 +1,12 @@
-﻿namespace rental_services.Server.Services
+﻿using System.Globalization;
+
+namespace rental_services.Server.Services
 {
     public class RentalService : IRentalService
     {
         private Repositories.IBookingRepository _bookingRepository;
         private Repositories.IPeripheralRepository _peripheralRepository;
+        private Repositories.IPaymentRepository _paymentRepository;
         private IBikeService _bikeService;
         private AutoMapper.IMapper _mapper;
         private readonly ILogger<RentalService> _logger;
@@ -42,6 +45,7 @@
             public int UserId { get; init; }
             public int Tries { get; set; } = 0;
             public long Amount { get; init; }
+            public string? LastRef { get; set; }
 
             public override bool Equals(object? obj)
             {
@@ -83,6 +87,7 @@
             Repositories.IPeripheralRepository peripheralRepository,
             Repositories.IVehicleModelRepository vehicleModelRepository,
             IBikeService bikeService,
+            Repositories.IPaymentRepository paymentRepository,
             ILogger<RentalService> logger)
         {
             _bookingRepository = bookingRepository;
@@ -91,6 +96,7 @@
             _logger = logger;
             _vehicleModelRepository = vehicleModelRepository;
             _bikeService = bikeService;
+            _paymentRepository = paymentRepository;
         }
 
         public async Task<bool> AddBookingAsync(Models.DTOs.BookingDTO booking)
@@ -318,10 +324,11 @@
 
             existing.Tries += 1;
 
+            existing.LastRef = string.Join("_", existing.BookingId, existing.Tries, VNPayService.GetGmtPlus7Now().ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture));
+
             return existing is null
                 ? null
-                : VNPayService.GetLink(userIp, null, existing.Amount * 100, null,
-                    string.Join("_", existing.BookingId, existing.Tries, DateTime.Now.ToString("HHmmssfff")));
+                : VNPayService.GetLink(userIp, null, existing.Amount * 100, null, existing.LastRef);
         }
 
         /// <summary>
@@ -393,9 +400,77 @@
                 return false;
             }
 
-            rentalTrackers.Remove(existing);
             dbBooking.Status = Utils.Config.BookingStatus.Upcoming;
-            // TODO: ADD PAYMENT ENTRY
+
+            DateTime paymentDate;
+            if (existing.LastRef is null || !DateTime.TryParseExact(existing.LastRef.Split("_").Last(), "yyyyMMddHHmmss",
+            CultureInfo.InvariantCulture, DateTimeStyles.None, out paymentDate))
+            {
+                return false;
+            }
+
+            Models.Payment newPayment = new Models.Payment() { PaymentId = existing.LastRef, BookingId = dbBooking.BookingId, AmountPaid = existing.Amount, PaymentDate = paymentDate };
+
+            try
+            {
+                await _paymentRepository.AddAsync(newPayment);
+            }
+            catch (Exception e) // TODO: figure out the possible exceptions
+            {
+                _logger.LogWarning(e, "Failed to save payment information into the database.");
+                // the only thing that determines rental states is the bookings table, attempt rollback by deleting the record and refunding
+                await _bookingRepository.DeleteAsync(existing.BookingId);
+
+                if (existing.LastRef is not null && !await VNPayService.IssueRefundAsync(Environment.GetEnvironmentVariable("HOST_IP") ?? "127.0.0.1", "02", existing.LastRef, existing.Amount * 100, existing.LastRef.Split("_").Last(), "vroomvroomclick"))
+                {
+                    // no idea what to do here...
+                    _logger.LogWarning("REFUND FOR {Ref} FAILED", existing.LastRef);
+                }
+
+                rentalTrackers.Remove(existing);
+                return false;
+            }
+
+            rentalTrackers.Remove(existing);
+            return true;
+        }
+
+        /// <summary>
+        /// Make sure authorization works before this is called
+        /// </summary>
+        /// <param name="bookingId"></param>
+        /// <returns></returns>
+        public async Task<bool> HandleCancelAndRefundAsync(int userId, int bookingId)
+        {
+            Models.Booking? booking = await _bookingRepository.GetByIdAsync(bookingId);
+
+            // for the time being, only upcoming rentals can be cancelled, the ones that are in progress will be implemented later.
+            if (booking is null || booking.Status != Utils.Config.BookingStatus.Upcoming || booking.UserId != userId)
+            {
+                return false;
+            }
+
+            Models.Payment? payment = await _paymentRepository.GetByBookingIdAsync(bookingId);
+
+            if (payment is null)
+            {
+                return false;
+            }
+
+            DateTime now = Utils.CustomDateTime.CurrentTime;
+            TimeSpan timeUntilBooking = booking.StartDate.ToDateTime(TimeOnly.MinValue) - now;
+
+            if (timeUntilBooking.TotalHours > 12 && !await VNPayService.IssueRefundAsync(Environment.GetEnvironmentVariable("HOST_IP") ?? "127.0.0.1",
+                timeUntilBooking.TotalHours > 24 ? "02" : "03",
+                payment.PaymentId, timeUntilBooking.TotalHours > 24 ? payment.AmountPaid * 100 : payment.AmountPaid * 100 / 2,
+                payment.PaymentDate.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture), "vroomvroomclick"))
+            {
+                return false;
+            }
+
+            await _bookingRepository.DeleteAsync(bookingId);
+
+            await _paymentRepository.DeleteWithBookingAsync(bookingId);
 
             return true;
         }

@@ -185,5 +185,21 @@ namespace rental_services.Server.Controllers
 
             return link is null ? BadRequest("Payment link generation failed.") : Ok(link);
         }
+
+        // GET /rentals/cancel/{bookingId}
+        [HttpGet("cancel/{bookingId}")]
+        [Authorize]
+        public async Task<ActionResult<string?>> GetPaymentLink(int bookingId)
+        {
+            string? sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            Models.User? dbUser = null;
+
+            if (sub is null || (dbUser = await _userService.GetUserBySubAsync(sub)) is null)
+            {
+                return Unauthorized();
+            }
+
+            return await _rentalService.HandleCancelAndRefundAsync(dbUser.UserId, bookingId) ? Ok() : BadRequest();
+        }
     }
 }
