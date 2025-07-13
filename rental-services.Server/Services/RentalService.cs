@@ -20,7 +20,7 @@
             {
                 _createdAt = DateTime.Now;
             }
-            
+
             public RentalTracker(Models.Booking booking)
             {
                 _createdAt = DateTime.Now;
@@ -54,7 +54,7 @@
             {
                 return BookingId;
             }
-            
+
         }
 
 
@@ -226,12 +226,12 @@
             }
 
             Models.Booking newBooking = new Models.Booking()
-                { BookingId = 0, UserId = userId, VehicleId = vehicleId, StartDate = start, EndDate = end };
+            { BookingId = 0, UserId = userId, VehicleId = vehicleId, StartDate = start, EndDate = end };
 
             await _bookingRepository.AddAsync(newBooking);
 
             rentalTrackers.Add(new RentalTracker()
-                { BookingId = newBooking.BookingId, UserId = userId, Amount = amount });
+            { BookingId = newBooking.BookingId, UserId = userId, Amount = amount });
 
             return true;
         }
