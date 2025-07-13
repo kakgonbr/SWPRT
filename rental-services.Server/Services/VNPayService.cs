@@ -171,7 +171,7 @@ namespace rental_services.Server.Services
             string createBy)
         {
             string requestId = VnpConfig.GetRandomNumber(8);
-            string version = "2.1.0";
+            string version = "2.1.1";
             string command = "refund";
             string tmnCode = VnpConfig.VnpTmnCode;
             string orderInfo = $"Hoan tien GD OrderId:{txnRef}";
@@ -246,7 +246,7 @@ namespace rental_services.Server.Services
         private static string UrlEncodeAscii(string value) =>
             WebUtility.UrlEncode(value ?? string.Empty);
 
-        private static DateTime GetGmtPlus7Now()
+        public static DateTime GetGmtPlus7Now()
         {
             string tzId = RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                           ? "SE Asia Standard Time"

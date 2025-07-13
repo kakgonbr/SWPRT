@@ -18,14 +18,14 @@ namespace rental_services.Server.Utils
             public const string Pending = "Pending";
             public const string AwaitingPayment = "Awaiting Payment";
             public const string Confirmed = "Confirmed";
-            public const string Upcomming = "Upcomming";
+            public const string Upcoming = "Upcoming";
             public const string Active = "Active";
             public const string Completed = "Completed";
             public const string Cancelled = "Cancelled";
 
             public static readonly string[] AllStatuses =
             {
-                Pending, AwaitingPayment, Confirmed, Upcomming, Active, Completed, Cancelled
+                Pending, AwaitingPayment, Confirmed, Upcoming, Active, Completed, Cancelled
             };
 
             public static bool IsValid(string status)
@@ -39,8 +39,8 @@ namespace rental_services.Server.Utils
                 {
                     Pending => targetStatus is AwaitingPayment or Confirmed or Cancelled,
                     AwaitingPayment => targetStatus is Confirmed or Cancelled,
-                    Confirmed => targetStatus is Upcomming or Cancelled,
-                    Upcomming => targetStatus is Active or Cancelled,
+                    Confirmed => targetStatus is Upcoming or Cancelled,
+                    Upcoming => targetStatus is Active or Cancelled,
                     Active => targetStatus is Completed or Cancelled,
                     Completed => false,
                     Cancelled => false,

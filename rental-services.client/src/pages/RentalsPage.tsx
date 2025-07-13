@@ -197,28 +197,54 @@ export default function RentalsPage() {
         setShowCancelDialog(false)
 
         try {
-            // TODO
-            // Simulate API call
-            //await new Promise(resolve => setTimeout(resolve, 2000))
+            let response: Response;
+            try {
+                response = await fetch(`${API}/api/rentals/cancel/${rentalToCancel.id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem("token")}`
+                    }
+                });
+            } catch (networkError) {
+                console.error(networkError);
+                toast({
+                    title: 'Network Error',
+                    description: 'Unable to reach server. Please try again later.',
+                    variant: "destructive"
+                });
+                return;
+            }
 
-            //// Update the rental status in state
-            //setRentals(prev => prev.map(rental =>
-            //    rental.id === rentalToCancel.id
-            //        ? { ...rental, status: 'Cancelled' as const }
-            //        : rental
-            //))
+            if (response.status === 400) {
+                toast({ title: 'Cancellation Failed', description: "Your data may be out of date, please refresh the page.", variant: "destructive" });
+                return;
+            }
 
-            //// Calculate refund amount (example: full refund if cancelled 24h+ before start)
-            //const hoursUntilStart = differenceInHours(rentalToCancel.startDate, new Date())
-            //const refundPercentage = hoursUntilStart >= 24 ? 100 : hoursUntilStart >= 12 ? 50 : 0
-            //const refundAmount = (rentalToCancel.totalPrice * refundPercentage) / 100
+            if (response.status !== 200) {
+                toast({
+                    title: 'Server Error',
+                    description: `Unexpected response (${response.status}).`,
+                    variant: "destructive"
+                });
+                return;
+            }
 
-            //toast({
-            //    title: "Rental Cancelled Successfully",
-            //    description: refundPercentage > 0
-            //        ? `Your rental has been cancelled. You will receive a ${refundPercentage}% refund of $${refundAmount.toFixed(2)}.`
-            //        : "Your rental has been cancelled. No refund is available for cancellations less than 12 hours before the start date.",
-            //})
+            setRentals(prev => prev.map(rental =>
+                rental.id === rentalToCancel.id
+                    ? { ...rental, status: 'Cancelled' as const }
+                    : rental
+            ))
+
+            const hoursUntilStart = differenceInHours(rentalToCancel.startDate, new Date())
+            const refundPercentage = hoursUntilStart >= 24 ? 100 : hoursUntilStart >= 12 ? 50 : 0
+            const refundAmount = (rentalToCancel.totalPrice! * refundPercentage) / 100
+
+            toast({
+                title: "Rental Cancelled Successfully",
+                description: refundPercentage > 0
+                    ? `Your rental has been cancelled. You will receive a ${refundPercentage}% refund of $${refundAmount.toFixed(2)}.`
+                    : "Your rental has been cancelled. No refund is available for cancellations less than 12 hours before the start date.",
+            })
 
         } catch (error) {
             console.error('Error cancelling rental:', error)

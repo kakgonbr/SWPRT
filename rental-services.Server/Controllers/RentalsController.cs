@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using rental_services.Server.Models.DTOs;
+using rental_services.Server.Services;
 using System.Security.Claims;
 
 namespace rental_services.Server.Controllers
@@ -33,8 +34,8 @@ namespace rental_services.Server.Controllers
         }
 
         // POST /rentals/book
-        [HttpPost("book")]
-        [Authorize]
+        //[HttpPost("book")]
+        //[Authorize]
         public async Task<ActionResult<string>> CreateBooking([FromBody] Models.DTOs.BookingDTO bookingDTO)
         {
             try
@@ -127,11 +128,41 @@ namespace rental_services.Server.Controllers
                 : BadRequest("Failed.");
         }
 
+        // POST /rentals/book
+        [HttpPost("book")]
+        [Authorize]
+        public async Task<ActionResult<string?>> SubmitBookingInfo([FromBody] Models.DTOs.BookingDTO? bookingDTO)
+        {
+            string? sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            Models.User? dbUser = null;
+
+            if (sub is null || (dbUser = await _userService.GetUserBySubAsync(sub)) is null)
+            {
+                return Unauthorized();
+            }
+
+            string? ip = HttpContext.Connection.RemoteIpAddress?
+                .MapToIPv4()
+                .ToString();
+
+            if (ip is null || bookingDTO is null)
+            {
+                return BadRequest("IP or body not found.");
+            }
+
+            if (await _rentalService.CreateRentalAsync(dbUser.UserId, bookingDTO.VehicleModelId,
+                        bookingDTO.StartDate, bookingDTO.EndDate, bookingDTO.PickupLocation) == RentalService.CreateRentalResult.CREATE_FAILURE)
+            {
+                return BadRequest("Rental creation failed.");
+            }
+
+            return Ok(await _rentalService.GetPaymentLinkAsync(dbUser.UserId, ip));
+        }
+
         // GET /rentals/pay
         [HttpGet("pay")]
         [Authorize]
-        // TODO: ADD FROMBODY json
-        public async Task<ActionResult<string?>> SubmitAndGetPaymentLink()
+        public async Task<ActionResult<string?>> GetPaymentLink()
         {
             string? sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
             Models.User? dbUser = null;
@@ -147,15 +178,28 @@ namespace rental_services.Server.Controllers
 
             if (ip is null)
             {
-                return BadRequest();
+                return BadRequest("IP address unavailable.");
             }
 
-            if (!await _rentalService.CreateRentalAsync(dbUser.UserId, 1, DateOnly.FromDateTime(DateTime.Now).AddDays(3), DateOnly.FromDateTime(DateTime.Now).AddDays(30)))
+            string? link = await _rentalService.GetPaymentLinkAsync(dbUser.UserId, ip);
+
+            return link is null ? BadRequest("Payment link generation failed.") : Ok(link);
+        }
+
+        // GET /rentals/cancel/{bookingId}
+        [HttpGet("cancel/{bookingId}")]
+        [Authorize]
+        public async Task<ActionResult<string?>> GetPaymentLink(int bookingId)
+        {
+            string? sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            Models.User? dbUser = null;
+
+            if (sub is null || (dbUser = await _userService.GetUserBySubAsync(sub)) is null)
             {
-                return BadRequest();
+                return Unauthorized();
             }
 
-            return await _rentalService.GetPaymentLinkAsync(dbUser.UserId, ip);
+            return await _rentalService.HandleCancelAndRefundAsync(dbUser.UserId, bookingId) ? Ok() : BadRequest();
         }
     }
 }

@@ -14,14 +14,16 @@ namespace rental_services.Server.Controllers
     public class IPNController : ControllerBase
     {
         private readonly ILogger<IPNController> _logger;
+        private readonly Services.IRentalService _rentalService;
 
-        public IPNController(ILogger<IPNController> logger)
+        public IPNController(ILogger<IPNController> logger, Services.IRentalService rentalService)
         {
+            _rentalService = rentalService;
             _logger = logger;
         }
 
         [HttpGet]
-        public IActionResult Get()
+        public async Task<IActionResult> Get()
         {
             _logger.LogInformation("IPN Received a GET request from {ip}", HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString());
 
@@ -63,38 +65,29 @@ namespace rental_services.Server.Controllers
             {
                 _logger.LogInformation("Order {OrderId}, amount {Amount}, date {Date}", txnRef, paidAmount, payDate);
 
-                if (IsOrderValid(txnRef, paidAmount))
+                if (responseCode == "00")
                 {
-                    if (responseCode == "00")
+                    if (await _rentalService.InformPaymentSuccessAsync(int.Parse(txnRef.Split("_")[0]), (long) decimal.Truncate(paidAmount)))
                     {
-                        // TODO
-                        _logger.LogInformation("Order is valid, response code valid");
+                        _logger.LogInformation("Payment successful.");
                     }
                     else
                     {
-                        // TODO
-                        _logger.LogInformation("Order is valid, response code invalid");
+                        // TODO: REFUNDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
                     }
                 }
                 else
                 {
-                    // TODO
-                    _logger.LogInformation("Order is invalid");
+                    await _rentalService.InformPaymentFailureAsync(int.Parse(txnRef.Split("_")[0]));
+                    _logger.LogInformation("Response code is not 00");
                 }
             }
             else
             {
-                // TODO
                 _logger.LogInformation("Hash doesnt match");
             }
 
             return Ok();
-        }
-
-        private bool IsOrderValid(string orderId, decimal paidAmount)
-        {
-            // TODO
-            return true;
         }
     }
 }

@@ -16,6 +16,14 @@ namespace rental_services.Server.Utils
         {
             _logger.LogInformation("RentalTrackerCleanup started.");
 
+            using (var scope = _serviceProvider.CreateScope())
+            {
+                _logger.LogInformation("Populating untracked rentals.");
+
+                var rentalService = scope.ServiceProvider.GetRequiredService<Services.IRentalService>();
+                await rentalService.PopulateTrackers();
+            }
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try

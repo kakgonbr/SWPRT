@@ -1,13 +1,17 @@
-﻿namespace rental_services.Server.Services
+﻿using System.Globalization;
+
+namespace rental_services.Server.Services
 {
     public class RentalService : IRentalService
     {
         private Repositories.IBookingRepository _bookingRepository;
         private Repositories.IPeripheralRepository _peripheralRepository;
+        private Repositories.IPaymentRepository _paymentRepository;
+        private IBikeService _bikeService;
         private AutoMapper.IMapper _mapper;
         private readonly ILogger<RentalService> _logger;
         private readonly Repositories.IVehicleModelRepository _vehicleModelRepository;
-        private readonly HashSet<RentalTracker> rentalTrackers = new();
+        private static HashSet<RentalTracker> rentalTrackers = new();
 
         /// <summary>
         /// For tracking unpaid bookings
@@ -41,6 +45,7 @@
             public int UserId { get; init; }
             public int Tries { get; set; } = 0;
             public long Amount { get; init; }
+            public string? LastRef { get; set; }
 
             public override bool Equals(object? obj)
             {
@@ -55,18 +60,43 @@
                 return BookingId;
             }
 
+            public override string ToString()
+            {
+                return $"Tracker: BID : {BookingId}, UID: {UserId}, AMNT: {Amount}, TRIES: {Tries}";
+            }
         }
 
+        public async Task PopulateTrackers()
+        {
+            var untrackedRentals = await _bookingRepository.GetUnpaid();
+
+            // one downside of this is that the database doesnt save the number of tries, so if a tracked rental's tries is 2,
+            // if the application is restarted before it is deleted, it will be reset to 0
+            foreach (var rental in untrackedRentals)
+            {
+                rentalTrackers.Add(new RentalTracker()
+                {
+                    UserId = rental.UserId,
+                    BookingId = rental.BookingId,
+                    Amount = rental.Vehicle.Model.RatePerDay * (rental.Vehicle.Model.UpFrontPercentage / 100)
+                });
+            }
+        }
 
         public RentalService(Repositories.IBookingRepository bookingRepository, AutoMapper.IMapper mapper,
             Repositories.IPeripheralRepository peripheralRepository,
             Repositories.IVehicleModelRepository vehicleModelRepository,
+            IBikeService bikeService,
+            Repositories.IPaymentRepository paymentRepository,
             ILogger<RentalService> logger)
         {
             _bookingRepository = bookingRepository;
             _mapper = mapper;
             _peripheralRepository = peripheralRepository;
             _logger = logger;
+            _vehicleModelRepository = vehicleModelRepository;
+            _bikeService = bikeService;
+            _paymentRepository = paymentRepository;
         }
 
         public async Task<bool> AddBookingAsync(Models.DTOs.BookingDTO booking)
@@ -191,12 +221,19 @@
 
         public async Task<bool> UpdateStatusAsync(int id, string status)
         {
-            if (Utils.Config.BookingStatus.IsValid(status))
+            if (!Utils.Config.BookingStatus.IsValid(status))
             {
                 return false;
             }
 
             return await _bookingRepository.UpdateStatusAsync(id, status) != 0;
+        }
+
+        public enum CreateRentalResult
+        {
+            CREATE_SUCCESS,
+            ALREADY_EXIST,
+            CREATE_FAILURE
         }
 
         /// <summary>
@@ -209,41 +246,63 @@
         /// <param name="end"></param>
         /// <param name="amount"></param>
         /// <returns></returns>
-        public async Task<bool> CreateRentalAsync(int userId, int modelId, DateOnly start, DateOnly end)
+        public async Task<CreateRentalResult> CreateRentalAsync(int userId, int modelId, DateOnly start, DateOnly end, string? pickupLocation)
         {
-            // TODO: CURRENTLY STUB, REPLACE WITH SCHEDULING LOGIC
-            int vehicleId =
-                (await _vehicleModelRepository.GetByIdAsync(modelId))?.Vehicles?.FirstOrDefault()?.ModelId ?? 0;
+            int vehicleId = await _bikeService.AssignAvailableVehicleAsync(modelId, start, end, pickupLocation) ?? 0;
+            //(await _vehicleModelRepository.GetByIdAsync(modelId))?.Vehicles?.FirstOrDefault()?.ModelId ?? 0;
 
-            // TODO: CALCULATE AMOUNT
-            long amount = 10_000;
+            if (vehicleId == 0)
+            {
+                return CreateRentalResult.CREATE_FAILURE;
+            }
+
+            Models.VehicleModel? model = await _vehicleModelRepository.GetByIdAsync(modelId);
+
+            if (model is null)
+            {
+                // cant be
+                return CreateRentalResult.CREATE_FAILURE;
+            }
+
+            // round down? idk
+            long amount = (model.RatePerDay * (model.UpFrontPercentage / 100));
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
             if (existing is not null)
             {
-                return false;
+                return CreateRentalResult.ALREADY_EXIST;
+            }
+
+            if (!await _bookingRepository.CanBook(userId, vehicleId, start, end))
+            {
+                return CreateRentalResult.CREATE_FAILURE;
             }
 
             Models.Booking newBooking = new Models.Booking()
-            { BookingId = 0, UserId = userId, VehicleId = vehicleId, StartDate = start, EndDate = end };
+            { BookingId = 0, UserId = userId, VehicleId = vehicleId, StartDate = start, EndDate = end, Status = Utils.Config.BookingStatus.AwaitingPayment };
 
+            // would throw and end the request if database validations fail, a little rough but saves quite a bit of code, functionality wise, it is acceptable.
             await _bookingRepository.AddAsync(newBooking);
 
             rentalTrackers.Add(new RentalTracker()
             { BookingId = newBooking.BookingId, UserId = userId, Amount = amount });
 
-            return true;
+            return CreateRentalResult.CREATE_SUCCESS;
         }
 
         public async Task<string?> GetPaymentLinkAsync(int userId, string userIp)
         {
+            _logger.LogInformation("{Trackers}", rentalTrackers);
+
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
             if (existing is null)
             {
                 return null;
             }
+
+            _logger.LogInformation("{Tracker}", existing);
 
             Models.Booking? dbBooking = await _bookingRepository.GetByIdAsync(existing.BookingId);
 
@@ -252,10 +311,24 @@
                 return null;
             }
 
+            if (existing.Tries > 3)
+            {
+                _logger.LogInformation("Clearing tracker for {BookingId}, tries exceeded", existing.BookingId);
+
+                await _bookingRepository.DeleteAsync(existing.BookingId);
+
+                rentalTrackers.Remove(new RentalTracker() { BookingId = existing.BookingId });
+
+                return null;
+            }
+
+            existing.Tries += 1;
+
+            existing.LastRef = string.Join("_", existing.BookingId, existing.Tries, VNPayService.GetGmtPlus7Now().ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture));
+
             return existing is null
                 ? null
-                : VNPayService.GetLink(userIp, null, existing.Amount * 100, null,
-                    string.Join("_", existing.BookingId, existing.Tries));
+                : VNPayService.GetLink(userIp, null, existing.Amount * 100, null, existing.LastRef);
         }
 
         /// <summary>
@@ -271,6 +344,7 @@
                     _logger.LogInformation("Clearing tracker for {BookingId}", tracker.BookingId);
 
                     await _bookingRepository.DeleteAsync(tracker.BookingId);
+                    rentalTrackers.Remove(tracker);
                 }
             }
         }
@@ -290,8 +364,6 @@
             {
                 return;
             }
-
-            existing.Tries += 1;
 
             if (existing.Tries < 3)
             {
@@ -320,6 +392,7 @@
                 return false;
             }
 
+
             Models.Booking? dbBooking = await _bookingRepository.GetByIdAsync(existing.BookingId);
 
             if (dbBooking is null)
@@ -327,8 +400,77 @@
                 return false;
             }
 
-            // might move this into a centralized config file instead
-            dbBooking.Status = "Upcoming";
+            dbBooking.Status = Utils.Config.BookingStatus.Upcoming;
+
+            DateTime paymentDate;
+            if (existing.LastRef is null || !DateTime.TryParseExact(existing.LastRef.Split("_").Last(), "yyyyMMddHHmmss",
+            CultureInfo.InvariantCulture, DateTimeStyles.None, out paymentDate))
+            {
+                return false;
+            }
+
+            Models.Payment newPayment = new Models.Payment() { PaymentId = existing.LastRef, BookingId = dbBooking.BookingId, AmountPaid = existing.Amount, PaymentDate = paymentDate };
+
+            try
+            {
+                await _paymentRepository.AddAsync(newPayment);
+            }
+            catch (Exception e) // TODO: figure out the possible exceptions
+            {
+                _logger.LogWarning(e, "Failed to save payment information into the database.");
+                // the only thing that determines rental states is the bookings table, attempt rollback by deleting the record and refunding
+                await _bookingRepository.DeleteAsync(existing.BookingId);
+
+                if (existing.LastRef is not null && !await VNPayService.IssueRefundAsync(Environment.GetEnvironmentVariable("HOST_IP") ?? "127.0.0.1", "02", existing.LastRef, existing.Amount * 100, existing.LastRef.Split("_").Last(), "vroomvroomclick"))
+                {
+                    // no idea what to do here...
+                    _logger.LogWarning("REFUND FOR {Ref} FAILED", existing.LastRef);
+                }
+
+                rentalTrackers.Remove(existing);
+                return false;
+            }
+
+            rentalTrackers.Remove(existing);
+            return true;
+        }
+
+        /// <summary>
+        /// Make sure authorization works before this is called
+        /// </summary>
+        /// <param name="bookingId"></param>
+        /// <returns></returns>
+        public async Task<bool> HandleCancelAndRefundAsync(int userId, int bookingId)
+        {
+            Models.Booking? booking = await _bookingRepository.GetByIdAsync(bookingId);
+
+            // for the time being, only upcoming rentals can be cancelled, the ones that are in progress will be implemented later.
+            if (booking is null || booking.Status != Utils.Config.BookingStatus.Upcoming || booking.UserId != userId)
+            {
+                return false;
+            }
+
+            Models.Payment? payment = await _paymentRepository.GetByBookingIdAsync(bookingId);
+
+            if (payment is null)
+            {
+                return false;
+            }
+
+            DateTime now = Utils.CustomDateTime.CurrentTime;
+            TimeSpan timeUntilBooking = booking.StartDate.ToDateTime(TimeOnly.MinValue) - now;
+
+            if (timeUntilBooking.TotalHours > 12 && !await VNPayService.IssueRefundAsync(Environment.GetEnvironmentVariable("HOST_IP") ?? "127.0.0.1",
+                timeUntilBooking.TotalHours > 24 ? "02" : "03",
+                payment.PaymentId, timeUntilBooking.TotalHours > 24 ? payment.AmountPaid * 100 : payment.AmountPaid * 100 / 2,
+                payment.PaymentDate.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture), "vroomvroomclick"))
+            {
+                return false;
+            }
+
+            await _bookingRepository.DeleteAsync(bookingId);
+
+            await _paymentRepository.DeleteWithBookingAsync(bookingId);
 
             return true;
         }

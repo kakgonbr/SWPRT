@@ -20,7 +20,10 @@ import { useToast } from '../contexts/toast-context.tsx'
 import { RENTAL_OPTIONS } from '../lib/mock-data'
 import { format, differenceInDays } from 'date-fns'
 import { cn } from '../lib/utils'
-import { bikeApi, rentalAPI } from "../lib/api.ts";
+import {
+    bikeApi,
+    //rentalAPI
+} from "../lib/api.ts";
 import { type VehicleModelDTO } from '../lib/types'
 import type { Booking } from '../types/booking.ts'
 
@@ -198,22 +201,23 @@ export default function CheckoutPage() {
 
             //payment should be complete in order to call this api
             //update the booking status before calling the api
-            const bookingResult = await rentalAPI.createBooking(booking);
+            //const bookingResult = await rentalAPI.createBooking(booking);
 
-            console.log(`booking result ${bookingResult}`);
+            //console.log(`booking result ${bookingResult}`);
 
-            toast({
-                title: "Booking Confirmed!",
-                description: `Your rental for ${bike.displayName} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')} at ${location}.`,
-            })
+            //toast({
+            //    title: "Booking Confirmed!",
+            //    description: `Your rental for ${bike.displayName} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')} at ${location}.`,
+            //})
 
-            // TODO
-            const response = await fetch(`${API}/api/rentals/pay`, {
-                method: 'GET',
+            const response = await fetch(`${API}/api/rentals/book`, {
+                method: 'POST',
                 headers: {
-                    Accept: 'text/plain',
-                    Authorization: `Bearer ${localStorage.getItem("token")}`
-                }
+                    'Accept': 'text/plain',
+                    'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                    'Content-type': 'application/json'
+                },
+                body: JSON.stringify(booking)
             });
             if (!response.ok) {
                 throw new Error(`API call failed with status ${response.status}`);

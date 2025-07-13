@@ -121,7 +121,7 @@ namespace rental_services.Server.Utils
                     opt.MapFrom(src =>
                         src.Payments.FirstOrDefault() == null
                             ? null
-                            : (DateOnly?)src.Payments.FirstOrDefault().PaymentDate
+                            : (DateOnly?) DateOnly.FromDateTime(src.Payments.FirstOrDefault()!.PaymentDate)
                     ))
                 .ForMember(dest => dest.PricePerDay, opt => opt.MapFrom(src => src.Vehicle.Model.RatePerDay
                 ))
