@@ -89,7 +89,6 @@ export default function FeedbackManagement() {
     useEffect(() => {
         const fetchData = async () => {
             if (searchTerm.trim() === '') {
-                // Nếu không có searchTerm, lấy toàn bộ feedback
                 try {
                     const res = await fetch('/api/feedback', {
                         headers: {
