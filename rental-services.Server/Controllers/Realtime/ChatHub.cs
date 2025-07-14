@@ -25,9 +25,13 @@ namespace rental_services.Server.Controllers.Realtime
         public async Task SendMessage(int chatId, string content)
         {
             var userId = int.Parse(Context.User.FindFirstValue("VroomVroomUserId")!);
-            //var userId = await _chatService.GetIDBasedOnMailForChat(Context.User.FindFirstValue(ClaimTypes.Email) ?? string.Empty);
             var messageDto = await _chatService.AddMessageAsync(chatId, userId, content);
             await Clients.Group($"chat-{chatId}").SendAsync("ReceiveMessage", messageDto);
+            var userRole = Context.User.FindFirstValue(ClaimTypes.Role);
+            if (userRole != null && userRole.ToLower().Equals("customer"))
+            {
+                await Clients.All.SendAsync("NewCustomerMessage", chatId);
+            }
         }
 
         // Assign staff to a chat
@@ -35,7 +39,6 @@ namespace rental_services.Server.Controllers.Realtime
         public async Task AssignStaff(int chatId)
         {
             var staffId = int.Parse(Context.User.FindFirstValue("VroomVroomUserId")!);
-            //var staffId = await _chatService.GetIDBasedOnMailForChat(Context.User.FindFirstValue(ClaimTypes.Email) ?? string.Empty);
             var chatDto = await _chatService.AssignStaffAsync(chatId, staffId);
             await Clients.Group($"chat-{chatId}").SendAsync("StaffAssigned", chatDto);
         }

@@ -5,7 +5,8 @@ namespace rental_services.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = Utils.Config.Role.Admin)]
+    //[Authorize(Roles = Utils.Config.Role.Admin)]
+    [Authorize]
     public class ImagesController : ControllerBase
     {
         [HttpPost]

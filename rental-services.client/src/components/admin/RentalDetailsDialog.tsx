@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Calendar, MapPin, Phone, FileText, DollarSign, X, Mail } from 'lucide-react'
 import {
     Dialog,
@@ -23,6 +24,8 @@ export default function RentalDetailsDialog({
     onClose,
     rental
 }: RentalDetailsDialogProps) {
+    const [imgError, setImgError] = useState(false);
+
     if (!rental) return null
 
     const totalDays = differenceInDays(rental.endDate, rental.startDate) + 1
@@ -74,14 +77,20 @@ export default function RentalDetailsDialog({
                             Bike Information
                         </h3>
                         <div className="flex items-center space-x-4 p-4 bg-muted/50 rounded-lg">
-                            <img
+                            {imgError ? (
+                                <img
+                                    src="/images/placeholder-bike.png"
+                                    alt={rental.bikeName}
+                                    className="w-20 h-20 object-cover rounded"
+                                />
+                            ) : (
+                                <img
                                 src={rental.bikeImageUrl.split('"')[0]}
                                 alt={rental.bikeName}
                                 className="w-20 h-20 object-cover rounded"
-                                onError={(e) => {
-                                    e.currentTarget.src = '/placeholder-bike.png'
-                                }}
+                                onError={() => setImgError(true)}
                             />
+                            )}
                             <div>
                                 <p className="text-lg font-medium">{rental.bikeName}</p>
                                 <p className="text-sm text-muted-foreground">

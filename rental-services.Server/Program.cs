@@ -12,6 +12,11 @@ using rental_services.Server.Services;
 using rental_services.Server.Repositories;
 using Microsoft.Extensions.FileProviders;
 using System.Runtime.InteropServices;
+using rental_services.Server.Middlewares;
+using Microsoft.AspNetCore.HttpOverrides;
+using System.Net;
+using rental_services.Server.Models.DTOs;
+using Microsoft.AspNetCore.Http;
 
 namespace rental_services.Server
 {
@@ -31,6 +36,13 @@ namespace rental_services.Server
             builder.Services.AddAutoMapper(typeof(Utils.DTOMapper));
             // schedulers
             //builder.Services.AddHostedService<Utils.FileCleanupService>();
+
+            builder.Services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+                options.KnownProxies.Add(IPAddress.Parse("127.0.0.1")); // Replace with NGINX IP if needed
+            });
+
 
             // Bind JWT config
             string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new InvalidOperationException("Environment Variable 'JWT_KEY' not found.");
@@ -62,7 +74,7 @@ namespace rental_services.Server
                         {
                             var accessToken = context.Request.Query["access_token"];
                             var path = context.HttpContext.Request.Path;
-                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat"))
+                            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/chat") || path.StartsWithSegments("/hubs/staff"))
                             {
                                 context.Token = accessToken;
                             }
@@ -86,17 +98,32 @@ namespace rental_services.Server
             // Register services and repositories
             builder.Services
                 .AddScoped<IUserRepository, UserRepository>()
+                .AddScoped<IPaymentRepository, PaymentRepository>()
                 .AddScoped<IUserService, UserService>()
                 .AddScoped<IVehicleModelRepository, VehicleModelRepository>()
                 .AddScoped<IVehicleRepository, VehicleRepository>()
                 .AddScoped<IPeripheralRepository, PeripheralRepository>()
+                .AddScoped<IShopRepository, ShopRepository>()
+                .AddScoped<IManufacturerRepository, ManufacturerRepository>()
+                .AddScoped<IVehicleTypeRepository, VehicleTypeRepository>()
                 .AddScoped<IBikeService, BikeService>()
                 .AddScoped<IOcrService, OcrService>()
                 .AddScoped<IChatRepository, ChatRepository>()
                 .AddScoped<IChatService, ChatService>()
                 .AddScoped<IBookingRepository, BookingRepository>()
-                .AddScoped<IRentalService, RentalService>();
-          
+                .AddScoped<IRentalService, RentalService>()
+                .AddScoped<IBannerRepository, BannerRepository>()
+                .AddScoped<IStatisticsRepository, StatisticsRepository>()
+                .AddSingleton<ISystemSettingsService, SystemSettingsService>()
+                .AddScoped<IAdminControlPanelService, AdminControlPanelService>()
+                .AddSingleton<IMaintenanceService, MaintenanceService>()
+                .AddScoped<IReportRepository, ReportRepository>()
+                .AddScoped<IReportService, ReportService>();
+            builder.Services.AddScoped<rental_services.Server.Repositories.IFeedbackRepository, rental_services.Server.Repositories.FeedbackRepository>();
+            builder.Services.AddScoped<rental_services.Server.Services.IFeedbackService, rental_services.Server.Services.FeedbackService>();
+
+            builder.Services.AddHostedService<Utils.RentalTrackerCleanup>();
+
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
             {
@@ -120,6 +147,9 @@ namespace rental_services.Server
             // Use files
             app.UseDefaultFiles();
             app.UseStaticFiles();
+
+            // nginx
+            app.UseForwardedHeaders();
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Directory.Exists(@"C:\images"))
             {
@@ -145,14 +175,18 @@ namespace rental_services.Server
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseMiddleware<MaintenanceMiddleware>();
+
+            app.MapFallbackToFile("index.html");
             //
             //app.UseHttpsRedirection(); // nginx handles https
             app.MapControllers();
             
             // Add SignalR endpoint
             app.MapHub<Controllers.Realtime.ChatHub>("/hubs/chat");
-            
-            app.MapFallbackToFile("wwwroot/index.html");
+            app.MapHub<Controllers.Realtime.StaffStatisticsHub>("/hubs/staff");
+
             app.Run();
         }
     }

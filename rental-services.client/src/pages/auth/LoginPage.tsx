@@ -7,9 +7,9 @@ import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Separator } from '../../components/ui/separator'
-import { useToast } from '../../hooks/use-toast'
+import { useToast } from '../../contexts/toast-context'
 import { useAuth } from '../../contexts/auth-context'
-import type {LoginRequest} from "../../contexts/auth-context";
+import type { LoginRequest } from "../../contexts/auth-context";
 
 export default function LoginPage() {
     const navigate = useNavigate()
@@ -45,7 +45,7 @@ export default function LoginPage() {
                     title: "Login Successful",
                     description: "Welcome back to VroomVroom!",
                 });
-                navigate('/', {replace: true});
+                navigate('/', { replace: true });
             } else {
                 toast({
                     title: "Login Failed",

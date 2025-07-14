@@ -1,8 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/auth-context'
-import { useStaffChats } from '../../hooks/useStaffChats'
-import type { ChatDTO } from '../../lib/types'
 import {
     Tabs,
     TabsContent,
@@ -16,19 +14,21 @@ import StaffStatsCards from '../../components/staff/StaffStatsCards'
 import CustomerMessagesTab from '../../components/staff/CustomerMessagesTab'
 import RentalManagementTab from '../../components/staff/RentalManagementTab'
 import ReportsManagementTab from '../../components/staff/ReportsManagementTab'
-import ChatDialog from '../../components/staff/ChatDialog'
 import RentalApprovalDialog from '../../components/staff/RentalApprovalDialog'
+import { usePendingMessages } from '../../hooks/usePendingMessages'
+import { useStaffReport } from '../../contexts/StaffReportProvider';
+import { rentalAPI } from '../../lib/api'
+import { type Booking } from '../../types/booking'
 
 export default function StaffDashboard() {
     const navigate = useNavigate()
     const { user, isAuthenticated, loading } = useAuth()
-    const token = localStorage.getItem('token') || ''
-    const { chats, loading: chatsLoading } = useStaffChats(token)
-    const [selectedChat, setSelectedChat] = useState<ChatDTO | null>(null)
-    const [isChatOpen, setIsChatOpen] = useState(false)
+    const token = localStorage.getItem('token') || '';
+    const { pendingCount } = usePendingMessages(token);
+    const { unresolvedCount } = useStaffReport();
+    const [ rentals, setRentals ] = useState<Booking[]>([]);
 
-    // Mock new reports count for demonstration
-    const newReportsCount = 2
+    const needResolvedReportsCount =  unresolvedCount ;
 
     // Authentication check
     useEffect(() => {
@@ -39,10 +39,32 @@ export default function StaffDashboard() {
             navigate('/')
             return
         }
-    }, [user, isAuthenticated, loading, navigate])
+    }, [user, isAuthenticated, loading, navigate]);
+
+    useEffect(() => {
+        async function fetchRentals() {
+            try {
+                const rentals = await rentalAPI.getRentals();
+                setRentals(rentals);
+                console.log('Complete rental info:', JSON.stringify(rentals, null, 2));
+            } catch (error) {
+                console.error(`error fetching rentals (staff page): ${error}`);
+            }
+        }
+        //debounce implementation to void to many api calls
+        const handler = setTimeout(() => {
+            fetchRentals();
+        }, 500);
+
+        return () => {
+            clearTimeout(handler);
+        }
+    }, []);
+
+
 
     // Loading state
-    if (loading || chatsLoading) {
+    if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
@@ -68,8 +90,9 @@ export default function StaffDashboard() {
 
             {/* Stats Cards */}
             <StaffStatsCards
-                activeRentals={0}
-                pendingMessages={chats.filter(c => c.status === 'Unresolved').length}
+                activeRentals={rentals.length}
+                //TODO: UPDATE PENDING MESSAGE NUMBER
+                pendingMessages={pendingCount}
             />
 
             {/* Main Content Tabs */}
@@ -78,11 +101,6 @@ export default function StaffDashboard() {
                     <TabsTrigger value="messages" className="flex items-center gap-2">
                         <MessageCircle className="h-4 w-4" />
                         Customer Messages
-                        {chats.filter(c => c.status === 'Unresolved').length > 0 && (
-                            <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs">
-                                {chats.filter(c => c.status === 'Unresolved').length}
-                            </Badge>
-                        )}
                     </TabsTrigger>
                     <TabsTrigger value="rentals" className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
@@ -91,24 +109,19 @@ export default function StaffDashboard() {
                     <TabsTrigger value="reports" className="flex items-center gap-2">
                         <AlertTriangle className="h-4 w-4" />
                         Issue Reports
-                        {newReportsCount > 0 && (
                             <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs">
-                                {newReportsCount}
+                                { needResolvedReportsCount }
                             </Badge>
-                        )}
                     </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="messages" className="space-y-4">
-                    <CustomerMessagesTab
-                        chats={chats}
-                        onOpenChat={(chat) => { setSelectedChat(chat); setIsChatOpen(true); }}
-                    />
+                    <CustomerMessagesTab/>
                 </TabsContent>
 
                 <TabsContent value="rentals" className="space-y-4">
                     <RentalManagementTab
-                        rentals={[]}
+                        rentals={rentals}
                         onOpenApproval={() => {}}
                         onRejectRental={() => {}}
                     />
@@ -118,13 +131,6 @@ export default function StaffDashboard() {
                     <ReportsManagementTab />
                 </TabsContent>
             </Tabs>
-
-            {/* Chat Dialog */}
-            <ChatDialog
-                isOpen={isChatOpen}
-                onClose={() => setIsChatOpen(false)}
-                chat={selectedChat}
-            />
 
             {/* Rental Approval Dialog */}
             <RentalApprovalDialog

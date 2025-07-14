@@ -26,12 +26,45 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '../components/ui/alert-dialog'
-import { useToast } from '../hooks/use-toast'
+import { useToast } from '../contexts/toast-context'
 import { format, differenceInHours } from 'date-fns'
 import { useAuth } from '../contexts/auth-context'
-import { MOCK_RENTALS } from '../lib/mock-data'
-import type { Rental } from '../lib/types'
-import ReportIssueDialog from '../components/customer/ReportIssueDialog'
+//import { MOCK_RENTALS } from '../lib/mock-data'
+//import type { Rental } from '../lib/types'
+//import ReportIssueDialog from '../components/customer/ReportIssueDialog'
+
+const API = import.meta.env.VITE_API_BASE_URL;
+
+export interface Peripheral {
+    peripheralId: number
+    name?: string | null
+    ratePerDay?: number | null
+}
+
+export interface Rental {
+    id: string
+    bikeName: string
+    bikeId: number
+    bikeImageUrl: string
+    customerName: string
+    customerEmail: string
+    customerPhone?: string
+    startDate: Date
+    endDate: Date
+    orderDate?: Date
+    status: 'Awaiting Payment' | 'Upcoming' | 'Active' | 'Completed' | 'Cancelled'
+    pricePerDay: number
+    peripherals: Peripheral[]
+    pickupLocation?: string
+    returnLocation?: string
+    paymentMethod?: string
+    notes?: string
+    deposit?: number
+    tax?: number
+    discount?: number
+
+    totalPrice?: number
+}
 
 export default function RentalsPage() {
     const navigate = useNavigate()
@@ -43,8 +76,8 @@ export default function RentalsPage() {
     const [showCancelDialog, setShowCancelDialog] = useState(false)
     const [rentalToCancel, setRentalToCancel] = useState<Rental | null>(null)
     // Add report dialog state
-    const [showReportDialog, setShowReportDialog] = useState(false)
-    const [rentalToReport, setRentalToReport] = useState<Rental | null>(null)
+    //const [showReportDialog, setShowReportDialog] = useState(false)
+    //const [rentalToReport, setRentalToReport] = useState<Rental | null>(null)
 
     useEffect(() => {
         if (loading) return
@@ -54,17 +87,95 @@ export default function RentalsPage() {
             return
         }
 
+        // https://sandbox.vnpayment.vn/tryitnow/Home/VnPayReturn?vnp_Amount=1000000&vnp_BankCode=VISA&vnp_BankTranNo=7521678280776603703607&vnp_CardType=VISA&vnp_OrderInfo=Thanh+toan+don+hang+thoi+gian%3A+2025-07-11+00%3A15%3A05&vnp_PayDate=20250711001754&vnp_ResponseCode=00&vnp_TmnCode=CTTVNP01&vnp_TransactionNo=15067165&vnp_TransactionStatus=00&vnp_TxnRef=259296
+
+        const params = new URLSearchParams(location.search);
+
+        const status: string | null = params.get("vnp_TransactionStatus")
+
+        if (status === "00") {
+            toast({
+                title: "Booking Confirmed!",
+                description: `Your rental has been confirmed.`,
+            })
+        } else if (status !== null) {
+            toast({
+                title: "Booking Failed",
+                description: `There was an error processing your booking. Please try again.`,
+                variant: "destructive",
+            })
+        }
+
+        const fetchRentals = async () => {
+            await fetch(`${API}/api/rentals/${user?.userId}`, {
+                headers: {
+                    Authorization: `Bearer ${localStorage.getItem("token")}`
+                }
+            })
+            .then(response => {
+                if (!response.ok) throw new Error('Failed to fetch rentals: ' + response.statusText);
+                return response.json();
+            })
+            .then((data: Rental[]) => {
+                setRentals(() =>
+                    data.map((rental) => {
+                        const start = new Date(rental.startDate);
+                        const end = new Date(rental.endDate);
+
+                        const millisecondsPerDay = 1000 * 60 * 60 * 24;
+                        const durationInDays = Math.max(1, Math.ceil((end.getTime() - start.getTime()) / millisecondsPerDay));
+
+                        const basePrice = rental.pricePerDay * durationInDays;
+
+                        const peripheralsTotal =
+                            rental.peripherals?.reduce((sum, peripheral) => {
+                                const rate = peripheral.ratePerDay ?? 0;
+                                return sum + rate * durationInDays;
+                            }, 0) ?? 0;
+
+                        const tax = rental.tax ?? 0;
+                        const deposit = rental.deposit ?? 0;
+                        const discount = rental.discount ?? 0;
+
+                        const totalPrice = basePrice + peripheralsTotal + tax + deposit - discount;
+
+                        return {
+                            ...rental,
+                            totalPrice: Math.max(0, totalPrice),
+                        };
+                    })
+                );
+            })
+            .catch((err) => {
+                setRentals([]);
+
+                toast({
+                    title: "Fetch failed",
+                    description: `There was an error fetching bookings: ${err.message}. Please try again.`,
+                    variant: "destructive",
+                })
+            })
+            .finally(() => setIsLoading(false));
+        }
+
+        fetchRentals();
+
+        
+
         // Filter rentals for current user
-        setTimeout(() => {
-            const userRentals = MOCK_RENTALS.filter(r => r.userId === user?.userId)
-                .sort((a, b) => a.orderDate && b.orderDate ? b.orderDate.getTime() - a.orderDate.getTime() : 0)
+        //setTimeout(() => {
+        //    const userRentals = MOCK_RENTALS.filter(r => r.userId === user?.userId)
+        //        .sort((a, b) => a.orderDate && b.orderDate ? b.orderDate.getTime() - a.orderDate.getTime() : 0)
 
-            setRentals(userRentals)
-            setIsLoading(false)
-        }, 500)
-    }, [user, isAuthenticated, loading, navigate])
+        //    setRentals(userRentals)
+        //    setIsLoading(false)
+        //}, 500)
 
-    const upcomingRentals = rentals.filter(r => r.status === 'Upcoming' || r.status === 'Active')
+        
+            
+    }, [user, isAuthenticated, loading, navigate, toast])
+
+    const upcomingRentals = rentals.filter(r => r.status === 'Upcoming' || r.status === 'Active' || r.status === 'Awaiting Payment')
     const pastRentals = rentals.filter(r => r.status === 'Completed' || r.status === 'Cancelled')
 
     const handleCancelClick = (rental: Rental) => {
@@ -74,8 +185,9 @@ export default function RentalsPage() {
 
     // Add report handler
     const handleReportClick = (rental: Rental) => {
-        setRentalToReport(rental)
-        setShowReportDialog(true)
+        //setRentalToReport(rental)
+        //setShowReportDialog(true)
+        console.log(rental);
     }
 
     const handleConfirmCancel = async () => {
@@ -85,20 +197,47 @@ export default function RentalsPage() {
         setShowCancelDialog(false)
 
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000))
+            let response: Response;
+            try {
+                response = await fetch(`${API}/api/rentals/cancel/${rentalToCancel.id}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem("token")}`
+                    }
+                });
+            } catch (networkError) {
+                console.error(networkError);
+                toast({
+                    title: 'Network Error',
+                    description: 'Unable to reach server. Please try again later.',
+                    variant: "destructive"
+                });
+                return;
+            }
 
-            // Update the rental status in state
+            if (response.status === 400) {
+                toast({ title: 'Cancellation Failed', description: "Your data may be out of date, please refresh the page.", variant: "destructive" });
+                return;
+            }
+
+            if (response.status !== 200) {
+                toast({
+                    title: 'Server Error',
+                    description: `Unexpected response (${response.status}).`,
+                    variant: "destructive"
+                });
+                return;
+            }
+
             setRentals(prev => prev.map(rental =>
                 rental.id === rentalToCancel.id
                     ? { ...rental, status: 'Cancelled' as const }
                     : rental
             ))
 
-            // Calculate refund amount (example: full refund if cancelled 24h+ before start)
             const hoursUntilStart = differenceInHours(rentalToCancel.startDate, new Date())
             const refundPercentage = hoursUntilStart >= 24 ? 100 : hoursUntilStart >= 12 ? 50 : 0
-            const refundAmount = (rentalToCancel.totalPrice * refundPercentage) / 100
+            const refundAmount = (rentalToCancel.totalPrice! * refundPercentage) / 100
 
             toast({
                 title: "Rental Cancelled Successfully",
@@ -186,11 +325,11 @@ export default function RentalsPage() {
                     </p>
                     <p className="text-sm text-foreground/80 mb-2">
                         <DollarSign className="inline w-4 h-4 mr-1.5 text-muted-foreground" />
-                        Total: ${rental.totalPrice.toFixed(2)}
+                        Total: ${rental.totalPrice!.toFixed(2)}
                     </p>
-                    {rental.options.length > 0 && (
+                    {rental.peripherals.length > 0 && (
                         <p className="text-xs text-muted-foreground mt-1">
-                            Options: {rental.options.join(', ')}
+                            Options: {rental.peripherals.map(p => p.name).join(', ')}
                         </p>
                     )}
 
@@ -205,9 +344,52 @@ export default function RentalsPage() {
                 </CardContent>
                 <CardFooter className="p-4 border-t space-y-2">
                     <div className="flex gap-2 w-full">
-                        <Button variant="outline" size="sm" className="flex-1" asChild>
-                            <Link to={`/bikes/${rental.bikeId}`}>View Details</Link>
-                        </Button>
+
+                        {rental.status === 'Awaiting Payment' ?  
+                            (
+                                <Button variant="outline"
+                                    size="sm"
+                                    className="flex-1 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={async () => {
+                                    try {
+                                        const response = await fetch(`${API}/api/rentals/pay`, {
+                                            method: 'GET',
+                                            headers: {
+                                                Accept: 'text/plain',
+                                                Authorization: `Bearer ${localStorage.getItem("token")}`
+                                            }
+                                        });
+
+                                        if (!response.ok) {
+                                            throw new Error(`API call failed with status ${response.status}`);
+                                        }
+
+                                        const rawText: string = await response.text();
+
+                                        const result: string | null = rawText.trim().length > 0 ? rawText.trim() : null;
+
+                                        if (result !== null) {
+                                            window.location.href = result;
+                                        } else {
+                                            throw new Error("Cannot get payment URL.")
+                                        }
+                                    } catch (error : any) {
+                                        toast({
+                                            title: "Payment link request failed",
+                                            description: `There was an error requesting payment link: ${error.message}, please refresh the page.`,
+                                            variant: "destructive",
+                                        })
+                                    }
+                                }}>
+                                Payment required
+                                </Button>
+                            )
+                        :
+                            (
+                                <Button variant = "outline" size = "sm" className = "flex-1">
+                                    <Link to={`/bikes/${rental.bikeId}`}>View Details</Link>
+                                </Button>
+                            )}
+                        
 
                         {/* Report Issue Button */}
                         {canReportIssue(rental) && (
@@ -336,7 +518,7 @@ export default function RentalsPage() {
                                             <strong>Dates:</strong> {format(rentalToCancel.startDate, "MMM d, yyyy")} - {format(rentalToCancel.endDate, "MMM d, yyyy")}
                                         </p>
                                         <p className="text-sm">
-                                            <strong>Total Paid:</strong> ${rentalToCancel.totalPrice.toFixed(2)}
+                                            <strong>Total Paid:</strong> ${rentalToCancel.totalPrice!.toFixed(2)}
                                         </p>
                                     </div>
                                     <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
@@ -344,7 +526,7 @@ export default function RentalsPage() {
                                         <div className="text-sm text-blue-700">
                                             {(() => {
                                                 const policy = getCancellationPolicy(rentalToCancel)
-                                                const refundAmount = (rentalToCancel.totalPrice * policy.refundPercentage) / 100
+                                                const refundAmount = (rentalToCancel.totalPrice! * policy.refundPercentage) / 100
 
                                                 return (
                                                     <>
@@ -382,16 +564,17 @@ export default function RentalsPage() {
             </AlertDialog>
 
             {/* Report Issue Dialog */}
-            <ReportIssueDialog
-                isOpen={showReportDialog}
-                onClose={() => setShowReportDialog(false)}
-                rental={rentalToReport}
-                userInfo={{
-                    id: String(user?.userId) || '',
-                    name: user?.fullName || '',
-                    email: user?.email || ''
-                }}
-            />
+            {/*TODO*/}
+            {/*<ReportIssueDialog*/}
+            {/*    isOpen={showReportDialog}*/}
+            {/*    onClose={() => setShowReportDialog(false)}*/}
+            {/*    rental={rentalToReport}*/}
+            {/*    userInfo={{*/}
+            {/*        id: String(user?.userId) || '',*/}
+            {/*        name: user?.fullName || '',*/}
+            {/*        email: user?.email || ''*/}
+            {/*    }}*/}
+            {/*/>*/}
         </div>
     )
 }

@@ -22,5 +22,11 @@ namespace rental_services.Server.Services
         Task<bool> UpdateVehicleModelAsync(VehicleDetailsDTO vehicleModel);
         List<VehicleModelDTO> FilterModelByVehicleType(List<VehicleModelDTO> vehicleModels, string? type);
         List<VehicleModelDTO> FilterModelByShop(List<VehicleModelDTO> vehicleModels, string? shop);
+        Task<List<ShopDTO>> GetAllShopsAsync();
+        Task<List<ManufacturerDTO>> GetAllManufacturersAsync();
+        Task<List<VehicleTypeDTO>> GetAllVehicleTypesAsync();
+        Task<List<PeripheralDTO>> GetAllPeripheralsAsync();
+        Task<int?> AssignAvailableVehicleAsync(int modelId, DateOnly startDate, DateOnly endDate,
+            string? shopLocation);
     }
 }

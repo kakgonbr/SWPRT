@@ -141,10 +141,10 @@ CREATE TABLE Bookings
 
 CREATE TABLE Payments
 (
-    PaymentId int PRIMARY KEY IDENTITY(1, 1),
+    PaymentId varchar(100) PRIMARY KEY,
     BookingId int NOT NULL,
     AmountPaid bigint NOT NULL,
-    PaymentDate date NOT NULL DEFAULT GETDATE(),
+    PaymentDate datetime NOT NULL DEFAULT GETDATE(),
 
     CONSTRAINT fk_pay_bookings FOREIGN KEY (BookingId) REFERENCES Bookings,
     CONSTRAINT ck_pay_amount CHECK (AmountPaid > 0)
@@ -170,11 +170,11 @@ CREATE TABLE AvailableModelPeripherals
 CREATE TABLE BookingPeripherals
 (
     PeripheralId int NOT NULL,
-    ModelId int NOT NULL,
+    BookingId int NOT NULL,
 
-    CONSTRAINT pk_bookperi PRIMARY KEY (PeripheralId, ModelId),
+    CONSTRAINT pk_bookperi PRIMARY KEY (PeripheralId, BookingId),
     CONSTRAINT fk_bookperi_peri FOREIGN KEY (PeripheralId) REFERENCES Peripherals,
-    CONSTRAINT fk_bookperi_modl FOREIGN KEY (ModelId) REFERENCES VehicleModels
+    CONSTRAINT fk_bookperi_book FOREIGN KEY (BookingId) REFERENCES Bookings
 )
 
 CREATE TABLE Chats
@@ -200,6 +200,7 @@ CREATE TABLE ChatMessages
     SenderId int NOT NULL,
     Content nvarchar(MAX) NOT NULL, -- maybe enforce length checks on the API
     SendTime datetime NOT NULL DEFAULT GETDATE(),
+    IsRead bit NOT NULL DEFAULT 0, 
 
     CONSTRAINT fk_chtmsg_chat FOREIGN KEY (ChatId) REFERENCES Chats,
     CONSTRAINT fk_chtmsg_sender FOREIGN KEY (SenderId) REFERENCES Users
@@ -211,7 +212,7 @@ CREATE TABLE Feedbacks
     UserId int NOT NULL,
     Title nvarchar(256) NOT NULL,
     Body nvarchar(MAX) NOT NULL,
-    ImagePath varchar(256) NOT NULL,
+    ImagePath varchar(256),
 
     CONSTRAINT fk_fdbck_user FOREIGN KEY (UserId) REFERENCES Users
 )
@@ -231,10 +232,78 @@ CREATE TABLE Reports
     Body nvarchar(MAX) NOT NULL,
     ImagePath varchar(256) NOT NULL,
     ReportTime datetime NOT NULL DEFAULT GETDATE(),
+    Status varchar(20) NOT NULL DEFAULT 'Unresolved',
 
     CONSTRAINT fk_rep_user FOREIGN KEY (UserId) REFERENCES Users,
-    CONSTRAINT fk_rep_type FOREIGN KEY (TypeId) REFERENCES ReportTypes
+    CONSTRAINT fk_rep_type FOREIGN KEY (TypeId) REFERENCES ReportTypes,
+    CONSTRAINT ck_rep_status CHECK (Status IN ('Unresolved', 'Resolved', 'In Progress'))
 )
+
+CREATE TABLE Banners
+(
+    BannerId int PRIMARY KEY IDENTITY(1, 1),
+    Title nvarchar(50) NOT NULL,
+    Message nvarchar(256) NOT NULL,
+    StartTime datetime NOT NULL DEFAULT GETDATE(),
+    EndTime datetime NOT NULL,
+    ButtonText nvarchar(50) NOT NULL,
+    ButtonLink varchar(50) NOT NULL,
+    Type varchar(10) NOT NULL,
+    Background varchar(7) NOT NULL,
+    TextColor varchar(7) NOT NULL,
+    Priority int NOT NULL DEFAULT 1,
+    IsActive bit NOT NULL DEFAULT 0,
+    ShowOnce bit NOT NULL DEFAULT 0,
+
+    CONSTRAINT ck_ban_type CHECK (Type IN ('Info', 'Warning', 'Success', 'Error', 'Promotion')),
+    CONSTRAINT ck_ban_date CHECK (EndTime > StartTime)
+)
+
+INSERT INTO Banners 
+(Title, Message, StartTime, EndTime, ButtonText, ButtonLink, Type, Background, TextColor, Priority, IsActive, ShowOnce)
+VALUES
+-- 1. Info Banner
+('Welcome Back!', 
+ 'Check out our new features and updates for July 2025.', 
+ '2025-07-01T08:00:00', 
+ '2025-07-10T23:59:59', 
+ 'Learn More', 
+ '/features', 
+ 'Info', 
+ '#e3f2fd', 
+ '#0d47a1', 
+ 2, 
+ 1, 
+ 0),
+
+-- 2. Promotion Banner
+('Limited Offer!', 
+ 'Get 20% off on all bookings until July 5th. Use code JULY20 at checkout!', 
+ '2025-07-01T00:00:00', 
+ '2025-07-05T23:59:59', 
+ 'Book Now', 
+ '/promo', 
+ 'Promotion', 
+ '#fff8e1', 
+ '#bf360c', 
+ 1, 
+ 1, 
+ 1),
+
+-- 3. Warning Banner
+('Scheduled Maintenance', 
+ 'Our site will be undergoing scheduled maintenance on July 3rd from 2am to 5am UTC.', 
+ '2025-07-02T20:00:00', 
+ '2025-07-03T05:00:00', 
+ 'View Details', 
+ '/maintenance', 
+ 'Warning', 
+ '#fff3e0', 
+ '#ff6f00', 
+ 3, 
+ 0, 
+ 0);
+
 
 -- Insert into Users (10 rows)
 -- Pass: Abc@12345
@@ -341,11 +410,11 @@ VALUES
     (5, 8, '2025-06-05', '2025-06-30', 'Upcoming')
 
 -- Insert into Payments (20 rows: 1 per booking)
-INSERT INTO Payments (BookingId, AmountPaid, PaymentDate)
+INSERT INTO Payments (PaymentId, BookingId, AmountPaid, PaymentDate)
 VALUES 
-	(1, 600000, '2025-06-03'), 
-	(2, 600000, '2025-06-04'),
-    (3, 580000, '2025-06-05')
+	('1_0', 1, 600000, '2025-06-03'), 
+	('2_0', 2, 600000, '2025-06-04'),
+    ('3_0', 3, 580000, '2025-06-05')
 
 -- Insert into Peripherals (10 rows)
 INSERT INTO Peripherals (Name, RatePerDay)
@@ -363,7 +432,7 @@ VALUES
 
 -- Insert into BookingPeripherals (sample, assuming schema error, should be BookingId)
 -- Proceeding with ModelId as per schema
-INSERT INTO BookingPeripherals (PeripheralId, ModelId)
+INSERT INTO BookingPeripherals (PeripheralId, BookingId)
 VALUES 
     (1, 1), (2, 1), (3, 1), -- Model 1 in bookings
     (1, 2), (2, 2), (5, 2); -- Model 2 in bookings

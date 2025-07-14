@@ -16,6 +16,15 @@ export interface User {
     creationDate: Date; // Added to track user sign-up date
 }
 
+export interface DashboardStats {
+    totalUsers: number
+    totalBikes: number
+    activeRentals: number
+    monthlyRevenue: number
+    recentUsers: number
+    availableBikes: number
+}
+
 export interface VehicleModelDTO {
     modelId: number;
     displayName: string;
@@ -108,6 +117,7 @@ export interface ChatDTO {
     subject: string;
     userName: string;
     staffName: string;
+    hasNewCustomerMessage: boolean;
 }
 
 export interface ChatMessageDTO {
@@ -115,5 +125,26 @@ export interface ChatMessageDTO {
     chatId: number;
     senderId: number;
     content: string;
-    timestamp: string;
+    sendTime: string;
+}
+
+export interface ServerInfo {
+    siteName: string,
+    siteDescription: string,
+    contactEmail: string,
+    supportPhone: string
+}
+
+export interface ReportDTO {
+    reportId: number;
+    userId: number;
+    typeId: number;
+    title: string;
+    body: string;
+    imagePath?: string; 
+    reportTime: string;
+    status: string;
+    typeName?: string;
+    userName?: string;
+    userEmail?: string;
 }
