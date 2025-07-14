@@ -114,7 +114,7 @@ export default function SignupPage() {
                     title: "Account Created",
                     description: "Welcome to VroomVroom! Your account has been created successfully.",
                 })
-                navigate('/login')
+                navigate('/auth/login')
             } else {
                 toast({
                     title: "Registration Failed",
@@ -227,7 +227,7 @@ export default function SignupPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="phoneNumber">phoneNumber number</Label>
+                                <Label htmlFor="phoneNumber">Phone number</Label>
                                 <Input
                                     id="phoneNumber"
                                     name="phoneNumber"

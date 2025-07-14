@@ -156,6 +156,16 @@ public class AuthController : ControllerBase
     {
         return Ok(new { Message = "Refresh token revoked successfully." });
     }
+    
+    /// <summary>
+    /// A
+    /// </summary>
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        // This endpoint is not implemented yet
+        return Ok(new { Message = "Forgot password functionality is not implemented yet." });
+    }
 
     /// <summary>
     /// Retrieves the authenticated user's information based on the access token provided in the request.

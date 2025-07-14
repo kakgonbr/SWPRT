@@ -112,7 +112,7 @@ export default function LoginPage() {
     const fillDemoCredentials = (userType: 'renter' | 'admin' | 'staff') => {
         const demoUsers = {
             renter: { email: 'renter@motorent.com', password: 'demo123' },
-            admin: { email: 'admin@motorent.com', password: 'demo123' },
+            admin: { email: 'admin@vroomvroom.vn', password: 'Abc@12345' },
             staff: { email: 'staff@motorent.com', password: 'demo123' }
         }
 

@@ -66,3 +66,8 @@ public record LoginResponse(
     DateTime ExpiresAt,
     UserDto User
 );
+
+public record ForgotPasswordRequest(
+    string Email,
+    string newPassword
+);
