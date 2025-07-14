@@ -383,13 +383,14 @@ namespace rental_services.Server.Services
         /// <param name="userId"></param>
         /// <param name="amount"></param>
         /// <returns>false if the payment should be refunded, true if otherwise</returns>
-        public async Task<bool> InformPaymentSuccessAsync(int userId, long amount)
+        public async Task<bool> InformPaymentSuccessAsync(int bookingId, long amount)
         {
-            RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
+            RentalTracker? existing;
+            rentalTrackers.TryGetValue(new() { BookingId = bookingId }, out existing);
 
             if (existing is null)
             {
-                _logger.LogWarning("Cannot find tracker for userId {UserId}", userId);
+                _logger.LogWarning("Cannot find tracker for bookingId {BookingId}", bookingId);
                 return false;
             }
 
