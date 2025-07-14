@@ -387,11 +387,19 @@ namespace rental_services.Server.Services
         {
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
-            if (existing is null || existing.Amount != amount)
+            if (existing is null)
             {
                 return false;
             }
 
+            rentalTrackers.Remove(existing);
+
+            if (existing.Amount != amount)
+            {
+                _logger.LogWarning("Amount in tracker: {TrackerAmount} does not match amount paid {PaidAmount}", existing.Amount, amount);
+
+                return false;
+            }
 
             Models.Booking? dbBooking = await _bookingRepository.GetByIdAsync(existing.BookingId);
 
@@ -401,6 +409,8 @@ namespace rental_services.Server.Services
             }
 
             dbBooking.Status = Utils.Config.BookingStatus.Upcoming;
+
+            await _bookingRepository.SaveAsync();
 
             DateTime paymentDate;
             if (existing.LastRef is null || !DateTime.TryParseExact(existing.LastRef.Split("_").Last(), "yyyyMMddHHmmss",
@@ -427,11 +437,9 @@ namespace rental_services.Server.Services
                     _logger.LogWarning("REFUND FOR {Ref} FAILED", existing.LastRef);
                 }
 
-                rentalTrackers.Remove(existing);
                 return false;
             }
 
-            rentalTrackers.Remove(existing);
             return true;
         }
 
