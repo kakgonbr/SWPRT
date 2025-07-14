@@ -39,6 +39,22 @@ namespace rental_services.Server.Controllers
 
             return Ok(new { message = "Feedback submitted successfully.", feedback = result });
         }
+
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllFeedback()
+        {
+            var feedbackList = await _service.GetAllFeedbackAsync();
+            return Ok(feedbackList);
+        }
+
+        [HttpGet("search")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> SearchFeedback([FromQuery] string query)
+        {
+            var result = await _service.SearchFeedbackAsync(query);
+            return Ok(result);
+        }
     }
 
     // Dùng riêng cho nhận form-data từ FE
