@@ -32,6 +32,7 @@ namespace rental_services.Server.Repositories
         public async Task<List<Models.DTOs.ServerStatisticsDTO>> GetOfDuration(int? days = null)
         {
             var currentDate = DateOnly.FromDateTime(DateTime.Now);
+            var currentDateTime = DateTime.Now;
             var serverStatistics = new List<Models.DTOs.ServerStatisticsDTO>();
 
             async Task<Models.DTOs.ServerStatisticsDTO> BuildSnapshotAsync(int daysBack)
@@ -50,7 +51,7 @@ namespace rental_services.Server.Repositories
                         .CountAsync(),
 
                     MonthlyRevenue = await _rentalContext.Payments
-                        .Where(p => EF.Functions.DateDiffDay(p.PaymentDate, currentDate.ToDateTime(TimeOnly.MinValue)) >= daysBack)
+                        .Where(p => EF.Functions.DateDiffDay(p.PaymentDate, currentDateTime) >= daysBack)
                         .SumAsync(p => (decimal?)p.AmountPaid) ?? 0m
                 };
             }
