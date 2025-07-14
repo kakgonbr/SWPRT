@@ -45,7 +45,7 @@ export function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps) {
             // Create FormData for file upload
             const formData = new FormData()
             formData.append('title', title)
-            formData.append('description', description)
+            formData.append('body', description)
             formData.append('systemRating', systemRating.toString())
             formData.append('currentPage', window.location.pathname)
             formData.append('timestamp', new Date().toISOString())
@@ -55,7 +55,7 @@ export function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps) {
             }
 
             // Replace with your actual API endpoint
-            const response = await fetch('/api/support/feedback', {
+            const response = await fetch('/api/feedback', {
                 method: 'POST',
                 body: formData,
                 headers: {
