@@ -389,6 +389,7 @@ namespace rental_services.Server.Services
 
             if (existing is null)
             {
+                _logger.LogWarning("Cannot find tracker for userId {UserId}", userId);
                 return false;
             }
 

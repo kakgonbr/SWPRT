@@ -67,7 +67,7 @@ namespace rental_services.Server.Controllers
 
                 if (responseCode == "00")
                 {
-                    if (await _rentalService.InformPaymentSuccessAsync(int.Parse(txnRef.Split("_")[0]), (long) decimal.Truncate(paidAmount)))
+                    if (await _rentalService.InformPaymentSuccessAsync(int.Parse(txnRef.Split("_")[1]), (long) decimal.Truncate(paidAmount)))
                     {
                         _logger.LogInformation("Payment successful.");
                     }
