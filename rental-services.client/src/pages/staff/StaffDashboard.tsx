@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/auth-context'
 import {
@@ -17,14 +17,16 @@ import ReportsManagementTab from '../../components/staff/ReportsManagementTab'
 import RentalApprovalDialog from '../../components/staff/RentalApprovalDialog'
 import { usePendingMessages } from '../../hooks/usePendingMessages'
 import { useStaffReport } from '../../contexts/StaffReportProvider';
+import { rentalAPI } from '../../lib/api'
+import { type Booking } from '../../types/booking'
 
 export default function StaffDashboard() {
     const navigate = useNavigate()
     const { user, isAuthenticated, loading } = useAuth()
-    
     const token = localStorage.getItem('token') || '';
     const { pendingCount } = usePendingMessages(token);
     const { unresolvedCount } = useStaffReport();
+    const [ rentals, setRentals ] = useState<Booking[]>([]);
 
     const needResolvedReportsCount =  unresolvedCount ;
 
@@ -37,7 +39,29 @@ export default function StaffDashboard() {
             navigate('/')
             return
         }
-    }, [user, isAuthenticated, loading, navigate])
+    }, [user, isAuthenticated, loading, navigate]);
+
+    useEffect(() => {
+        async function fetchRentals() {
+            try {
+                const rentals = await rentalAPI.getRentals();
+                setRentals(rentals);
+                console.log('Complete rental info:', JSON.stringify(rentals, null, 2));
+            } catch (error) {
+                console.error(`error fetching rentals (staff page): ${error}`);
+            }
+        }
+        //debounce implementation to void to many api calls
+        const handler = setTimeout(() => {
+            fetchRentals();
+        }, 500);
+
+        return () => {
+            clearTimeout(handler);
+        }
+    }, []);
+
+
 
     // Loading state
     if (loading) {
@@ -66,7 +90,8 @@ export default function StaffDashboard() {
 
             {/* Stats Cards */}
             <StaffStatsCards
-                activeRentals={0}
+                activeRentals={rentals.length}
+                //TODO: UPDATE PENDING MESSAGE NUMBER
                 pendingMessages={pendingCount}
             />
 
@@ -96,7 +121,7 @@ export default function StaffDashboard() {
 
                 <TabsContent value="rentals" className="space-y-4">
                     <RentalManagementTab
-                        rentals={[]}
+                        rentals={rentals}
                         onOpenApproval={() => {}}
                         onRejectRental={() => {}}
                     />

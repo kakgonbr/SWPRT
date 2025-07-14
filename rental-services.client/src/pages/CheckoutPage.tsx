@@ -179,25 +179,25 @@ export default function CheckoutPage() {
 
         try {
             const booking: Booking = {
-                Id: '',
-                CustomerId: user.userId,
-                CustomerName: user.fullName,
-                CustomerEmail: user.email,
-                VehicleModelId: bike.modelId,
-                BikeName: bike.displayName,
-                BikeImageUrl: bike.imageFile,
-                StartDate: startDate.toISOString().split('T')[0],
-                EndDate: endDate.toISOString().split('T')[0],
-                Status: 'Awaiting Payment',
-                PricePerDay: bike.ratePerDay,
+                id: '',
+                customerId: user.userId,
+                customerName: user.fullName,
+                customerEmail: user.email,
+                vehicleModelId: bike.modelId,
+                bikeName: bike.displayName,
+                bikeImageUrl: bike.imageFile,
+                startDate: startDate.toISOString().split('T')[0],
+                endDate: endDate.toISOString().split('T')[0],
+                status: 'Awaiting Payment',
+                pricePerDay: bike.ratePerDay,
                 //TODO: change the up front percentage to fixed deposit price for each bike
-                Deposit: bike.upFrontPercentage,
-                PickupLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
-                ReturnLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
-                PaymentMethod: 'Credit Card'
+                deposit: bike.upFrontPercentage,
+                pickupLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
+                returnLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
+                paymentMethod: 'Credit Card'
             };         
 
-            console.log(`passing booking api data: ${booking.CustomerId, booking.CustomerName, booking.VehicleModelId, booking.StartDate}`)
+            console.log(`passing booking api data: ${booking.customerId, booking.customerName, booking.vehicleModelId, booking.startDate}`)
 
             //payment should be complete in order to call this api
             //update the booking status before calling the api

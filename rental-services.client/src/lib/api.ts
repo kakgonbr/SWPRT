@@ -23,7 +23,7 @@ export const bikeApi = {
     },
 
     getAvailableBike: async (startDate: string, endDate: string, address?: string, searchTerm?: string): Promise<VehicleModelDTO[]> => {
-        const params: Record<string, string> = {    
+        const params: Record<string, string> = {
             startDate,
             endDate,
         }
@@ -42,11 +42,11 @@ export const rentalAPI = {
     createBooking: async (booking: Booking): Promise<string> => {
         try {
             console.log(`sending booking data ${booking}`);
-            console.log(`converted booking data: ${booking.StartDate}`);
+            console.log(`converted booking data: ${booking.startDate}`);
             const response = await axios.post(`${BASE_API_URL}/rentals/book`, booking, {
                 headers: {
                     'Content-type': 'application/json',
-                    ...getAuthHeaders() 
+                    ...getAuthHeaders()
                 }
             });
             console.log(`create booking api response: ${response.data}`);
@@ -56,5 +56,21 @@ export const rentalAPI = {
             throw error;
         }
 
+    },
+
+    getRentals: async (): Promise<Booking[]> => {
+        try {
+            const response = await axios.get(`${BASE_API_URL}/rentals`, {
+                headers: {
+                    'Content-type': 'application/json',
+                    ...getAuthHeaders()
+                }
+            });
+            console.log(`rentals fetch response: ${response.data}`);
+            return response.data;
+        } catch (error) {
+            console.error(`Error fetching rental list: ${error}`);
+            throw error;
+        }   
     }
 }
