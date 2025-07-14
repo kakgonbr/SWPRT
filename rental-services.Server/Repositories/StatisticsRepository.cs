@@ -14,16 +14,17 @@ namespace rental_services.Server.Repositories
         public async Task<Models.DTOs.ServerStatisticsDTO> GetStatistics()
         {
             // sql uses its own time, no custom time needed
-            var currentDate = DateTime.Now;
+            var currentDateTime = DateTime.Now;
+            var currentDate = DateOnly.FromDateTime(DateTime.Now);
 
             Models.DTOs.ServerStatisticsDTO serverStatistics = new()
             {
                 TotalUsers = await _rentalContext.Users.Where(u => u.IsActive).CountAsync(),
-                RecentUsers = await _rentalContext.Users.Where(u => u.IsActive && u.CreationDate.AddDays(30).ToDateTime(TimeOnly.MinValue) > currentDate).CountAsync(),
+                RecentUsers = await _rentalContext.Users.Where(u => u.IsActive && u.CreationDate.AddDays(30) > currentDate).CountAsync(),
                 TotalBikes = await _rentalContext.VehicleModels.CountAsync(),
                 AvailableBikes = await _rentalContext.VehicleModels.Where(vm => vm.IsAvailable).CountAsync(),
-                ActiveRentals = await _rentalContext.Bookings.Where(b => !b.Status.Equals("Awaiting Payment") && !b.Status.Equals("Cancelled") && b.StartDate.ToDateTime(TimeOnly.MinValue) > currentDate && b.EndDate.ToDateTime(TimeOnly.MinValue) < currentDate).CountAsync(),
-                MonthlyRevenue = await _rentalContext.Payments.Where(p => p.PaymentDate.AddDays(30) > currentDate).Select(p => p.AmountPaid).SumAsync()
+                ActiveRentals = await _rentalContext.Bookings.Where(b => !b.Status.Equals("Awaiting Payment") && !b.Status.Equals("Cancelled") && b.StartDate > currentDate && b.EndDate < currentDate).CountAsync(),
+                MonthlyRevenue = await _rentalContext.Payments.Where(p => p.PaymentDate.AddDays(30) > currentDateTime).Select(p => p.AmountPaid).SumAsync()
             };
 
             return serverStatistics;
