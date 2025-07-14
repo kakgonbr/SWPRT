@@ -265,7 +265,7 @@ namespace rental_services.Server.Services
             }
 
             // round down? idk
-            long amount = (model.RatePerDay * (model.UpFrontPercentage / 100));
+            long amount = (long)(model.RatePerDay * ((double) model.UpFrontPercentage / 100));
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
