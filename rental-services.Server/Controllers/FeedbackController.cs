@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using rental_services.Server.Data;
-using rental_services.Server.Models;
+using rental_services.Server.Models.DTOs;
+using rental_services.Server.Services;
 using System.Security.Claims;
 
 namespace rental_services.Server.Controllers
@@ -10,51 +10,39 @@ namespace rental_services.Server.Controllers
     [Route("api/[controller]")]
     public class FeedbackController : ControllerBase
     {
-        private readonly RentalContext _context;
-        public FeedbackController(RentalContext context)
+        private readonly IFeedbackService _service;
+        public FeedbackController(IFeedbackService service)
         {
-            _context = context;
+            _service = service;
         }
 
         [HttpPost]
         [Authorize]
-        public async Task<IActionResult> SubmitFeedback([FromForm] FeedbackDto feedbackDto)
+        public async Task<IActionResult> SubmitFeedback([FromForm] FeedbackFormDto feedbackForm)
         {
             var userIdClaim = User.FindFirstValue("VroomVroomUserId");
             if (string.IsNullOrEmpty(userIdClaim)) return Unauthorized();
 
-            var feedback = new Feedback
+            var feedbackDto = new FeedbackDTO
             {
                 UserId = int.Parse(userIdClaim),
-                Title = feedbackDto.Title,
-                Body = feedbackDto.Body,
-                ImagePath = null
+                Title = feedbackForm.Title,
+                Body = feedbackForm.Body
             };
 
-            if (feedbackDto.Screenshot != null && feedbackDto.Screenshot.Length > 0)
-            {
-                var imagesDir = System.IO.Path.Combine("wwwroot", "images");
-                if (!System.IO.Directory.Exists(imagesDir))
-                {
-                    System.IO.Directory.CreateDirectory(imagesDir);
-                }
-                var fileName = $"{DateTime.Now:yyyyMMddHHmmssfff}_{Guid.NewGuid()}{System.IO.Path.GetExtension(feedbackDto.Screenshot.FileName)}";
-                var savePath = System.IO.Path.Combine(imagesDir, fileName);
-                using (var stream = new FileStream(savePath, FileMode.Create))
-                {
-                    await feedbackDto.Screenshot.CopyToAsync(stream);
-                }
-                var imageUrl = $"{Request.Scheme}://{Request.Host}/images/{fileName}";
-                feedback.ImagePath = imageUrl;
-            }
+            var result = await _service.SubmitFeedbackAsync(
+                feedbackDto,
+                feedbackForm.Screenshot,
+                Request.Scheme,
+                Request.Host.Value
+            );
 
-            _context.Feedbacks.Add(feedback);
-            await _context.SaveChangesAsync();
-            return Ok(new { message = "Feedback submitted successfully." });
+            return Ok(new { message = "Feedback submitted successfully.", feedback = result });
         }
     }
 
-    public class FeedbackDto
+    // Dùng riêng cho nhận form-data từ FE
+    public class FeedbackFormDto
     {
         public string Title { get; set; } = null!;
         public string Body { get; set; } = null!;
