@@ -416,6 +416,8 @@ namespace rental_services.Server.Services
             if (existing.LastRef is null || !DateTime.TryParseExact(existing.LastRef.Split("_").Last(), "yyyyMMddHHmmss",
             CultureInfo.InvariantCulture, DateTimeStyles.None, out paymentDate))
             {
+                _logger.LogWarning("Failed to parse time.");
+
                 return false;
             }
 
