@@ -265,7 +265,7 @@ namespace rental_services.Server.Services
             }
 
             // round down? idk
-            long amount = (model.RatePerDay * (model.UpFrontPercentage / 100));
+            long amount = (long)(model.RatePerDay * ((double) model.UpFrontPercentage / 100));
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
@@ -383,15 +383,25 @@ namespace rental_services.Server.Services
         /// <param name="userId"></param>
         /// <param name="amount"></param>
         /// <returns>false if the payment should be refunded, true if otherwise</returns>
-        public async Task<bool> InformPaymentSuccessAsync(int userId, long amount)
+        public async Task<bool> InformPaymentSuccessAsync(int bookingId, long amount)
         {
-            RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
+            RentalTracker? existing;
+            rentalTrackers.TryGetValue(new() { BookingId = bookingId }, out existing);
 
-            if (existing is null || existing.Amount != amount)
+            if (existing is null)
             {
+                _logger.LogWarning("Cannot find tracker for bookingId {BookingId}", bookingId);
                 return false;
             }
 
+            rentalTrackers.Remove(existing);
+
+            if (existing.Amount != amount)
+            {
+                _logger.LogWarning("Amount in tracker: {TrackerAmount} does not match amount paid {PaidAmount}", existing.Amount, amount);
+
+                return false;
+            }
 
             Models.Booking? dbBooking = await _bookingRepository.GetByIdAsync(existing.BookingId);
 
@@ -402,10 +412,14 @@ namespace rental_services.Server.Services
 
             dbBooking.Status = Utils.Config.BookingStatus.Upcoming;
 
+            await _bookingRepository.SaveAsync();
+
             DateTime paymentDate;
             if (existing.LastRef is null || !DateTime.TryParseExact(existing.LastRef.Split("_").Last(), "yyyyMMddHHmmss",
             CultureInfo.InvariantCulture, DateTimeStyles.None, out paymentDate))
             {
+                _logger.LogWarning("Failed to parse time.");
+
                 return false;
             }
 
@@ -427,11 +441,9 @@ namespace rental_services.Server.Services
                     _logger.LogWarning("REFUND FOR {Ref} FAILED", existing.LastRef);
                 }
 
-                rentalTrackers.Remove(existing);
                 return false;
             }
 
-            rentalTrackers.Remove(existing);
             return true;
         }
 
