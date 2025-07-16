@@ -103,14 +103,10 @@ namespace rental_services.Server.Utils
             // database to view
             // to eagerly load: user, vehicle, model (from vehicle), manufacturer (from model), payments
             CreateMap<Booking, BookingDTO>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.BookingId.ToString()
-                ))
-                .ForMember(dest => dest.CustomerId, opt => opt.MapFrom(src => src.UserId.ToString()
-                ))
-                .ForMember(dest => dest.BikeId, opt => opt.MapFrom(src => src.VehicleId.ToString()
-                ))
-                .ForMember(dest => dest.VehicleModelId, opt => opt.MapFrom(src => src.Vehicle.ModelId
-                ))
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.BookingId.ToString()))
+                .ForMember(dest => dest.CustomerId, opt => opt.MapFrom(src => src.UserId))
+                .ForMember(dest => dest.BikeId, opt => opt.MapFrom(src => src.VehicleId))
+                .ForMember(dest => dest.VehicleModelId, opt => opt.MapFrom(src => src.Vehicle.ModelId))
                 .ForMember(dest => dest.BikeName, opt =>
                     opt.MapFrom(src =>
                         $"{src.Vehicle.Model.Manufacturer.ManufacturerName} {src.Vehicle.Model.ModelName}"

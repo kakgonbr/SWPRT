@@ -15,6 +15,8 @@ using System.Runtime.InteropServices;
 using rental_services.Server.Middlewares;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Net;
+using rental_services.Server.Models.DTOs;
+using Microsoft.AspNetCore.Http;
 
 namespace rental_services.Server
 {
@@ -117,6 +119,8 @@ namespace rental_services.Server
                 .AddSingleton<IMaintenanceService, MaintenanceService>()
                 .AddScoped<IReportRepository, ReportRepository>()
                 .AddScoped<IReportService, ReportService>();
+            builder.Services.AddScoped<rental_services.Server.Repositories.IFeedbackRepository, rental_services.Server.Repositories.FeedbackRepository>();
+            builder.Services.AddScoped<rental_services.Server.Services.IFeedbackService, rental_services.Server.Services.FeedbackService>();
 
             builder.Services.AddHostedService<Utils.RentalTrackerCleanup>();
 
