@@ -16,7 +16,7 @@ namespace rental_services.Server.Controllers
 
         [HttpPost("advance")]
         [Authorize(Roles = Utils.Config.Role.Admin)]
-        public IActionResult Advance([FromQuery] int days = 1)
+        public IActionResult Advance([FromQuery] int days = 1, [FromQuery] int hours = 0)
         {
             CustomDateTime.Advance(days);
             return Ok(new { message = $"Advanced by {days} day(s)", time = CustomDateTime.CurrentTime });
@@ -24,7 +24,7 @@ namespace rental_services.Server.Controllers
 
         [HttpPost("back")]
         [Authorize(Roles = Utils.Config.Role.Admin)]
-        public IActionResult Back([FromQuery] int days = 1)
+        public IActionResult Back([FromQuery] int days = 1, [FromQuery] int hours = 0)
         {
             CustomDateTime.Back(days);
             return Ok(new { message = $"Went back by {days} day(s)", time = CustomDateTime.CurrentTime });

@@ -78,7 +78,7 @@ namespace rental_services.Server.Services
                 {
                     UserId = rental.UserId,
                     BookingId = rental.BookingId,
-                    Amount = rental.Vehicle.Model.RatePerDay * (rental.Vehicle.Model.UpFrontPercentage / 100)
+                    Amount = (long)(rental.Vehicle.Model.RatePerDay * ((double) rental.Vehicle.Model.UpFrontPercentage / 100))
                 });
             }
         }
@@ -293,7 +293,7 @@ namespace rental_services.Server.Services
 
         public async Task<string?> GetPaymentLinkAsync(int userId, string userIp)
         {
-            _logger.LogInformation("{Trackers}", rentalTrackers);
+            //_logger.LogInformation("{Trackers}", rentalTrackers);
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
