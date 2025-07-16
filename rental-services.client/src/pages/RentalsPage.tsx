@@ -200,7 +200,7 @@ export default function RentalsPage() {
             let response: Response;
             try {
                 response = await fetch(`${API}/api/rentals/cancel/${rentalToCancel.id}`, {
-                    method: 'POST',
+                    method: 'GET',
                     headers: {
                         'Authorization': `Bearer ${localStorage.getItem("token")}`
                     }
@@ -261,10 +261,7 @@ export default function RentalsPage() {
 
     const canCancelRental = (rental: Rental) => {
         // Can only cancel upcoming rentals, not active ones
-        if (rental.status !== 'Upcoming') return false
-
-        // Check if rental start date is in the future
-        return rental.startDate > new Date()
+        return rental.status === 'Upcoming'
     }
 
     // Add function to check if report is allowed
