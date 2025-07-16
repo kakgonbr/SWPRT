@@ -457,7 +457,7 @@ namespace rental_services.Server.Services
             Models.Booking? booking = await _bookingRepository.GetByIdAsync(bookingId);
 
             // for the time being, only upcoming rentals can be cancelled, the ones that are in progress will be implemented later.
-            if (booking is null || booking.Status != Utils.Config.BookingStatus.Upcoming || booking.UserId != userId)
+            if (booking is null || booking.Status != Utils.Config.BookingStatus.Upcoming || (userId != -1 && booking.UserId != userId))
             {
                 return false;
             }
@@ -477,12 +477,14 @@ namespace rental_services.Server.Services
                 payment.PaymentId, timeUntilBooking.TotalHours > 24 ? payment.AmountPaid * 100 : payment.AmountPaid * 100 / 2,
                 payment.PaymentDate.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture), "vroomvroomclick"))
             {
+                _logger.LogError("Failed to issue refund.");
+
                 return false;
             }
 
-            await _bookingRepository.DeleteAsync(bookingId);
-
             await _paymentRepository.DeleteWithBookingAsync(bookingId);
+
+            await _bookingRepository.DeleteAsync(bookingId);
 
             return true;
         }
