@@ -31,7 +31,9 @@ namespace rental_services.Server.Services
 
             if (screenshot != null && screenshot.Length > 0)
             {
-                var imagesDir = Path.Combine("wwwroot", "images");
+                // var imagesDir = Path.Combine("wwwroot", "images");
+                  var imagesDir = rental_services.Server.Utils.Config.Image.ImagePath;
+
                 if (!Directory.Exists(imagesDir))
                 {
                     Directory.CreateDirectory(imagesDir);
