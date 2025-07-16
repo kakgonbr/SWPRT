@@ -109,6 +109,8 @@ namespace rental_services.Server.Utils
                 ))
                 .ForMember(dest => dest.BikeId, opt => opt.MapFrom(src => src.VehicleId.ToString()
                 ))
+                .ForMember(dest => dest.VehicleModelId, opt => opt.MapFrom(src => src.Vehicle.ModelId
+                ))
                 .ForMember(dest => dest.BikeName, opt =>
                     opt.MapFrom(src =>
                         $"{src.Vehicle.Model.Manufacturer.ManufacturerName} {src.Vehicle.Model.ModelName}"

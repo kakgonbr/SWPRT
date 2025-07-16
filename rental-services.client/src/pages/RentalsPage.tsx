@@ -44,7 +44,7 @@ export interface Peripheral {
 export interface Rental {
     id: string
     bikeName: string
-    bikeId: number
+    vehicleModelId: number
     bikeImageUrl: string
     customerName: string
     customerEmail: string
@@ -386,7 +386,7 @@ export default function RentalsPage() {
                         :
                             (
                                 <Button variant = "outline" size = "sm" className = "flex-1">
-                                    <Link to={`/bikes/${rental.bikeId}`}>View Details</Link>
+                                    <Link to={`/bikes/${rental.vehicleModelId}`}>View Details</Link>
                                 </Button>
                             )}
                         
