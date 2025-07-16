@@ -40,10 +40,15 @@ jobs:
         target: "/var/web"
 
     - name: Copy and rename native .so files to match expected names
-      run: |
-        mkdir -p ./published/x64
-        cp /usr/lib/x86_64-linux-gnu/liblept.so.5.0.4 ./published/x64/libleptonica-1.82.0.so
-        cp /usr/lib/x86_64-linux-gnu/libtesseract.so.5.0.3 ./published/x64/libtesseract50.so
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USER }}
+        key: ${{ secrets.VPS_DEPLOY_KEY }}
+        script: |
+            mkdir -p /var/web/published/x64
+            cp /usr/lib/x86_64-linux-gnu/liblept.so.5.0.4 /var/web/published/x64/libleptonica-1.82.0.so
+            cp /usr/lib/x86_64-linux-gnu/libtesseract.so.5.0.3 /var/web/published/x64/libtesseract50.so
 
     - name: Copy images to temporary directory
       uses: appleboy/scp-action@v0.1.7
