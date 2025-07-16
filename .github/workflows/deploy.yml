@@ -41,9 +41,9 @@ jobs:
 
     - name: Copy and rename native .so files to match expected names
       run: |
-        mkdir -p ./publish/x64
-        cp /usr/lib/x86_64-linux-gnu/liblept.so.5.0.4 ./publish/x64/libleptonica-1.82.0.so
-        cp /usr/lib/x86_64-linux-gnu/libtesseract.so.5.0.3 ./publish/x64/libtesseract-5.so
+        mkdir -p ./published/x64
+        cp /usr/lib/x86_64-linux-gnu/liblept.so.5.0.4 ./published/x64/libleptonica-1.82.0.so
+        cp /usr/lib/x86_64-linux-gnu/libtesseract.so.5.0.3 ./published/x64/libtesseract50.so
 
     - name: Copy images to temporary directory
       uses: appleboy/scp-action@v0.1.7
