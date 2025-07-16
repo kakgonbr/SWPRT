@@ -23,7 +23,7 @@ export const bikeApi = {
     },
 
     getAvailableBike: async (startDate: string, endDate: string, address?: string, searchTerm?: string): Promise<VehicleModelDTO[]> => {
-        const params: Record<string, string> = {    
+        const params: Record<string, string> = {
             startDate,
             endDate,
         }
@@ -33,7 +33,7 @@ export const bikeApi = {
         if (searchTerm !== undefined) {
             params.searchTerm = searchTerm;
         }
-        const response = await axios.get(`/api/bikes/available`, { params: params });
+        const response = await axios.get(`${BASE_API_URL}/bikes/available`, { params: params });
         return response.data;
     }
 };
@@ -42,31 +42,35 @@ export const rentalAPI = {
     createBooking: async (booking: Booking): Promise<string> => {
         try {
             console.log(`sending booking data ${booking}`);
-            //const testBooking = {
-            //    Id: '',
-            //    CustomerId: 1,
-            //    BikeName: 'Test Bike',
-            //    BikeImageUrl: 'test.jpg',
-            //    CustomerName: 'Test User',
-            //    CustomerEmail: 'test@test.com',
-            //    StartDate: '2024-01-15',
-            //    EndDate: '2024-01-20',
-            //    Status: 'Pending',
-            //    PricePerDay: 50.00
-            //};
-            console.log(`converted booking data: ${booking.StartDate}`);
-            const response = axios.post(`${BASE_API_URL}/rentals/book`, booking, {
+            console.log(`converted booking data: ${booking.startDate}`);
+            const response = await axios.post(`${BASE_API_URL}/rentals/book`, booking, {
                 headers: {
                     'Content-type': 'application/json',
-                    ...getAuthHeaders() 
+                    ...getAuthHeaders()
                 }
             });
-            console.log(`create booking api response: ${response}`);
-            return (await response).data;
+            console.log(`create booking api response: ${response.data}`);
+            return response.data;
         } catch (error) {
             console.error(`Error creating booking: ${error}`);
             throw error;
         }
 
+    },
+
+    getRentals: async (): Promise<Booking[]> => {
+        try {
+            const response = await axios.get(`${BASE_API_URL}/rentals`, {
+                headers: {
+                    'Content-type': 'application/json',
+                    ...getAuthHeaders()
+                }
+            });
+            console.log(`rentals fetch response: ${response.data}`);
+            return response.data;
+        } catch (error) {
+            console.error(`Error fetching rental list: ${error}`);
+            throw error;
+        }   
     }
 }

@@ -12,6 +12,7 @@ import {
     SelectValue,
 } from '../ui/select'
 import { format, differenceInDays } from 'date-fns'
+import { type Booking } from '../../types/booking'
 import RentalDetailsDialog from './RentalDetailsDialog'
 
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -38,13 +39,13 @@ export interface Rental {
 }
 
 export default function RentalsTab() {
-    const [rentals, setRentals] = useState<Rental[]>([]);
+    const [rentals, setRentals] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState('')
     const [statusFilter, setStatusFilter] = useState<string>('all')
     const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false)
-    const [selectedRental, setSelectedRental] = useState<Rental | null>(null)
+    const [selectedRental, setSelectedRental] = useState<Booking | null>(null)
     const rawToken = localStorage.getItem('token');
     const [imgError, setImgError] = useState(false);
 
@@ -64,7 +65,7 @@ export default function RentalsTab() {
                 if (!response.ok) throw new Error('Failed to fetch rentals: ' + response.statusText);
                 return response.json();
             })
-            .then((data: Rental[]) => {
+            .then((data: Booking[]) => {
                 setRentals(data);
             })
             .catch((err) => {
@@ -90,7 +91,7 @@ export default function RentalsTab() {
         return matchesSearch && matchesStatus
     })
 
-    const handleViewDetails = (rental: Rental) => {
+    const handleViewDetails = (rental: Booking) => {
         setSelectedRental(rental)
         setIsDetailsDialogOpen(true)
     }
@@ -176,17 +177,17 @@ export default function RentalsTab() {
                                 <div key={rental.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                                     <div className="flex items-center space-x-4">
                                         {imgError ? (
-                                             <img
-                                            src= "/images/placeholder-bike.png"
-                                            alt="Placeholder"
-                                            className="w-16 h-16 object-cover rounded"
+                                            <img
+                                                src="/images/placeholder-bike.png"
+                                                alt="Placeholder"
+                                                className="w-16 h-16 object-cover rounded"
                                             />
                                         ) : (
                                             <img
-                                            src={rental.bikeImageUrl.split('"')[0]}
-                                            alt={rental.bikeName}
-                                            className="w-16 h-16 object-cover rounded"
-                                            onError={() => setImgError(true)}
+                                                src={rental.bikeImageUrl.split('"')[0]}
+                                                alt={rental.bikeName}
+                                                className="w-16 h-16 object-cover rounded"
+                                                onError={() => setImgError(true)}
                                             />
                                         )}
                                         <div className="min-w-0 flex-1">
@@ -235,11 +236,13 @@ export default function RentalsTab() {
             </Card>
 
             {/* Rental Details Dialog */}
-            <RentalDetailsDialog
-                isOpen={isDetailsDialogOpen}
-                onClose={handleCloseDetails}
-                rental={selectedRental}
-            />
+            {selectedRental && (
+                <RentalDetailsDialog
+                    isOpen={isDetailsDialogOpen}
+                    onClose={handleCloseDetails}
+                    rental={selectedRental}
+                />
+            )}
         </>
     )
 }
