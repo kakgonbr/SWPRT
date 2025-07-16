@@ -62,8 +62,11 @@ namespace rental_services.Server.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi nghiêm trọng trong quá trình xử lý OCR");
-                return StatusCode(500, $"Lỗi OCR: {ex.Message}");
+                // _logger.LogError(ex, "Lỗi nghiêm trọng trong quá trình xử lý OCR");
+                // return StatusCode(500, $"Lỗi OCR: {ex.Message}");
+                var baseException = ex.GetBaseException();
+    _logger.LogError(ex, "Lỗi nghiêm trọng trong quá trình xử lý OCR");
+    return StatusCode(500, $"Lỗi OCR: {baseException.Message}");
             }
 
             var parser = new GplxParser(extractedText);
