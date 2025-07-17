@@ -73,7 +73,9 @@ namespace rental_services.Server.Controllers
                     }
                     else
                     {
+                        _logger.LogWarning("Payment successful, but payment failed to proceed further, refunding");
                         // TODO: REFUNDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
+                        await _rentalService.HandleCancelAndRefundAsync(-1, int.Parse(txnRef.Split("_")[0]));
                     }
                 }
                 else

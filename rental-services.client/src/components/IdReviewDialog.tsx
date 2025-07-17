@@ -469,7 +469,9 @@ export default function IdReviewDialog({
                                   : ""
                               }`}
                               placeholder="e.g. 012345678912"
-                              disabled
+
+                              disabled={isEditing}
+
                             />
                             {fieldErrors.idNumber && (
                               <p className="text-sm text-red-600 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200">
@@ -522,7 +524,9 @@ export default function IdReviewDialog({
                                   : ""
                               }`}
                               placeholder="e.g. B1"
-                              disabled
+
+                              disabled={isEditing}
+
                             />
                             {fieldErrors.licenseClass && (
                               <p className="text-sm text-red-600 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200">
