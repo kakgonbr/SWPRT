@@ -12,7 +12,7 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Textarea } from "./ui/textarea";
 import { useToast } from "../contexts/toast-context";
-import { Star, Heart } from "lucide-react";
+import {  Heart } from "lucide-react";
 
 interface FeedbackDialogProps {
   isOpen: boolean;
@@ -23,17 +23,16 @@ export function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [screenshot, setScreenshot] = useState<File | null>(null);
-  const [systemRating, setSystemRating] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!title.trim() || !description.trim() || systemRating === 0) {
+    if (!title.trim() || !description.trim()) {
       toast({
         title: "Missing Information",
-        description: "Please fill in all required fields and provide a rating.",
+        description: "Please fill in all required fields.",
         variant: "destructive",
       });
       return;
@@ -46,7 +45,6 @@ export function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps) {
       const formData = new FormData();
       formData.append("title", title);
       formData.append("body", description);
-      formData.append("systemRating", systemRating.toString());
       formData.append("currentPage", window.location.pathname);
       formData.append("timestamp", new Date().toISOString());
 
@@ -77,7 +75,6 @@ export function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps) {
       setTitle("");
       setDescription("");
       setScreenshot(null);
-      setSystemRating(0);
       onClose();
     } catch (error) {
       console.error("Error submitting feedback:", error);
@@ -105,10 +102,6 @@ export function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps) {
       }
       setScreenshot(file);
     }
-  };
-
-  const handleStarClick = (rating: number) => {
-    setSystemRating(rating);
   };
 
   return (
@@ -148,38 +141,6 @@ export function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <Label>System Rating *</Label>
-            <div className="flex items-center gap-2">
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => handleStarClick(star)}
-                    className="p-1 hover:scale-110 transition-transform"
-                  >
-                    <Star
-                      className={`w-6 h-6 ${
-                        star <= systemRating
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "text-gray-300 hover:text-yellow-300"
-                      }`}
-                    />
-                  </button>
-                ))}
-              </div>
-              {systemRating > 0 && (
-                <span className="text-sm text-muted-foreground ml-2">
-                  {systemRating}/5 stars
-                </span>
-              )}
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Rate your overall experience with our system
-            </p>
-          </div>
-
-          <div className="space-y-2">
             <Label htmlFor="screenshot">Screenshot (optional)</Label>
             <Input
               id="screenshot"
@@ -208,8 +169,7 @@ export function FeedbackDialog({ isOpen, onClose }: FeedbackDialogProps) {
               disabled={
                 isSubmitting ||
                 !title.trim() ||
-                !description.trim() ||
-                systemRating === 0
+                !description.trim()
               }
             >
               {isSubmitting ? "Submitting..." : "Submit Feedback"}

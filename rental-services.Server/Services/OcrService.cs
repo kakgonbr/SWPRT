@@ -35,6 +35,13 @@ namespace rental_services.Server.Services
             }
 
             // Cập nhật/Thêm bằng lái
+            var licenseType = await _driverLicenseRepository.GetLicenseTypeByCodeAsync(gplxData.LicenseClass);
+
+            if (licenseType == null)
+            {
+                throw new BadHttpRequestException($"Hạng bằng lái '{gplxData.LicenseClass}' không được hỗ trợ hoặc không nhận dạng được.");
+            }
+
             var existingLicense = await _driverLicenseRepository.GetByUserAndTypeAsync(user.UserId, licenseType.LicenseTypeId);
 
             if (existingLicense == null)
