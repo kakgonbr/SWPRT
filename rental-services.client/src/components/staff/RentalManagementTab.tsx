@@ -26,8 +26,8 @@ import {
     Calendar as CalendarIcon,
     CheckCircle2,
 } from 'lucide-react'
-import { Calendar } from '../ui/calendar'
 import { type Booking, type BookingStatus } from '../../types/booking'
+import RentalDetailsDialog from '../admin/RentalDetailsDialog';
 
 interface RentalManagementTabProps {
     rentals: Booking[]
@@ -42,8 +42,20 @@ export default function RentalManagementTab({
 }: RentalManagementTabProps) {
     const [rentalFilter, setRentalFilter] = useState<'all' | 'awaiting payment' | 'confirmed' | 'upcoming' | 'active' | 'completed' | 'cancelled'>('all')
 
-    const parseDate = (dateString: string | undefined | null): Date => {
+    const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
+    const [selectedRentalForDetails, setSelectedRentalForDetails] = useState<Booking | null>(null);
 
+    // Currency formatting function for VND
+    const formatVND = (amount: number): string => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    }
+
+    const parseDate = (dateString: string | undefined | null): Date => {
         console.log(`og date: ${rentals.map(r => r.startDate)}`);
 
         // Check if dateString is undefined, null, or empty
@@ -68,13 +80,13 @@ export default function RentalManagementTab({
             }
             console.log(`manual parse date: ${date}`);
         }
-        
+
         // If all attempts fail, return current date as fallback
         if (!isValid(date)) {
             console.error('All date parsing attempts failed for:', dateString);
             return new Date();
         }
-        
+
         return date;
     }
 
@@ -115,15 +127,26 @@ export default function RentalManagementTab({
 
     const getRentalStatusIcon = (status: BookingStatus) => {
         switch (status) {
-            case 'Awaiting Payment': return <Calendar className="h-3 w-3" />
+            //case 'Awaiting Payment': return <Calendar className="h-3 w-3" />
             case 'Confirmed': return <CheckCircle2 className="h-3 w-3" />
-            case 'Upcoming': return <Calendar className="h-3 w-3" />
+            case 'Upcoming': return <CalendarIcon className="h-3 w-3" />
             case 'Active': return <CheckCircle2 className="h-3 w-3" />
             case 'Completed': return <Check className="h-3 w-3" />
             case 'Cancelled': return <X className="h-3 w-3" />
             default: return null
         }
     }
+
+    const handleOpenViewDetails = (rental: Booking) => {
+        setSelectedRentalForDetails(rental);
+        setIsDetailsDialogOpen(true);
+    }
+
+    const handleCloseViewDetails = () => {
+        setIsDetailsDialogOpen(false);
+        setSelectedRentalForDetails(null);
+    }
+
 
     const filteredRentals = rentals.filter(rental => {
         const matchesFilter = rentalFilter === 'all' || rental.status.toLowerCase().replace(' ', ' ') === rentalFilter;
@@ -147,145 +170,151 @@ export default function RentalManagementTab({
         // Use StartDate instead of OrderDate which may not exist
         const aDate = a.orderDate || a.startDate
         const bDate = b.orderDate || b.startDate
-        
+
         // Add null checks before parsing dates
         if (!aDate && !bDate) return 0;
         if (!aDate) return 1;
         if (!bDate) return -1;
-        
+
         return parseDate(bDate).getTime() - parseDate(aDate).getTime();
     })
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <div>
-                        <CardTitle>Rental Management</CardTitle>
-                        <CardDescription>
-                            Monitor and manage rental bookings ({filteredRentals.length} rentals)
-                        </CardDescription>
+        <>
+            <Card>
+                <CardHeader>
+                    <div className="flex justify-between items-center">
+                        <div>
+                            <CardTitle>Rental Management</CardTitle>
+                            <CardDescription>
+                                Monitor and manage rental bookings ({filteredRentals.length} rentals)
+                            </CardDescription>
+                        </div>
+                        <div className="flex gap-2">
+                            <select
+                                value={rentalFilter}
+                                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                                onChange={(e) => setRentalFilter(e.target.value as any)}
+                                className="px-3 py-2 border rounded-md"
+                            >
+                                <option value="all">All Rentals</option>
+                                {/*<option value="awaiting payment">Awaiting Payment ({rentals.filter(r => r.status === 'Awaiting Payment').length})</option>*/}
+                                <option value="confirmed">Confirmed ({rentals.filter(r => r.status === 'Confirmed').length})</option>
+                                <option value="upcoming">Upcoming ({rentals.filter(r => r.status === 'Upcoming').length})</option>
+                                <option value="active">Active ({rentals.filter(r => r.status === 'Active').length})</option>
+                                <option value="completed">Completed ({rentals.filter(r => r.status === 'Completed').length})</option>
+                                <option value="cancelled">Cancelled ({rentals.filter(r => r.status === 'Cancelled').length})</option>
+                            </select>
+                        </div>
                     </div>
-                    <div className="flex gap-2">
-                        <select
-                            value={rentalFilter}
-                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                            onChange={(e) => setRentalFilter(e.target.value as any)}
-                            className="px-3 py-2 border rounded-md"
-                        >
-                            <option value="all">All Rentals</option>
-                            <option value="awaiting payment">Awaiting Payment ({rentals.filter(r => r.status === 'Awaiting Payment').length})</option>
-                            <option value="confirmed">Confirmed ({rentals.filter(r => r.status === 'Confirmed').length})</option>
-                            <option value="upcoming">Upcoming ({rentals.filter(r => r.status === 'Upcoming').length})</option>
-                            <option value="active">Active ({rentals.filter(r => r.status === 'Active').length})</option>
-                            <option value="completed">Completed ({rentals.filter(r => r.status === 'Completed').length})</option>
-                            <option value="cancelled">Cancelled ({rentals.filter(r => r.status === 'Cancelled').length})</option>
-                        </select>
-                    </div>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Customer</TableHead>
-                            <TableHead>Bike</TableHead>
-                            <TableHead>Location</TableHead>
-                            <TableHead>Rental Period</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Total Cost</TableHead>
-                            <TableHead className="text-center">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {sortedRentals.length === 0 ? (
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
                             <TableRow>
-                                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                                    No rentals found matching your criteria
-                                </TableCell>
+                                <TableHead>Customer</TableHead>
+                                <TableHead>Bike</TableHead>
+                                <TableHead>Location</TableHead>
+                                <TableHead>Rental Period</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Total Cost</TableHead>
+                                <TableHead className="text-center">Actions</TableHead>
                             </TableRow>
-                        ) : (
-                            sortedRentals.map((rental) => {
-                                const days = calculateDays(rental.startDate, rental.endDate);
-                                const totalCost = (rental.pricePerDay * days).toFixed(2);
-                                return (
-                                    <TableRow
-                                        key={rental.id}
-                                        className={`${rental.status === 'Active' ? 'bg-yellow-50 hover:bg-yellow-100' : 'hover:bg-muted/50'}`}
-                                    >
-                                        <TableCell>
-                                            <div>
-                                                <div className="font-medium">{rental.customerName}</div>
-                                                <div className="text-sm text-muted-foreground">{rental.customerEmail}</div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="font-medium">{rental.bikeName}</TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-1">
-                                                <MapPin className="h-3 w-3 text-muted-foreground" />
-                                                {rental.pickupLocation}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="text-sm">
+                        </TableHeader>
+                        <TableBody>
+                            {sortedRentals.length === 0 ? (
+                                <TableRow>
+                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                        No rentals found matching your criteria
+                                    </TableCell>
+                                </TableRow>
+                            ) : (
+                                sortedRentals.map((rental) => {
+                                    const days = calculateDays(rental.startDate, rental.endDate);
+                                    const totalCost = rental.pricePerDay * days;
+                                    return (
+                                        <TableRow
+                                            key={rental.id}
+                                            className={`${rental.status === 'Active' ? 'bg-yellow-50 hover:bg-yellow-100' : 'hover:bg-muted/50'}`}
+                                        >
+                                            <TableCell>
+                                                <div>
+                                                    <div className="font-medium">{rental.customerName}</div>
+                                                    <div className="text-sm text-muted-foreground">{rental.customerEmail}</div>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="font-medium">{rental.bikeName}</TableCell>
+                                            <TableCell>
                                                 <div className="flex items-center gap-1">
-                                                    <CalendarIcon className="h-3 w-3 text-muted-foreground" />
-                                                    {formatDate(rental.startDate, "MMM d")} - {formatDate(rental.endDate, "MMM d, yyyy")}
+                                                    <MapPin className="h-3 w-3 text-muted-foreground" />
+                                                    {rental.pickupLocation}
                                                 </div>
-                                                <div className="text-xs text-muted-foreground">
-                                                    {days} days
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="text-sm">
+                                                    <div className="flex items-center gap-1">
+                                                        <CalendarIcon className="h-3 w-3 text-muted-foreground" />
+                                                        {formatDate(rental.startDate, "MMM d")} - {formatDate(rental.endDate, "MMM d, yyyy")}
+                                                    </div>
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {days} days
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant={getStatusBadgeVariant(rental.status)} className="flex items-center gap-1 w-fit">
-                                                {getRentalStatusIcon(rental.status)}
-                                                {rental.status}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell className="font-medium">${totalCost}</TableCell>
-                                        <TableCell className="text-center">
-                                            <div className="flex items-center justify-center gap-2">
-                                                {rental.status === 'Active' ? (
-                                                    <>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant={getStatusBadgeVariant(rental.status)} className="flex items-center gap-1 w-fit">
+                                                    {getRentalStatusIcon(rental.status)}
+                                                    {rental.status}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="font-medium">{formatVND(totalCost)}</TableCell>
+                                            <TableCell className="text-center">
+                                                <div className="flex items-center justify-center gap-2">
+                                                    {rental.status === 'Confirmed' ? (
+                                                        <>
+                                                            <Button
+                                                                size="sm"
+                                                                onClick={() => onOpenApproval(rental)}
+                                                                className="bg-green-600 hover:bg-green-700"
+                                                            >
+                                                                <Check className="h-4 w-4 mr-1" />
+                                                                Approve
+                                                            </Button>
+                                                            <Button
+                                                                size="sm"
+                                                                variant="destructive"
+                                                                onClick={() => onRejectRental(rental.id)}
+                                                            >
+                                                                <X className="h-4 w-4 mr-1" />
+                                                                Reject
+                                                            </Button>
+                                                        </>
+                                                    ) : (
                                                         <Button
                                                             size="sm"
-                                                            onClick={() => onOpenApproval(rental)}
-                                                            className="bg-green-600 hover:bg-green-700"
+                                                            variant="outline"
+                                                            onClick={() => handleOpenViewDetails(rental)}
                                                         >
-                                                            <Check className="h-4 w-4 mr-1" />
-                                                            Approve
+                                                            <Eye className="h-4 w-4 mr-1" />
+                                                            View Details
                                                         </Button>
-                                                        <Button
-                                                            size="sm"
-                                                            variant="destructive"
-                                                            onClick={() => onRejectRental(rental.id)}
-                                                        >
-                                                            <X className="h-4 w-4 mr-1" />
-                                                            Reject
-                                                        </Button>
-                                                    </>
-                                                ) : (
-                                                    <Button
-                                                        size="sm"
-                                                        variant="outline"
-                                                        onClick={() => onOpenApproval(rental)}
-                                                    >
-                                                        <Eye className="h-4 w-4 mr-1" />
-                                                        View Details
-                                                    </Button>
-                                                )}
-                                            </div>
-                                        </TableCell>
+                                                    )}
+                                                </div>
+                                            </TableCell>
 
-                                    </TableRow>
+                                        </TableRow>
+                                    )
+                                }
                                 )
-                            }
-                            )
-                        )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
+
+            {selectedRentalForDetails && (
+                <RentalDetailsDialog isOpen={isDetailsDialogOpen} onClose={handleCloseViewDetails} rental={selectedRentalForDetails} />
+            )}
+        </>
     )
 }
