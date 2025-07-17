@@ -74,8 +74,8 @@ namespace rental_services.Server.Controllers
         [HttpPost("confirm-license")]
         public async Task<IActionResult> ConfirmAndSaveLicense([FromBody] GplxData gplxData)
         {
-            var userSub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-            if (string.IsNullOrEmpty(userSub))
+            var userIdClaim = User.FindFirstValue("VroomVroomUserId");
+            if (string.IsNullOrEmpty(userIdClaim))
             {
                 return Unauthorized("Không thể xác định người dùng từ token.");
             }
@@ -83,7 +83,7 @@ namespace rental_services.Server.Controllers
             try
             {
                 // Lưu dữ liệu vào database khi user confirm
-                await _ocrService.ProcessGplxDataAsync(userSub, gplxData);
+                await _ocrService.ProcessGplxDataAsync(int.Parse(userIdClaim), gplxData);
                 
                 return Ok(new
                 {
