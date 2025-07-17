@@ -67,6 +67,7 @@ export default function ProfilePage() {
   const [extractedIdData, setExtractedIdData] =
     useState<ExtractedIdData | null>(null);
   const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
+  const [isVerified, setIsVerified] = useState(false);
 
   const [formData, setFormData] = useState({
     name: "",
@@ -307,8 +308,11 @@ export default function ProfilePage() {
         );
       }
 
-      //@ts-ignore
       const result = await response.json();
+
+      if (result.success) {
+        setIsVerified(true);
+      }
 
       // Update form data with confirmed information
       setFormData((prev) => ({
@@ -573,54 +577,34 @@ export default function ProfilePage() {
             <div className="space-y-4">
               <h3 className="text-lg font-semibold">Identity Verification</h3>
 
-              {uploadedImageUrl ? (
-                // Show uploaded ID document
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <Label>Uploaded ID Document</Label>
-                    <div className="border rounded-lg p-4 bg-green-50">
-                      <div className="flex items-start gap-4">
-                        {uploadedImageUrl && (
-                          <img
-                            src={uploadedImageUrl}
-                            alt="ID Document"
-                            className="max-w-xs rounded border"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 text-green-600 mb-2">
-                            <CheckCircle className="h-5 w-5" />
-                            <span className="font-medium">
-                              Verification Completed
-                            </span>
-                          </div>
-                          <p className="text-sm text-muted-foreground mb-2">
-                            Your ID document has been successfully verified and
-                            processed.
-                          </p>
-                          <p className="text-sm text -muted-foreground">
-                            <strong>Note:</strong> Information extracted from
-                            your ID document cannot be edited manually for
-                            security purposes.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
+              {isVerified || user.driverLicenses?.at(0)?.licenseId ? (
+                // Hiển thị block xác thực thành công
+                <div className="border rounded-lg p-4 bg-green-50 flex items-center gap-4">
+                  <div>
+                    <CheckCircle className="h-5 w-5 text-green-600" />
                   </div>
-
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={triggerIdUpload}
-                      disabled={isUploadingId}
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Re-upload ID Document
-                    </Button>
+                  <div>
+                    <div className="font-medium text-green-700 text-lg">Verification Completed</div>
+                    <div className="text-sm text-muted-foreground">
+                      Your ID document has been successfully verified and processed.
+                    </div>
+                    <div className="text-xs mt-1">
+                      <strong>Note:</strong> Information extracted from your ID document cannot be edited manually for security purposes.
+                    </div>
+                    <div className="mt-2">
+                      <Button
+                        variant="outline"
+                        onClick={triggerIdUpload}
+                        disabled={isUploadingId}
+                      >
+                        <Upload className="h-4 w-4 mr-2" />
+                        Re-upload ID Document
+                      </Button>
+                    </div>
                   </div>
                 </div>
               ) : (
-                // Show upload interface
+                // Hiển thị upload
                 <div className="space-y-4">
                   <div className="space-y-2">
                     <Label>ID Document Upload</Label>
@@ -685,7 +669,6 @@ export default function ProfilePage() {
         onConfirm={handleIdConfirm}
         onReject={handleIdReject}
         extractedData={extractedIdData}
-        uploadedImageUrl={uploadedImageUrl}
         isProcessing={isSavingIdData}
       />
     </div>
