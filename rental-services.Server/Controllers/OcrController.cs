@@ -31,15 +31,6 @@ namespace rental_services.Server.Controllers
         [HttpPost("upload-license")]
         public async Task<IActionResult> UploadAndProcessLicense(IFormFile image)
         {
-            string status = await ImageUploadHandler.Upload(image);
-
-            if (status.StartsWith("Failed"))
-            {
-                return BadRequest(status);
-            }
-
-            var imageUrl = $"{Request.Scheme}://{Request.Host}/images/{status}";
-
             string extractedText;
             try
             {
@@ -49,7 +40,6 @@ namespace rental_services.Server.Controllers
                     await image.CopyToAsync(memoryStream);
                     var imageBytes = memoryStream.ToArray();
 
-                    _logger.LogInformation("CWD: {Directory}", Directory.GetCurrentDirectory());
                     using (var engine = new TesseractEngine(@"./tessdata", "vie", EngineMode.Default))
                     {
                         using (var img = Pix.LoadFromMemory(imageBytes))
@@ -69,12 +59,11 @@ namespace rental_services.Server.Controllers
             var parser = new GplxParser(extractedText);
             var gplxData = parser.Parse();
 
-            // Chỉ trả về dữ liệu đã extract, không lưu database
             return Ok(new
             {
                 message = "Xử lý OCR thành công. Vui lòng xem xét và xác nhận thông tin.",
                 extractedData = gplxData,
-                imageUrl = imageUrl 
+                extractedText
             });
         }
 
