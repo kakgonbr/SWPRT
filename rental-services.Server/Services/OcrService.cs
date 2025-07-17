@@ -17,16 +17,10 @@ namespace rental_services.Server.Services
             _driverLicenseRepository = driverLicenseRepository;
         }
 
-        public async Task ProcessGplxDataAsync(string userSub, GplxData gplxData)
+        public async Task ProcessGplxDataAsync(int userId, GplxData gplxData)
         {
-            var licenseType = await _driverLicenseRepository.GetLicenseTypeByCodeAsync(gplxData.LicenseClass);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
 
-            if (licenseType == null)
-            {
-                throw new BadHttpRequestException($"Hạng bằng lái '{gplxData.LicenseClass}' không được hỗ trợ hoặc không nhận dạng được.");
-            }
-
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Sub == userSub);
             if (user == null)
             {
                 throw new BadHttpRequestException("Không tìm thấy người dùng từ thông tin xác thực.");
