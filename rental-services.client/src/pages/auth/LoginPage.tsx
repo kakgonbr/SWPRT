@@ -68,33 +68,7 @@ export default function LoginPage() {
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
         try {
-            // Option 1: Redirect to Google OAuth
-            window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`
-
-            // Option 2: If using Google Sign-In library (uncomment if you prefer this approach)
-            /*
-            const response = await fetch('/api/auth/google-signin', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    // Google token would be here
-                })
-            })
-            
-            if (response.ok) {
-                const data = await response.json()
-                // Handle successful login
-                toast({
-                    title: "Login Successful",
-                    description: "Welcome back to VroomVroom!",
-                })
-                navigate('/')
-            } else {
-                throw new Error('Google login failed')
-            }
-            */
+            window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login/google`
         } catch (error) {
             console.error('Google login error:', error)
             toast({

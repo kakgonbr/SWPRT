@@ -20,8 +20,12 @@ public class UserService : IUserService
 
     public async Task<UserDto> GetUser(int id)
     {
-        // Example business logic (can add more later)
         return _mapper.Map<UserDto>(await _userRepository.GetById(id));
+    }
+    
+    public async Task<UserDto> GetUser(string email)
+    {
+        return _mapper.Map<UserDto>(await _userRepository.GetByEmail(email));
     }
 
     public async Task<User?> GetUserBySubAsync(string sub)

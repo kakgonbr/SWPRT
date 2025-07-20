@@ -6,6 +6,7 @@ namespace rental_services.Server.Services;
 public interface IUserService
 {
     Task<UserDto> GetUser(int id);
+    Task<UserDto> GetUser(string email);
     // IEnumerable<User> GetAllUsers();
     void CreateUser(User user);
     Task<bool> UpdateUser(UserDto user);
