@@ -743,11 +743,15 @@ import { Switch } from '../ui/switch';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
-import { Upload, Trash2, Save, X, Plus } from 'lucide-react';
+import {
+    Upload, Trash2, Save, X,
+    //Plus
+} from 'lucide-react';
 
 import {
     useQuery,
 } from '@tanstack/react-query'
+//import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -793,60 +797,78 @@ const CONDITION_OPTIONS: VehicleCondition[] = [
 ];
 
 /* --------------------------  VEHICLE ROW  -------------------------- */
-const VehicleRow = (
-    props: {
-        vehicle: IVehicle;
-        idx: number;
-        shops: Option[];
-        onChange: (partial: Partial<IVehicle>) => void;
-        onDelete: () => void;
-    },
-) => (
-    <div
-        className="grid grid-cols-[1fr_160px_40px] items-center gap-4 border rounded-lg p-3"
-    >
-        {/* Shop selector */}
-        <Select
-            value={String(props.vehicle.shopId)}
-            onValueChange={val => props.onChange({ shopId: Number(val) })}
-        >
-            <SelectTrigger>
-                <SelectValue placeholder="Select shop" />
-            </SelectTrigger>
-            <SelectContent>
-                {props.shops.map(s => (
-                    <SelectItem key={s.id} value={String(s.id)}>{s.label}</SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+//const VehicleRow = (
+//    props: {
+//        vehicle: IVehicle;
+//        idx: number;
+//        shops: Option[];
+//        onChange: (partial: Partial<IVehicle>) => void;
+//        onDelete: () => void;
+//    },
+//) => (
+//    <div
+//        className="grid grid-cols-[1fr_160px_40px] items-center gap-4 border rounded-lg p-3"
+//    >
+//        {/* Shop selector */}
+//        <Select
+//            value={String(props.vehicle.shopId)}
+//            onValueChange={val => props.onChange({ shopId: Number(val) })}
+//        >
+//            <SelectTrigger>
+//                <SelectValue placeholder="Select shop" />
+//            </SelectTrigger>
+//            <SelectContent>
+//                {props.shops.map(s => (
+//                    <SelectItem key={s.id} value={String(s.id)}>{s.label}</SelectItem>
+//                ))}
+//            </SelectContent>
+//        </Select>
 
-        {/* Condition selector */}
-        <Select
-            value={props.vehicle.condition}
-            onValueChange={val => props.onChange({ condition: val as VehicleCondition })}
-        >
-            <SelectTrigger>
-                <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-                {CONDITION_OPTIONS.map(opt => (
-                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+//        {/* Condition selector */}
+//        <Select
+//            value={props.vehicle.condition}
+//            onValueChange={val => props.onChange({ condition: val as VehicleCondition })}
+//        >
+//            <SelectTrigger>
+//                <SelectValue />
+//            </SelectTrigger>
+//            <SelectContent>
+//                {CONDITION_OPTIONS.map(opt => (
+//                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+//                ))}
+//            </SelectContent>
+//        </Select>
 
-        {/* Delete icon */}
-        <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={props.onDelete}
-            aria-label="Delete vehicle row"
-        >
-            <Trash2 className="w-4 h-4" />
-        </Button>
-    </div>
-);
+//        {/* Delete icon */}
+//        <Button
+//            type="button"
+//            variant="ghost"
+//            size="icon"
+//            onClick={props.onDelete}
+//            aria-label="Delete vehicle row"
+//        >
+//            <Trash2 className="w-4 h-4" />
+//        </Button>
+//    </div>
+//);
+
+type GroupedVehicles = Record<
+    number, // shopId
+    Partial<Record<VehicleCondition, IVehicle[]>> // condition -> vehicle[]
+>;
+
+const groupVehiclesByShop = (vehicles: IVehicle[]): GroupedVehicles => {
+    return vehicles.reduce((acc, vehicle) => {
+        if (!acc[vehicle.shopId]) {
+            acc[vehicle.shopId] = {};
+        }
+        if (!acc[vehicle.shopId][vehicle.condition]) {
+            acc[vehicle.shopId][vehicle.condition] = [];
+        }
+        acc[vehicle.shopId][vehicle.condition]!.push(vehicle);
+        return acc;
+    }, {} as GroupedVehicles);
+};
 
 /* ------------------------------------------------------------------ */
 /* 0. Utilities – unchanged                                            */
@@ -980,28 +1002,28 @@ export const BikeEditDialog: React.FC<BikeEditDialogProps> = ({
             (value: IBikeModelForm[K]) =>
                 setFormData(prev => ({ ...prev, [key]: value }));
 
-    const updateVehicle = (idx: number, patch: Partial<IVehicle>) =>
-        setFormData(prev => ({
-            ...prev,
-            vehicles: prev.vehicles.map((v, i) =>
-                i === idx ? { ...v, ...patch } : v,
-            ),
-        }));
+    //const updateVehicle = (idx: number, patch: Partial<IVehicle>) =>
+    //    setFormData(prev => ({
+    //        ...prev,
+    //        vehicles: prev.vehicles.map((v, i) =>
+    //            i === idx ? { ...v, ...patch } : v,
+    //        ),
+    //    }));
 
-    const removeVehicle = (idx: number) =>
-        setFormData(prev => ({
-            ...prev,
-            vehicles: prev.vehicles.filter((_, i) => i !== idx),
-        }));
+    //const removeVehicle = (idx: number) =>
+    //    setFormData(prev => ({
+    //        ...prev,
+    //        vehicles: prev.vehicles.filter((_, i) => i !== idx),
+    //    }));
 
-    const addVehicle = () =>
-        setFormData(prev => ({
-            ...prev,
-            vehicles: [
-                ...prev.vehicles,
-                { shopId: shops[0]?.id ?? 0, condition: 'Normal' },
-            ],
-        }));
+    //const addVehicle = () =>
+    //    setFormData(prev => ({
+    //        ...prev,
+    //        vehicles: [
+    //            ...prev.vehicles,
+    //            { shopId: shops[0]?.id ?? 0, condition: 'Normal' },
+    //        ],
+    //    }));
 
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -1011,6 +1033,30 @@ export const BikeEditDialog: React.FC<BikeEditDialogProps> = ({
             imageFile: file,
             imagePreviewUrl: URL.createObjectURL(file),
         }));
+    };
+
+    const addVehicleWithParams = (shopId: number, condition: VehicleCondition) => {
+        setFormData(prev => ({
+            ...prev,
+            vehicles: [
+                ...prev.vehicles,
+                { shopId, condition },
+            ],
+        }));
+    };
+
+    const removeVehicleBatch = (shopId: number, condition: VehicleCondition, count: number) => {
+        setFormData(prev => {
+            let removed = 0;
+            const vehicles = prev.vehicles.filter(v => {
+                if (removed < count && v.shopId === shopId && v.condition === condition) {
+                    removed++;
+                    return false;
+                }
+                return true;
+            });
+            return { ...prev, vehicles };
+        });
     };
 
     /* ---------------- Render ---------------- */
@@ -1185,33 +1231,82 @@ export const BikeEditDialog: React.FC<BikeEditDialogProps> = ({
                         {/* -------------------------------------------------- */}
                         {/* Vehicle instances list */}
                         {/* -------------------------------------------------- */}
+                        {/*<div className="space-y-2">*/}
+                        {/*    <Label>Physical vehicles *</Label>*/}
+
+                        {/*    <div className="space-y-3">*/}
+                        {/*        {formData.vehicles.map((v, idx) => (*/}
+                        {/*            <VehicleRow*/}
+                        {/*                key={v.vehicleId ?? idx}*/}
+                        {/*                vehicle={v}*/}
+                        {/*                idx={idx}*/}
+                        {/*                shops={shops}*/}
+                        {/*                onChange={patch => updateVehicle(idx, patch)}*/}
+                        {/*                onDelete={() => removeVehicle(idx)}*/}
+                        {/*            />*/}
+                        {/*        ))}*/}
+
+                        {/*        <Button*/}
+                        {/*            type="button"*/}
+                        {/*            variant="secondary"*/}
+                        {/*            size="sm"*/}
+                        {/*            onClick={addVehicle}*/}
+                        {/*            className="w-full"*/}
+                        {/*        >*/}
+                        {/*            <Plus className="w-4 h-4 mr-2" />*/}
+                        {/*            Add vehicle*/}
+                        {/*        </Button>*/}
+                        {/*    </div>*/}
+                        {/*</div>*/}
                         <div className="space-y-2">
                             <Label>Physical vehicles *</Label>
 
                             <div className="space-y-3">
-                                {formData.vehicles.map((v, idx) => (
-                                    <VehicleRow
-                                        key={v.vehicleId ?? idx}
-                                        vehicle={v}
-                                        idx={idx}
-                                        shops={shops}
-                                        onChange={patch => updateVehicle(idx, patch)}
-                                        onDelete={() => removeVehicle(idx)}
-                                    />
-                                ))}
+                                {shops.map((shop) => {
+                                    const shopId = shop.id;
+                                    const conditionMap = groupVehiclesByShop(formData.vehicles)[shopId] ?? {};
 
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={addVehicle}
-                                    className="w-full"
-                                >
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Add vehicle
-                                </Button>
+                                    return (
+                                        <div key={shopId} className="border rounded p-3 space-y-2">
+                                            <h4 className="font-semibold">{shop.label}</h4>
+
+                                            {CONDITION_OPTIONS.map((condition) => {
+                                                const vehicles = conditionMap[condition] ?? [];
+
+                                                return (
+                                                    <div key={condition} className="flex items-center gap-4">
+                                                        <span className="text-xs font-medium bg-muted px-2 py-0.5 rounded w-24 text-center">
+                                                            {condition}
+                                                        </span>
+
+                                                        {/* Adjustable count input */}
+                                                        <input
+                                                            type="number"
+                                                            min={0}
+                                                            value={vehicles.length}
+                                                            onChange={(e) => {
+                                                                const newCount = Number(e.target.value);
+                                                                const delta = newCount - vehicles.length;
+
+                                                                if (delta > 0) {
+                                                                    for (let i = 0; i < delta; i++) {
+                                                                        addVehicleWithParams(shopId, condition);
+                                                                    }
+                                                                } else if (delta < 0) {
+                                                                    removeVehicleBatch(shopId, condition, -delta);
+                                                                }
+                                                            }}
+                                                            className="w-20 border rounded px-2 py-1 text-sm"
+                                                        />
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
+
 
                         {/* -------------------------------------------------- */}
                         {/* Peripherals (scrollable)                           */}
