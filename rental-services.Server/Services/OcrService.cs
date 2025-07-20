@@ -9,23 +9,18 @@ namespace rental_services.Server.Services
     public class OcrService : IOcrService
     {
         private readonly RentalContext _context;
+        private readonly IDriverLicenseRepository _driverLicenseRepository;
 
-        public OcrService(RentalContext context)
+        public OcrService(RentalContext context, IDriverLicenseRepository driverLicenseRepository)
         {
             _context = context;
+            _driverLicenseRepository = driverLicenseRepository;
         }
 
-        public async Task ProcessGplxDataAsync(string userSub, GplxData gplxData)
+        public async Task ProcessGplxDataAsync(int userId, GplxData gplxData)
         {
-            var licenseType = await _context.DriverLicenseTypes
-                .FirstOrDefaultAsync(lt => lt.LicenseTypeCode == gplxData.LicenseClass);
+            var user = await _context.Users.FirstOrDefaultAsync(u => u.UserId == userId);
 
-            if (licenseType == null)
-            {
-                throw new BadHttpRequestException($"Hạng bằng lái '{gplxData.LicenseClass}' không được hỗ trợ hoặc không nhận dạng được.");
-            }
-
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Sub == userSub);
             if (user == null)
             {
                 throw new BadHttpRequestException("Không tìm thấy người dùng từ thông tin xác thực.");
@@ -40,8 +35,14 @@ namespace rental_services.Server.Services
             }
 
             // Cập nhật/Thêm bằng lái
-            var existingLicense = await _context.DriverLicenses
-                .FirstOrDefaultAsync(dl => dl.UserId == user.UserId && dl.LicenseTypeId == licenseType.LicenseTypeId);
+            var licenseType = await _driverLicenseRepository.GetLicenseTypeByCodeAsync(gplxData.LicenseClass);
+
+            if (licenseType == null)
+            {
+                throw new BadHttpRequestException($"Hạng bằng lái '{gplxData.LicenseClass}' không được hỗ trợ hoặc không nhận dạng được.");
+            }
+
+            var existingLicense = await _driverLicenseRepository.GetByUserAndTypeAsync(user.UserId, licenseType.LicenseTypeId);
 
             if (existingLicense == null)
             {
@@ -52,9 +53,8 @@ namespace rental_services.Server.Services
                     LicenseId = gplxData.LicenseNumber,
                     HolderName = gplxData.FullName,
                     DateOfIssue = DateTime.TryParse(gplxData.DateOfIssue, out var doi) ? DateOnly.FromDateTime(doi) : DateOnly.FromDateTime(DateTime.Now),
-                    //ImageLicenseUrl = gplxData.ImageUrl ?? imageUrl
                 };
-                _context.DriverLicenses.Add(newLicense);
+                await _driverLicenseRepository.AddAsync(newLicense);
             }
             else
             {
@@ -64,10 +64,9 @@ namespace rental_services.Server.Services
                 {
                     existingLicense.DateOfIssue = DateOnly.FromDateTime(doi);
                 }
-                //existingLicense.ImageLicenseUrl = gplxData.ImageUrl ?? imageUrl;
             }
-            
-            await _context.SaveChangesAsync();
+
+            await _driverLicenseRepository.SaveChangesAsync();
         }
     }
 } 

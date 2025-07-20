@@ -34,6 +34,7 @@ import StaffDashboard from './pages/staff/StaffDashboard'
 import ForgotPasswordPage from './pages/auth/ForgotPassword.tsx'
 import { MaintenanceBanner } from './components/MaintenanceBanner.tsx'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import PopupBannerLoader from './components/PopupBannerLoader.tsx'
 
 const queryClient = new QueryClient()
 
@@ -50,6 +51,7 @@ function App() {
                                         <div className="min-h-screen flex flex-col">
                                             <Header />
                                             <MaintenanceBanner />
+                                            <PopupBannerLoader />
                                             <main className="flex-grow">
                                                 <Routes>
                                                     <Route path="/" element={<HomePage />} />

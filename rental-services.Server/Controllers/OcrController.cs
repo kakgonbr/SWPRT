@@ -31,15 +31,6 @@ namespace rental_services.Server.Controllers
         [HttpPost("upload-license")]
         public async Task<IActionResult> UploadAndProcessLicense(IFormFile image)
         {
-            string status = await ImageUploadHandler.Upload(image);
-
-            if (status.StartsWith("Failed"))
-            {
-                return BadRequest(status);
-            }
-
-            var imageUrl = $"{Request.Scheme}://{Request.Host}/images/{status}";
-
             string extractedText;
             try
             {
@@ -49,7 +40,6 @@ namespace rental_services.Server.Controllers
                     await image.CopyToAsync(memoryStream);
                     var imageBytes = memoryStream.ToArray();
 
-                    _logger.LogInformation("CWD: {Directory}", Directory.GetCurrentDirectory());
                     using (var engine = new TesseractEngine(@"./tessdata", "vie", EngineMode.Default))
                     {
                         using (var img = Pix.LoadFromMemory(imageBytes))
@@ -62,19 +52,21 @@ namespace rental_services.Server.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi nghiêm trọng trong quá trình xử lý OCR");
-                return StatusCode(500, $"Lỗi OCR: {ex.Message}");
+                // _logger.LogError(ex, "Lỗi nghiêm trọng trong quá trình xử lý OCR");
+                // return StatusCode(500, $"Lỗi OCR: {ex.Message}");
+                var baseException = ex.GetBaseException();
+    _logger.LogError(ex, "Lỗi nghiêm trọng trong quá trình xử lý OCR");
+    return StatusCode(500, $"Lỗi OCR: {baseException.Message}");
             }
 
             var parser = new GplxParser(extractedText);
             var gplxData = parser.Parse();
 
-            // Chỉ trả về dữ liệu đã extract, không lưu database
             return Ok(new
             {
                 message = "Xử lý OCR thành công. Vui lòng xem xét và xác nhận thông tin.",
                 extractedData = gplxData,
-                imageUrl = imageUrl 
+                extractedText
             });
         }
 
@@ -82,8 +74,8 @@ namespace rental_services.Server.Controllers
         [HttpPost("confirm-license")]
         public async Task<IActionResult> ConfirmAndSaveLicense([FromBody] GplxData gplxData)
         {
-            var userSub = User.FindFirstValue(ClaimTypes.NameIdentifier) ?? User.FindFirstValue("sub");
-            if (string.IsNullOrEmpty(userSub))
+            var userIdClaim = User.FindFirstValue("VroomVroomUserId");
+            if (string.IsNullOrEmpty(userIdClaim))
             {
                 return Unauthorized("Không thể xác định người dùng từ token.");
             }
@@ -91,7 +83,7 @@ namespace rental_services.Server.Controllers
             try
             {
                 // Lưu dữ liệu vào database khi user confirm
-                await _ocrService.ProcessGplxDataAsync(userSub, gplxData);
+                await _ocrService.ProcessGplxDataAsync(int.Parse(userIdClaim), gplxData);
                 
                 return Ok(new
                 {

@@ -78,7 +78,7 @@ namespace rental_services.Server.Services
                 {
                     UserId = rental.UserId,
                     BookingId = rental.BookingId,
-                    Amount = rental.Vehicle.Model.RatePerDay * (rental.Vehicle.Model.UpFrontPercentage / 100)
+                    Amount = (long)(rental.Vehicle.Model.RatePerDay * ((double) rental.Vehicle.Model.UpFrontPercentage / 100))
                 });
             }
         }
@@ -293,7 +293,7 @@ namespace rental_services.Server.Services
 
         public async Task<string?> GetPaymentLinkAsync(int userId, string userIp)
         {
-            _logger.LogInformation("{Trackers}", rentalTrackers);
+            //_logger.LogInformation("{Trackers}", rentalTrackers);
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
@@ -383,15 +383,25 @@ namespace rental_services.Server.Services
         /// <param name="userId"></param>
         /// <param name="amount"></param>
         /// <returns>false if the payment should be refunded, true if otherwise</returns>
-        public async Task<bool> InformPaymentSuccessAsync(int userId, long amount)
+        public async Task<bool> InformPaymentSuccessAsync(int bookingId, long amount)
         {
-            RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
+            RentalTracker? existing;
+            rentalTrackers.TryGetValue(new() { BookingId = bookingId }, out existing);
 
-            if (existing is null || existing.Amount != amount)
+            if (existing is null)
             {
+                _logger.LogWarning("Cannot find tracker for bookingId {BookingId}", bookingId);
                 return false;
             }
 
+            rentalTrackers.Remove(existing);
+
+            if (existing.Amount != amount)
+            {
+                _logger.LogWarning("Amount in tracker: {TrackerAmount} does not match amount paid {PaidAmount}", existing.Amount, amount);
+
+                return false;
+            }
 
             Models.Booking? dbBooking = await _bookingRepository.GetByIdAsync(existing.BookingId);
 
@@ -402,10 +412,14 @@ namespace rental_services.Server.Services
 
             dbBooking.Status = Utils.Config.BookingStatus.Upcoming;
 
+            await _bookingRepository.SaveAsync();
+
             DateTime paymentDate;
             if (existing.LastRef is null || !DateTime.TryParseExact(existing.LastRef.Split("_").Last(), "yyyyMMddHHmmss",
             CultureInfo.InvariantCulture, DateTimeStyles.None, out paymentDate))
             {
+                _logger.LogWarning("Failed to parse time.");
+
                 return false;
             }
 
@@ -427,11 +441,9 @@ namespace rental_services.Server.Services
                     _logger.LogWarning("REFUND FOR {Ref} FAILED", existing.LastRef);
                 }
 
-                rentalTrackers.Remove(existing);
                 return false;
             }
 
-            rentalTrackers.Remove(existing);
             return true;
         }
 
@@ -445,7 +457,7 @@ namespace rental_services.Server.Services
             Models.Booking? booking = await _bookingRepository.GetByIdAsync(bookingId);
 
             // for the time being, only upcoming rentals can be cancelled, the ones that are in progress will be implemented later.
-            if (booking is null || booking.Status != Utils.Config.BookingStatus.Upcoming || booking.UserId != userId)
+            if (booking is null || booking.Status != Utils.Config.BookingStatus.Upcoming || (userId != -1 && booking.UserId != userId))
             {
                 return false;
             }
@@ -465,12 +477,14 @@ namespace rental_services.Server.Services
                 payment.PaymentId, timeUntilBooking.TotalHours > 24 ? payment.AmountPaid * 100 : payment.AmountPaid * 100 / 2,
                 payment.PaymentDate.ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture), "vroomvroomclick"))
             {
+                _logger.LogError("Failed to issue refund.");
+
                 return false;
             }
 
-            await _bookingRepository.DeleteAsync(bookingId);
-
             await _paymentRepository.DeleteWithBookingAsync(bookingId);
+
+            await _bookingRepository.DeleteAsync(bookingId);
 
             return true;
         }

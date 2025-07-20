@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.IO;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace rental_services.Server.Services
 {
@@ -29,7 +31,9 @@ namespace rental_services.Server.Services
 
             if (screenshot != null && screenshot.Length > 0)
             {
-                var imagesDir = Path.Combine("wwwroot", "images");
+                // var imagesDir = Path.Combine("wwwroot", "images");
+                  var imagesDir = rental_services.Server.Utils.Config.Image.ImagePath;
+
                 if (!Directory.Exists(imagesDir))
                 {
                     Directory.CreateDirectory(imagesDir);
@@ -54,6 +58,36 @@ namespace rental_services.Server.Services
                 Body = feedback.Body,
                 ImagePath = feedback.ImagePath
             };
+        }
+
+        public async Task<List<FeedbackDTO>> GetAllFeedbackAsync()
+        {
+            var feedbacks = await _repository.GetAllWithUserAsync();
+            return feedbacks.Select(f => new FeedbackDTO
+            {
+                FeedBackId = f.FeedBackId,
+                UserId = f.UserId,
+                Title = f.Title,
+                Body = f.Body,
+                ImagePath = f.ImagePath,
+                CustomerName = f.User.FullName ?? "",
+                CustomerEmail = f.User.Email
+            }).ToList();
+        }
+
+        public async Task<List<FeedbackDTO>> SearchFeedbackAsync(string query)
+        {
+            var feedbacks = await _repository.SearchAsync(query);
+            return feedbacks.Select(f => new FeedbackDTO
+            {
+                FeedBackId = f.FeedBackId,
+                UserId = f.UserId,
+                Title = f.Title,
+                Body = f.Body,
+                ImagePath = f.ImagePath,
+                CustomerName = f.User.FullName ?? "",
+                CustomerEmail = f.User.Email
+            }).ToList();
         }
     }
 } 

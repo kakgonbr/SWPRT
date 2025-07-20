@@ -189,7 +189,7 @@ namespace rental_services.Server.Controllers
         // GET /rentals/cancel/{bookingId}
         [HttpGet("cancel/{bookingId}")]
         [Authorize]
-        public async Task<ActionResult<string?>> GetPaymentLink(int bookingId)
+        public async Task<ActionResult<string?>> Cancel(int bookingId)
         {
             string? sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
             Models.User? dbUser = null;

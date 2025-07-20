@@ -9,7 +9,7 @@ namespace rental_services.Server.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize(Roles = Utils.Config.Role.Admin)]
-    public class AdminController : Controller
+    public class AdminController : ControllerBase
     {
         private readonly IAdminControlPanelService _adminService;
         private readonly IMaintenanceService _maintenanceService;

@@ -39,13 +39,21 @@ namespace rental_services.Server.Controllers
 
             return Ok(new { message = "Feedback submitted successfully.", feedback = result });
         }
-    }
 
-    // Dùng riêng cho nhận form-data từ FE
-    public class FeedbackFormDto
-    {
-        public string Title { get; set; } = null!;
-        public string Body { get; set; } = null!;
-        public IFormFile? Screenshot { get; set; }
+        [HttpGet]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> GetAllFeedback()
+        {
+            var feedbackList = await _service.GetAllFeedbackAsync();
+            return Ok(feedbackList);
+        }
+
+        [HttpGet("search")]
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> SearchFeedback([FromQuery] string query)
+        {
+            var result = await _service.SearchFeedbackAsync(query);
+            return Ok(result);
+        }
     }
 } 
