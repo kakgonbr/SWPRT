@@ -9,6 +9,8 @@ import {useEffect, useState} from "react";
 import type {VehicleModelDTO} from "../lib/types.ts";
 import {bikeApi} from "../lib/api.ts";
 
+const API = import.meta.env.VITE_API_BASE_URL;
+
 export default function BikeDetailsPage() {
     const {id} = useParams<{ id: string }>();
     const [bike, setBike] = useState<VehicleModelDTO>();
@@ -147,7 +149,7 @@ export default function BikeDetailsPage() {
                 <div className="space-y-4">
                     <div className="aspect-video rounded-lg overflow-hidden">
                         <img
-                            src={bike.imageFile.split('"')[0]}
+                            src={`${API}/images/` + bike.imageFile.split('"')[0]}
                             alt={bike.displayName}
                             className="w-full h-full object-cover"
                         />

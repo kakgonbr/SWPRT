@@ -51,17 +51,17 @@ export default function CheckoutPage() {
             const params = new URLSearchParams(rentalParams);
             const startDateStr = params.get(`startDate`);
             const endDateStr = params.get(`endDate`);
-            
+
             if (startDateStr) {
                 setStartDate(new Date(startDateStr));
             }
-            
+
             if (endDateStr) {
                 setEndDate(new Date(endDateStr));
             }
         }
     }, [rentalParams]);
-    
+
     console.log(`start date: ${startDate}, end date: ${endDate} in checkout page`);
 
 
@@ -151,7 +151,7 @@ export default function CheckoutPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        
+
         //TODO: update the terms tick and payment information when done
 
         if (!termsTick) {
@@ -195,7 +195,7 @@ export default function CheckoutPage() {
                 pickupLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
                 returnLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
                 paymentMethod: 'Credit Card'
-            };         
+            };
 
             console.log(`passing booking api data: ${booking.customerId, booking.customerName, booking.vehicleModelId, booking.startDate}`)
 
@@ -500,7 +500,7 @@ export default function CheckoutPage() {
                             {/* Bike Details */}
                             <div className="flex space-x-4">
                                 <img
-                                    src={bike.imageFile.split('"')[0]}
+                                    src={`images/` + bike.imageFile.split('"')[0]}
                                     alt={bike.displayName}
                                     className="w-20 h-20 object-cover rounded-lg"
                                 />
