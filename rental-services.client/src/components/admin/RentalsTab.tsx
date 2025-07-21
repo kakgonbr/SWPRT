@@ -184,7 +184,7 @@ export default function RentalsTab() {
                                             />
                                         ) : (
                                             <img
-                                                src={rental.bikeImageUrl.split('"')[0]}
+                                                src={`images/` + rental.bikeImageUrl.split('"')[0]}
                                                 alt={rental.bikeName}
                                                 className="w-16 h-16 object-cover rounded"
                                                 onError={() => setImgError(true)}
