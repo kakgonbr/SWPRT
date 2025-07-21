@@ -434,7 +434,7 @@ export default function BikesTab() {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center space-x-4">
                                             <img
-                                                src={'/images' + nameData.imageUrl.split('"')[0]}
+                                                src={'images/' + nameData.imageUrl.split('"')[0]}
                                                 alt={nameData.name}
                                                 className="w-16 h-16 object-cover rounded"
                                             />
