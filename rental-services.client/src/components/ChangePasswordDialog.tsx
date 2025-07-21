@@ -113,7 +113,7 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
 
         setIsLoading(true)
         try {
-            const response = await fetch('/api/user/change-password', {
+            const response = await fetch('/api/users/change-password', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -133,7 +133,7 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
                 handleClose()
             } else {
                 const errorData = await response.json()
-                if (response.status === 400 && errorData.message === 'Current password is incorrect') {
+                if (response.status === 400 || response.status === 500) {
                     setErrors(prev => ({
                         ...prev,
                         currentPassword: 'Current password is incorrect'
