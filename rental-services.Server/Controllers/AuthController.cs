@@ -124,7 +124,7 @@ public class AuthController : ControllerBase
         }
 
         // Generate JWT token
-        var accessToken = GenerateJwtToken(_mapper.Map<User>(mappedUser), out var expires);
+        var accessToken = GenerateJwtToken(mappedUser, out var expires) ?? throw new ArgumentNullException("GenerateJwtToken(_mapper.Map<User>(mappedUser), out var expires)");
         var userDto = new UserDto(
             mappedUser.UserId,
             mappedUser.Email,
@@ -137,6 +137,7 @@ public class AuthController : ControllerBase
             mappedUser.EmailConfirmed,
             mappedUser.DateOfBirth,
             mappedUser.IsActive,
+            mappedUser.Sub,
             mappedUser.DriverLicenses.Select(dl => new DriverLicenseDto(
                 dl.LicenseId,
                 dl.HolderName,
@@ -219,6 +220,7 @@ public class AuthController : ControllerBase
             user.EmailConfirmed,
             user.DateOfBirth,
             user.IsActive,
+            user.Sub,
             user.DriverLicenses?.Select(dl => new DriverLicenseDto(
                 dl.LicenseId,
                 dl.HolderName,
@@ -270,8 +272,8 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> Me()
     {
-        var userSub = User.FindFirstValue(JwtRegisteredClaimNames.Sub)!;
-        var user = await _userService.GetUserBySubAsync(userSub);
+        var userSub = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub") ?? User.FindFirst(JwtRegisteredClaimNames.Sub);
+        var user = await _userService.GetUserBySubAsync(userSub.Value);
         if (user == null) return NotFound(new { Message = "User not found" });
         return Ok(new UserDto(
             user.UserId,
@@ -285,6 +287,7 @@ public class AuthController : ControllerBase
             user.EmailConfirmed,
             user.DateOfBirth,
             user.IsActive,
+            user.Sub,
             user.DriverLicenses?.Select(dl => new DriverLicenseDto(
                 dl.LicenseId,
                 dl.HolderName,
@@ -305,12 +308,18 @@ public class AuthController : ControllerBase
     /// </returns>
     private string GenerateJwtToken(User user, out DateTime expiration)
     {
+        // Add null checks and default values
+        var sub = user.Sub ?? throw new ArgumentNullException(nameof(user.Sub), "User Sub cannot be null");
+        var email = user.Email ?? throw new ArgumentNullException(nameof(user.Email), "User Email cannot be null");
+        var role = user.Role ?? "Customer"; // Default role if null
+        var userId = user.UserId.ToString();
+        
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Sub),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role),
-            new Claim("VroomVroomUserId", user.UserId.ToString())
+            new Claim(JwtRegisteredClaimNames.Sub, sub),
+            new Claim(JwtRegisteredClaimNames.Email, email),
+            new Claim(ClaimTypes.Role, role),
+            new Claim("VroomVroomUserId", userId),
         };
 
         string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? _jwtSettings.Key;
