@@ -110,7 +110,7 @@ export default function BikesPage() {
         <Card className="overflow-hidden hover:shadow-lg transition-shadow">
             <div className="aspect-video relative">
                 <img
-                    src={bikes.imageFile?.split('"')[0]}
+                    src={'images/' + bikes.imageFile?.split('"')[0]}
                     alt={bikes.displayName}
                     className="w-full h-full object-cover"
                 />

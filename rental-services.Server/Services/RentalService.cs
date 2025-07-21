@@ -326,9 +326,7 @@ namespace rental_services.Server.Services
 
             existing.LastRef = string.Join("_", existing.BookingId, existing.Tries, VNPayService.GetGmtPlus7Now().ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture));
 
-            return existing is null
-                ? null
-                : VNPayService.GetLink(userIp, null, existing.Amount * 100, null, existing.LastRef);
+            return VNPayService.GetLink(userIp, null, existing.Amount * 100, null, existing.LastRef);
         }
 
         /// <summary>

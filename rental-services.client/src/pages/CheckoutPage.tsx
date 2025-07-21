@@ -500,7 +500,7 @@ export default function CheckoutPage() {
                             {/* Bike Details */}
                             <div className="flex space-x-4">
                                 <img
-                                    src={bike.imageFile.split('"')[0]}
+                                    src={`images/` + bike.imageFile.split('"')[0]}
                                     alt={bike.displayName}
                                     className="w-20 h-20 object-cover rounded-lg"
                                 />
