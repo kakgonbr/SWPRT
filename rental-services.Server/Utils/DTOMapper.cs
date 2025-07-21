@@ -24,7 +24,7 @@ namespace rental_services.Server.Utils
                     ? Math.Round(src.Reviews.Average(r => r.Rate), 1)
                     : 0
                 ))
-                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Vehicles.Count
+                .ForMember(dest => dest.Quantity, opt => opt.MapFrom(src => src.Vehicles.Select(v => v.Condition != "Damaged" && !v.Bookings.Any(b => b.Status == "Upcoming" || b.Status == "Active")).ToList().Count
                 ));
 
             // database to detailed view
@@ -49,7 +49,7 @@ namespace rental_services.Server.Utils
                 //    })
                 //))
                 .ForMember(dest => dest.NumOfAvailable, opt =>
-                    opt.MapFrom(src => src.Vehicles.IsNullOrEmpty() ? 0 : src.Vehicles.Count
+                    opt.MapFrom(src => (src.Vehicles.IsNullOrEmpty() ? 0 : src.Vehicles.Select(v => v.Condition != "Damaged" && !v.Bookings.Any(b => b.Status == "Upcoming" || b.Status == "Active")).ToList().Count)
                     ));
 
             // admin detailed view to database
