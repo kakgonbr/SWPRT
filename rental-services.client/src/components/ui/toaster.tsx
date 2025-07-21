@@ -6,6 +6,7 @@ import {
     Toast,
     ToastClose,
     ToastDescription,
+    ToastProvider,
     ToastTitle,
     ToastViewport,
 } from "./toast"
@@ -17,7 +18,7 @@ export function Toaster() {
     console.log("Toaster - Number of toasts:", toasts.length) // Additional debug
 
     return (
-        <>
+        <ToastProvider>
             {toasts.map(({ id, title, description, variant }) => {
                 console.log("Rendering toast:", { id, title, description, variant })
                 return (
@@ -25,17 +26,6 @@ export function Toaster() {
                         key={id}
                         variant={variant}
                         duration={5000}
-                        style={{
-                            backgroundColor: 'red',
-                            color: 'white',
-                            zIndex: 99999,
-                            position: 'fixed',
-                            top: '20px',
-                            right: '20px',
-                            border: '3px solid yellow',
-                            padding: '20px',
-                            minWidth: '300px'
-                        }}
                     >
                         <div className="grid gap-1">
                             {title && <ToastTitle>{title}</ToastTitle>}
@@ -48,6 +38,6 @@ export function Toaster() {
                 )
             })}
             <ToastViewport />
-        </>
+        </ToastProvider>
     )
 }
