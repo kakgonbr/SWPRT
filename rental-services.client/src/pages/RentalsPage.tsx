@@ -291,7 +291,7 @@ export default function RentalsPage() {
                 <CardHeader className="p-0 relative">
                     <div className="aspect-[16/7] relative w-full">
                         <img
-                            src={rental.bikeImageUrl.split('"')[0]}
+                            src={'images/' + rental.bikeImageUrl.split('"')[0]}
                             alt={rental.bikeName}
                             className="w-full h-full object-cover"
                         />
