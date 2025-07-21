@@ -113,7 +113,7 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
 
         setIsLoading(true)
         try {
-            const response = await fetch('/api/user/change-password', {
+            const response = await fetch('/api/users/change-password', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

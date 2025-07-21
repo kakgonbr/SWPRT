@@ -11,6 +11,7 @@ public interface IUserService
     void CreateUser(User user);
     Task<bool> UpdateUser(UserDto user);
     void DeleteUser(int id);
+    Task<ChangePasswordResponse> ChangePasswordAsync(string sub, string currentPassword, string newPassword);
     Task<User?> GetUserBySubAsync(string sub);
     Task<List<UserDto>> GetAll();
 }
