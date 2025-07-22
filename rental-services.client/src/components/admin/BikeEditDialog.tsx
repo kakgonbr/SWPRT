@@ -987,7 +987,7 @@ export const BikeEditDialog: React.FC<BikeEditDialogProps> = ({
         const formData = new FormData();
         formData.append("file", imageFile);
 
-        const response = await fetch(`${API}/api/images`, {
+        const response = await fetch(`${API}/api/images/admin`, {
             method: "POST",
             headers: {
                 'Authorization': `Bearer ${localStorage.getItem("token")}`,
