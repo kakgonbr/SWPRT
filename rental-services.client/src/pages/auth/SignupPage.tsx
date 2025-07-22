@@ -117,14 +117,14 @@ export default function SignupPage() {
             } else {
                 toast({
                     title: "Registration Failed",
-                    description: "Failed to create account. Please try again.",
+                    description: "Failed to create account. " + success.message,
                     variant: "destructive",
                 })
             }
-        } catch (error) {
+        } catch (error: any) {
             toast({
                 title: "Error",
-                description: "An error occurred during registration. Please try again.",
+                description: "An error occurred during registration." + error.message,
                 variant: "destructive",
             })
         } finally {

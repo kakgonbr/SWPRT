@@ -1,4 +1,5 @@
-﻿using rental_services.Server.Models;
+﻿using Azure.Core;
+using rental_services.Server.Models;
 using rental_services.Server.Models.DTOs;
 using rental_services.Server.Repositories;
 using System.Collections.Generic;
@@ -22,7 +23,7 @@ public class UserService : IUserService
     {
         return _mapper.Map<UserDto>(await _userRepository.GetById(id));
     }
-    
+
     public async Task<UserDto> GetUser(string email)
     {
         return _mapper.Map<UserDto>(await _userRepository.GetByEmail(email));
@@ -48,6 +49,16 @@ public class UserService : IUserService
             return false;
         }
 
+        if (!string.IsNullOrEmpty(user.PhoneNumber) && !Utils.Validator.PhoneNumber(user.PhoneNumber))
+        {
+            return false;
+        }
+
+        if (!Utils.Validator.Email(user.Email))
+        {
+            return false;
+        }
+
         _mapper.Map(user, dbUser);
 
         // Possible business logic/validation
@@ -60,7 +71,7 @@ public class UserService : IUserService
     {
         _userRepository.Delete(id);
     }
-    
+
     public async Task<ChangePasswordResponse> ChangePasswordAsync(string sub, string currentPassword, string newPassword)
     {
         try
@@ -75,19 +86,24 @@ public class UserService : IUserService
             // Verify current password
             var passwordHasher = new Microsoft.AspNetCore.Identity.PasswordHasher<User>();
             var verificationResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, currentPassword);
-        
+
             if (verificationResult == Microsoft.AspNetCore.Identity.PasswordVerificationResult.Failed)
             {
                 return new ChangePasswordResponse(false, "Current password is incorrect");
             }
 
+            if (!Utils.Validator.Password(newPassword))
+            {
+                return new ChangePasswordResponse(false, "Password must be between 8 to 32 characters, contain a lowercase character, an uppercase character, a number and a special character at least.");
+            }
+
             // Hash new password
             var newPasswordHash = passwordHasher.HashPassword(user, newPassword);
-        
+
             // Update password in database
             user.PasswordHash = newPasswordHash;
             var updateResult = await _userRepository.Update(user);
-        
+
             if (updateResult == 0)
             {
                 return new ChangePasswordResponse(false, "Failed to update password");
