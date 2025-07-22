@@ -1,4 +1,3 @@
-// src/components/layout/Header.tsx
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
@@ -32,6 +31,7 @@ import { useIsMobile } from '../../hooks/use-mobile'
 import { FeedbackDialog } from '../FeedbackDialog'
 import GeneralReportDialog from '../customer/GeneralReportDialog'
 import ReportIssueDialog from '../customer/ReportIssueDialog'
+import { useServerInfo } from '../../contexts/server-info-context'
 
 export default function Header() {
     const { openChatWidget } = useChatWidget()
@@ -43,7 +43,8 @@ export default function Header() {
     // Website issue report for dropdown
     const [isWebsiteReportOpen, setIsWebsiteReportOpen] = useState(false)
     const [isFeedbackOpen, setIsFeedbackOpen] = useState(false)
-    console.log('----- User in header:', user);
+    //console.log('----- User in header:', user);
+    const { serverInfo, loading, error } = useServerInfo();
 
     const handleLogout = () => {
         logout()
@@ -107,7 +108,7 @@ export default function Header() {
                             <span>Report Website Issue</span>
                         </DropdownMenuItem>
 
-                        {(user.role === 'Admin') && (
+                        {(user.role === 'admin') && (
                             <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>
@@ -119,7 +120,7 @@ export default function Header() {
                             </>
                         )}
 
-                        {(user.role === 'Staff') && (
+                        {(user.role?.toLowerCase?.() === 'staff') && (
                             <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem asChild>
@@ -163,7 +164,11 @@ export default function Header() {
             <div className="container mx-auto px-4 h-16 flex items-center justify-between">
                 <Link to="/" className="flex items-center space-x-2">
                     <Bike className="h-8 w-8 text-primary" />
-                    <span className="font-bold text-xl text-primary">VroomVroom.vn</span>
+                    <span className="font-bold text-xl text-primary">{loading
+                        ? "Loading"
+                        : error || !serverInfo?.siteName
+                            ? "VroomVroom.vn"
+                            : serverInfo.siteName}</span>
                 </Link>
 
                 <div className="flex items-center space-x-4">

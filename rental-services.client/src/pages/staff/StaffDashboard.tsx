@@ -1,7 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../contexts/auth-context'
-import { useStaffDashboard } from '../../hooks/useStaffDashboard'
 import {
     Tabs,
     TabsContent,
@@ -15,46 +14,54 @@ import StaffStatsCards from '../../components/staff/StaffStatsCards'
 import CustomerMessagesTab from '../../components/staff/CustomerMessagesTab'
 import RentalManagementTab from '../../components/staff/RentalManagementTab'
 import ReportsManagementTab from '../../components/staff/ReportsManagementTab'
-import ChatDialog from '../../components/staff/ChatDialog'
 import RentalApprovalDialog from '../../components/staff/RentalApprovalDialog'
+import { usePendingMessages } from '../../hooks/usePendingMessages'
+import { useStaffReport } from '../../contexts/StaffReportProvider';
+import { rentalAPI } from '../../lib/api'
+import { type Booking } from '../../types/booking'
 
 export default function StaffDashboard() {
     const navigate = useNavigate()
     const { user, isAuthenticated, loading } = useAuth()
-    const {
-        stats,
-        messages,
-        rentals,
-        selectedMessage,
-        selectedRental,
-        replyText,
-        setReplyText,
-        isLoading,
-        isChatOpen,
-        setIsChatOpen,
-        isApprovalDialogOpen,
-        setIsApprovalDialogOpen,
-        handleReplyToMessage,
-        handleApproveRental,
-        handleRejectRental,
-        openChatDialog,
-        openApprovalDialog,
-        activeRentals,
-        pendingRentalsCount
-    } = useStaffDashboard()
+    const token = localStorage.getItem('token') || '';
+    const { pendingCount } = usePendingMessages(token);
+    const { unresolvedCount } = useStaffReport();
+    const [ rentals, setRentals ] = useState<Booking[]>([]);
 
-    // Mock new reports count for demonstration
-    const newReportsCount = 2
+    const needResolvedReportsCount =  unresolvedCount ;
 
     // Authentication check
     useEffect(() => {
         if (loading) return
-
-        if (!isAuthenticated || !user || (user.role !== 'staff' && user.role !== 'admin')) {
+        // Only allow staff (case-insensitive)
+        const role = user?.role?.toLowerCase?.() || ''
+        if (!isAuthenticated || !user || role !== 'staff') {
             navigate('/')
             return
         }
-    }, [user, isAuthenticated, loading, navigate])
+    }, [user, isAuthenticated, loading, navigate]);
+
+    useEffect(() => {
+        async function fetchRentals() {
+            try {
+                const rentals = await rentalAPI.getRentals();
+                setRentals(rentals);
+                console.log('Complete rental info:', JSON.stringify(rentals, null, 2));
+            } catch (error) {
+                console.error(`error fetching rentals (staff page): ${error}`);
+            }
+        }
+        //debounce implementation to void to many api calls
+        const handler = setTimeout(() => {
+            fetchRentals();
+        }, 500);
+
+        return () => {
+            clearTimeout(handler);
+        }
+    }, []);
+
+
 
     // Loading state
     if (loading) {
@@ -66,7 +73,8 @@ export default function StaffDashboard() {
     }
 
     // Unauthorized access
-    if (!isAuthenticated || !user || (user.role !== 'staff' && user.role !== 'admin')) {
+    const role = user?.role?.toLowerCase?.() || ''
+    if (!isAuthenticated || !user || role !== 'staff') {
         return null
     }
 
@@ -82,8 +90,9 @@ export default function StaffDashboard() {
 
             {/* Stats Cards */}
             <StaffStatsCards
-                activeRentals={activeRentals}
-                pendingMessages={stats.pendingMessages}
+                activeRentals={rentals.length}
+                //TODO: UPDATE PENDING MESSAGE NUMBER
+                pendingMessages={pendingCount}
             />
 
             {/* Main Content Tabs */}
@@ -92,44 +101,29 @@ export default function StaffDashboard() {
                     <TabsTrigger value="messages" className="flex items-center gap-2">
                         <MessageCircle className="h-4 w-4" />
                         Customer Messages
-                        {stats.pendingMessages > 0 && (
-                            <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs">
-                                {stats.pendingMessages}
-                            </Badge>
-                        )}
                     </TabsTrigger>
                     <TabsTrigger value="rentals" className="flex items-center gap-2">
                         <Calendar className="h-4 w-4" />
                         Rental Management
-                        {pendingRentalsCount > 0 && (
-                            <Badge variant="secondary" className="ml-1 px-1 py-0 text-xs">
-                                {pendingRentalsCount}
-                            </Badge>
-                        )}
                     </TabsTrigger>
                     <TabsTrigger value="reports" className="flex items-center gap-2">
                         <AlertTriangle className="h-4 w-4" />
                         Issue Reports
-                        {newReportsCount > 0 && (
                             <Badge variant="destructive" className="ml-1 px-1 py-0 text-xs">
-                                {newReportsCount}
+                                { needResolvedReportsCount }
                             </Badge>
-                        )}
                     </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="messages" className="space-y-4">
-                    <CustomerMessagesTab
-                        messages={messages}
-                        onOpenChat={openChatDialog}
-                    />
+                    <CustomerMessagesTab/>
                 </TabsContent>
 
                 <TabsContent value="rentals" className="space-y-4">
                     <RentalManagementTab
                         rentals={rentals}
-                        onOpenApproval={openApprovalDialog}
-                        onRejectRental={handleRejectRental}
+                        onOpenApproval={() => {}}
+                        onRejectRental={() => {}}
                     />
                 </TabsContent>
 
@@ -138,24 +132,14 @@ export default function StaffDashboard() {
                 </TabsContent>
             </Tabs>
 
-            {/* Chat Dialog */}
-            <ChatDialog
-                isOpen={isChatOpen}
-                onClose={() => setIsChatOpen(false)}
-                selectedMessage={selectedMessage}
-                replyText={replyText}
-                setReplyText={setReplyText}
-                onSendReply={handleReplyToMessage}
-            />
-
             {/* Rental Approval Dialog */}
             <RentalApprovalDialog
-                isOpen={isApprovalDialogOpen}
-                onClose={() => setIsApprovalDialogOpen(false)}
-                selectedRental={selectedRental}
-                onApprove={handleApproveRental}
-                onReject={handleRejectRental}
-                isLoading={isLoading}
+                isOpen={false}
+                onClose={() => {}}
+                selectedRental={null}
+                onApprove={() => {}}
+                onReject={() => {}}
+                isLoading={false}
             />
         </div>
     )

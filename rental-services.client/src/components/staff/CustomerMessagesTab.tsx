@@ -1,214 +1,265 @@
-import { useState } from 'react'
-import { format } from 'date-fns'
-import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardHeader,
-    CardTitle,
-} from '../ui/card'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '../ui/table'
-import { Button } from '../ui/button'
-import { Badge } from '../ui/badge'
-import { Input } from '../ui/input'
-import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar'
-import {
-    Search,
-    Reply,
-    AlertCircle,
-    Clock,
-    CheckCircle2,
-} from 'lucide-react'
-import { type CustomerMessage } from '../../lib/mock-staff-data'
+import { useState } from 'react';
+import { format } from 'date-fns';
+import type { ChatDTO } from '../../lib/types';
+import { Avatar, AvatarFallback } from '../ui/avatar';
+import { useAuth } from '../../contexts/auth-context';
+import ChatDialog from './ChatDialog';
+import { useStaffChats } from '../../hooks/useStaffChats';
 
-interface CustomerMessagesTabProps {
-    messages: CustomerMessage[]
-    onOpenChat: (message: CustomerMessage) => void
-}
+const STATUS_OPTIONS = [
+    { value: 'Unresolved', label: 'Unresolved' },
+    { value: 'Resolved', label: 'Resolved' }
+];
+const PRIORITY_OPTIONS = [
+    { value: 'Critical', label: 'Critical' },
+    { value: 'High', label: 'High' },
+    { value: 'Medium', label: 'Medium' },
+    { value: 'Low', label: 'Low' }
+];
 
-export default function CustomerMessagesTab({ messages, onOpenChat }: CustomerMessagesTabProps) {
-    const [searchTerm, setSearchTerm] = useState('')
-    const [messageFilter, setMessageFilter] = useState<'all' | 'unread' | 'read' | 'replied'>('all')
+export default function CustomerMessagesTab() {
+    const { user } = useAuth();
+    const token = localStorage.getItem('token') || '';
+    const { chats, setChats, loading, page, setPage, newCustomerMessages, clearNewCustomerMessage } = useStaffChats(token);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [errorMsg, setErrorMsg] = useState<string | null>(null);
+    const [openChat, setOpenChat] = useState<ChatDTO | null>(null);
+    const [updatingChatId, setUpdatingChatId] = useState<number | null>(null);
+    
+    const noMoreChats = !loading && chats.length === 0 && page > 1;
 
-    const getStatusBadgeVariant = (status: string) => {
-        switch (status) {
-            case 'unread': return 'destructive'
-            case 'read': return 'secondary'
-            case 'replied': return 'default'
-            default: return 'outline'
-        }
-    }
+    // search chat on chat subject and filter by status
+    const filteredChats = chats.filter(chat => {
+        const matchesSearch = chat.subject.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = statusFilter === 'all' || chat.status === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
 
-    const getPriorityBadgeVariant = (priority: string) => {
-        switch (priority) {
-            case 'high': return 'destructive'
-            case 'medium': return 'default'
-            case 'low': return 'secondary'
-            default: return 'outline'
-        }
-    }
-
-    const getPriorityIcon = (priority: string) => {
-        switch (priority) {
-            case 'high': return <AlertCircle className="h-3 w-3" />
-            case 'medium': return <Clock className="h-3 w-3" />
-            case 'low': return <CheckCircle2 className="h-3 w-3" />
-            default: return null
-        }
-    }
-
-    const filteredMessages = messages.filter(message => {
-        const matchesSearch = message.customerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            message.subject.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            message.message.toLowerCase().includes(searchTerm.toLowerCase())
-        const matchesFilter = messageFilter === 'all' || message.status === messageFilter
-
-        return matchesSearch && matchesFilter
-    })
-
-    const sortedMessages = filteredMessages.sort((a, b) => {
-        const priorityOrder = { high: 3, medium: 2, low: 1 }
-        const statusOrder = { unread: 3, read: 2, replied: 1 }
-
+    const sortedChats = filteredChats.sort((a, b) => {
+        // Prioritize unresolved, then by openTime desc
         if (a.status !== b.status) {
-            return statusOrder[b.status] - statusOrder[a.status]
+            return a.status === 'Unresolved' ? -1 : 1;
         }
+        return new Date(b.openTime).getTime() - new Date(a.openTime).getTime();
+    });
 
-        if (a.priority !== b.priority) {
-            return priorityOrder[b.priority] - priorityOrder[a.priority]
+    const handleOpenChat = async (chat: ChatDTO) => {
+        setErrorMsg(null);
+        // If chat is assigned to another staff
+        if (chat.staffId && chat.staffId !== user?.userId) {
+            setErrorMsg('This chat is not assigned to you');
+            return;
         }
+        // If chat is unassigned, assign it to this staff
+        if (!chat.staffId) {
+            try {
+                const API = import.meta.env.VITE_API_BASE_URL;
+                const res = await fetch(`${API}/api/chats/${chat.chatId}/assign`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) {
+                    setErrorMsg('Failed to assign this chat to you.');
+                    return;
+                }
+            } catch {
+                setErrorMsg('Failed to assign this chat to you.');
+                return;
+            }
+        }
+        setOpenChat(chat);
+        // Mark as read in backend
+        const API = import.meta.env.VITE_API_BASE_URL;
+        await fetch(`${API}/api/chats/${chat.chatId}/read`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        clearNewCustomerMessage(chat.chatId);
+    };
 
-        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-    })
+    const handleUpdateChat = async (chat: ChatDTO, updates: Partial<ChatDTO>) => {
+        setUpdatingChatId(chat.chatId);
+        try {
+            const API = import.meta.env.VITE_API_BASE_URL;
+            const res = await fetch(`${API}/api/chats/${chat.chatId}/update`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify({ ...chat, ...updates })
+            });
+            if (!res.ok) {
+                setErrorMsg('Failed to update chat.');
+            }
+            else {
+                // Update the chat in the local state immediately
+                setChats(prevChats => prevChats.map(c => c.chatId === chat.chatId ? { ...c, ...updates } : c));
+            }
+        } catch {
+            setErrorMsg('Failed to update chat.');
+        } finally {
+            setUpdatingChatId(null);
+        }
+    };
+
+    const handlePrevPage = () => setPage(Math.max(1, page - 1));
+    const handleNextPage = () => {
+        if (!noMoreChats) 
+            setPage(page + 1);
+    };
+
+    const showBadge = (chat: ChatDTO) => chat.hasNewCustomerMessage || newCustomerMessages[chat.chatId];
 
     return (
-        <Card>
-            <CardHeader>
-                <div className="flex justify-between items-center">
-                    <div>
-                        <CardTitle>Customer Messages</CardTitle>
-                        <CardDescription>
-                            Manage customer support requests and conversations ({filteredMessages.length} messages)
-                        </CardDescription>
-                    </div>
-                    <div className="flex gap-2">
-                        <div className="relative">
-                            <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-                            <Input
-                                placeholder="Search messages..."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="pl-8 w-64"
-                            />
-                        </div>
-                        <select
-                            value={messageFilter}
-                            onChange={(e) => setMessageFilter(e.target.value as any)}
-                            className="px-3 py-2 border rounded-md"
-                        >
-                            <option value="all">All Messages</option>
-                            <option value="unread">Unread ({messages.filter(m => m.status === 'unread').length})</option>
-                            <option value="read">Read ({messages.filter(m => m.status === 'read').length})</option>
-                            <option value="replied">Replied ({messages.filter(m => m.status === 'replied').length})</option>
-                        </select>
-                    </div>
+        <div className="card">
+            <div className="flex justify-between items-center mb-2">
+                <div>
+                    <div className="font-bold text-lg">Customer Messages</div>
+                    <div className="text-xs text-muted-foreground">Manage customer support requests and conversations</div>
                 </div>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Customer</TableHead>
-                            <TableHead>Subject</TableHead>
-                            <TableHead>Message Preview</TableHead>
-                            <TableHead>Priority</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead className="text-center">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {sortedMessages.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                                    No messages found matching your criteria
-                                </TableCell>
-                            </TableRow>
+                <div className="flex gap-2">
+                    <input
+                        className="border rounded px-2 py-1"
+                        placeholder="Search subject..."
+                        value={searchTerm}
+                        onChange={e => setSearchTerm(e.target.value)}
+                    />
+                    <select
+                        value={statusFilter}
+                        onChange={e => setStatusFilter(e.target.value)}
+                        className="px-2 py-1 border rounded"
+                    >
+                        <option value="all">All</option>
+                        <option value="Unresolved">Unresolved</option>
+                        <option value="Resolved">Resolved</option>
+                    </select>
+                </div>
+            </div>
+            {errorMsg && <div className="text-red-500 text-xs mb-2">{errorMsg}</div>}
+            <div className="overflow-x-auto">
+                <table className="min-w-full text-sm">
+                    <thead>
+                        <tr>
+                            <th className="text-left">Customer</th>
+                            <th className="text-left">Staff</th>
+                            <th className="text-left">Subject</th>
+                            <th className="text-left">Priority</th>
+                            <th className="text-left">Status</th>
+                            <th className="text-left">Opened</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {loading ? (
+                            <tr><td colSpan={6} className="text-center py-8 text-muted-foreground">Loading...</td></tr>
+                        ) : sortedChats.length === 0 ? (
+                            <tr>
+                                <td colSpan={6} className="text-center py-8 text-muted-foreground">
+                                    No chats found matching your criteria
+                                </td>
+                            </tr>
                         ) : (
-                            sortedMessages.map((message) => (
-                                <TableRow
-                                    key={message.id}
-                                    className={`${message.status === 'unread' ? 'bg-blue-50 hover:bg-blue-100' : 'hover:bg-muted/50'} cursor-pointer`}
-                                    onClick={() => onOpenChat(message)}
+                            sortedChats.map((chat) => (
+                                <tr
+                                    key={chat.chatId}
+                                    className="relative hover:bg-muted/50 cursor-pointer"
+                                    onClick={() => handleOpenChat(chat)}
                                 >
-                                    <TableCell>
+                                    <td>
                                         <div className="flex items-center gap-2">
                                             <Avatar className="h-8 w-8">
-                                                <AvatarImage src={message.customerAvatar} />
                                                 <AvatarFallback>
-                                                    {message.customerName.split(' ').map(n => n[0]).join('')}
+                                                    {chat.userName ? chat.userName[0] : chat.userId}
                                                 </AvatarFallback>
                                             </Avatar>
                                             <div>
-                                                <div className="font-medium">{message.customerName}</div>
-                                                <div className="text-sm text-muted-foreground">{message.customerEmail}</div>
+                                                <div className="font-medium">
+                                                    {chat.userName ? chat.userName : `User #${chat.userId}`}
+                                                </div>
                                             </div>
                                         </div>
-                                    </TableCell>
-                                    <TableCell className="font-medium">
+                                    </td>
+                                    <td>
                                         <div className="flex items-center gap-2">
-                                            {message.status === 'unread' && (
-                                                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                                            )}
-                                            {message.subject}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="max-w-xs truncate">{message.message}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={getPriorityBadgeVariant(message.priority)} className="flex items-center gap-1 w-fit">
-                                            {getPriorityIcon(message.priority)}
-                                            {message.priority}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant={getStatusBadgeVariant(message.status)}>
-                                            {message.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="text-sm">
-                                            {format(new Date(message.createdAt), "MMM d, yyyy")}
-                                            <div className="text-xs text-muted-foreground">
-                                                {format(new Date(message.createdAt), "HH:mm")}
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarFallback>
+                                                    {chat.staffName ? chat.staffName[0] : (chat.staffId ?? '?')}
+                                                </AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <div className="font-medium">{chat.staffName ? chat.staffName : (chat.staffId ? `Staff #${chat.staffId}` : 'Unassigned')}</div>
                                             </div>
                                         </div>
-                                    </TableCell>
-                                    <TableCell className="text-center">
-                                        <Button
-                                            size="sm"
-                                            onClick={(e) => {
-                                                e.stopPropagation()
-                                                onOpenChat(message)
+                                    </td>
+                                    <td className="font-medium">{chat.subject}</td>
+                                    <td>
+                                        <select
+                                            className="border rounded px-1 py-1 text-xs"
+                                            value={chat.priority}
+                                            disabled={updatingChatId === chat.chatId}
+                                            onClick={e => e.stopPropagation()}
+                                            onChange={e => {
+                                                e.stopPropagation();
+                                                handleUpdateChat(chat, { priority: e.target.value });
                                             }}
-                                            variant={message.status === 'unread' ? 'default' : 'outline'}
                                         >
-                                            <Reply className="h-4 w-4 mr-1" />
-                                            {message.conversationHistory.length > 1 ? 'Continue' : 'Reply'}
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
+                                            {PRIORITY_OPTIONS.map(opt => (
+                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                            ))}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <select
+                                            className="border rounded px-1 py-1 text-xs"
+                                            value={chat.status}
+                                            disabled={updatingChatId === chat.chatId}
+                                            onClick={e => e.stopPropagation()}
+                                            onChange={e => {
+                                                e.stopPropagation();
+                                                handleUpdateChat(chat, { status: e.target.value });
+                                            }}
+                                        >
+                                            {STATUS_OPTIONS.map(opt => (
+                                                <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                            ))}
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <div className="text-xs">
+                                            {format(new Date(chat.openTime), "MMM d, yyyy HH:mm")}
+                                        </div>
+                                    </td>
+                                    {showBadge(chat) && (
+                                        <span
+                                            className="absolute top-2 right-2 w-3 h-3 rounded-full bg-red-500"
+                                            title="New customer message"
+                                        />
+                                    )}
+                                </tr>
                             ))
                         )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-    )
+                    </tbody>
+                </table>
+            </div>
+            {/* Pagination Controls */}
+            <div className="flex justify-center mt-4">
+                <div className="flex gap-2 items-center">
+                    <button className="px-2 py-1 border rounded" onClick={handlePrevPage} disabled={page === 1 || loading}>Prev</button>
+                    <span>Page {page}</span>
+                    <button className="px-2 py-1 border rounded" onClick={handleNextPage} disabled={loading || noMoreChats}>Next</button>
+                </div>
+            </div>
+            {noMoreChats && (
+                <div className="text-center text-muted-foreground mt-2">No more chat to load</div>
+            )}
+            {openChat && (
+                <ChatDialog
+                    isOpen={!!openChat}
+                    onClose={() => setOpenChat(null)}
+                    chat={openChat}
+                />
+            )}
+        </div>
+    );
 }

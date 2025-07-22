@@ -1,4 +1,9 @@
-import { Calendar, MapPin, Phone, FileText, DollarSign, X } from 'lucide-react'
+import { useState } from 'react'
+import {
+    Calendar, MapPin, Phone, FileText, DollarSign,
+    //X,
+    Mail
+} from 'lucide-react'
 import {
     Dialog,
     DialogContent,
@@ -7,15 +12,15 @@ import {
     DialogTitle,
 } from '../ui/dialog'
 import { Badge } from '../ui/badge'
-import { Button } from '../ui/button'
+//import { Button } from '../ui/button'
 import { Separator } from '../ui/separator'
 import { format, differenceInDays } from 'date-fns'
-import { type Rental } from './RentalsTab'
+import { type Booking } from '../../types/booking'
 
 interface RentalDetailsDialogProps {
     isOpen: boolean
     onClose: () => void
-    rental: Rental | null
+    rental: Booking
 }
 
 export default function RentalDetailsDialog({
@@ -23,10 +28,22 @@ export default function RentalDetailsDialog({
     onClose,
     rental
 }: RentalDetailsDialogProps) {
+    const [imgError, setImgError] = useState(false);
+
     if (!rental) return null
 
+    const formatVND = (amount: number): string => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    }
+
     const totalDays = differenceInDays(rental.endDate, rental.startDate) + 1
-    const pricePerDay = rental.pricePerDay || rental.totalPrice / totalDays
+    const pricePerDay = rental.pricePerDay ?? 0;
+    const totalPrice = formatVND(pricePerDay * totalDays);
 
     const getStatusColor = (status: string) => {
         switch (status) {
@@ -38,15 +55,15 @@ export default function RentalDetailsDialog({
         }
     }
 
-    const getPaymentStatusColor = (status?: string) => {
-        switch (status) {
-            case 'Paid': return 'default'
-            case 'Pending': return 'outline'
-            case 'Failed': return 'destructive'
-            case 'Refunded': return 'secondary'
-            default: return 'outline'
-        }
-    }
+    //const getPaymentStatusColor = (status?: string) => {
+    //    switch (status) {
+    //        case 'Paid': return 'default'
+    //        case 'Pending': return 'outline'
+    //        case 'Failed': return 'destructive'
+    //        case 'Refunded': return 'secondary'
+    //        default: return 'outline'
+    //    }
+    //}
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -59,9 +76,9 @@ export default function RentalDetailsDialog({
                                 Rental ID: {rental.id}
                             </DialogDescription>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={onClose}>
-                            <X className="h-4 w-4" />
-                        </Button>
+                        {/*<Button variant="ghost" size="icon" onClick={onClose}>*/}
+                        {/*    <X className="h-4 w-4" />*/}
+                        {/*</Button>*/}
                     </div>
                 </DialogHeader>
 
@@ -73,18 +90,24 @@ export default function RentalDetailsDialog({
                             Bike Information
                         </h3>
                         <div className="flex items-center space-x-4 p-4 bg-muted/50 rounded-lg">
-                            <img
-                                src={rental.bikeImageUrl.split('"')[0]}
-                                alt={rental.bikeName}
-                                className="w-20 h-20 object-cover rounded"
-                                onError={(e) => {
-                                    e.currentTarget.src = '/placeholder-bike.png'
-                                }}
-                            />
+                            {imgError ? (
+                                <img
+                                    src="/images/placeholder-bike.png"
+                                    alt={rental.bikeName}
+                                    className="w-20 h-20 object-cover rounded"
+                                />
+                            ) : (
+                                <img
+                                    src={`images/` + rental.bikeImageUrl.split('"')[0]}
+                                    alt={rental.bikeName}
+                                    className="w-20 h-20 object-cover rounded"
+                                    onError={() => setImgError(true)}
+                                />
+                            )}
                             <div>
                                 <p className="text-lg font-medium">{rental.bikeName}</p>
                                 <p className="text-sm text-muted-foreground">
-                                    ${pricePerDay.toFixed(2)} per day
+                                    ${formatVND(pricePerDay)} per day
                                 </p>
                             </div>
                         </div>
@@ -97,14 +120,14 @@ export default function RentalDetailsDialog({
                         <h3 className="text-lg font-semibold mb-3">Customer Information</h3>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                {/* <div className="flex items-center space-x-2">
+                                <div className="flex items-center space-x-2">
                                     <span className="font-medium">Name:</span>
                                     <span>{rental.customerName}</span>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                     <Mail className="h-4 w-4 text-muted-foreground" />
                                     <span className="text-sm">{rental.customerEmail}</span>
-                                </div> */}
+                                </div>
                                 {rental.customerPhone && (
                                     <div className="flex items-center space-x-2">
                                         <Phone className="h-4 w-4 text-muted-foreground" />
@@ -181,7 +204,7 @@ export default function RentalDetailsDialog({
                                 <div className="space-y-2">
                                     <div className="flex justify-between">
                                         <span>Price per day:</span>
-                                        <span>${pricePerDay.toFixed(2)}</span>
+                                        <span>${formatVND(pricePerDay)}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span>Duration:</span>
@@ -189,7 +212,7 @@ export default function RentalDetailsDialog({
                                     </div>
                                     <div className="flex justify-between">
                                         <span>Subtotal:</span>
-                                        <span>${(pricePerDay * totalDays).toFixed(2)}</span>
+                                        <span>${totalPrice}</span>
                                     </div>
                                     {rental.tax && (
                                         <div className="flex justify-between">
@@ -206,14 +229,14 @@ export default function RentalDetailsDialog({
                                     {rental.deposit && (
                                         <div className="flex justify-between">
                                             <span>Security Deposit:</span>
-                                            <span>${rental.deposit.toFixed(2)}</span>
+                                            <span>${formatVND(rental.deposit)}</span>
                                         </div>
                                     )}
                                 </div>
                                 <div className="space-y-2">
                                     <div className="flex justify-between font-semibold text-lg">
                                         <span>Total Amount:</span>
-                                        <span>${rental.totalPrice.toFixed(2)}</span>
+                                        <span>${totalPrice}</span>
                                     </div>
                                     {rental.paymentMethod && (
                                         <div className="flex justify-between">
@@ -223,7 +246,7 @@ export default function RentalDetailsDialog({
                                     )}
                                     <div className="flex justify-between">
                                         <span>Order Date:</span>
-                                        <span>{format(rental.orderDate, 'MMM d, yyyy')}</span>
+                                        <span>{rental.orderDate ? format(rental.orderDate, 'MMM d, yyyy') : 'Not paid'}</span>
                                     </div>
                                 </div>
                             </div>
@@ -242,14 +265,14 @@ export default function RentalDetailsDialog({
                                     {rental.status}
                                 </Badge>
                             </div>
-                            {rental.paymentStatus && (
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground mb-1">Payment Status</p>
-                                    <Badge variant={getPaymentStatusColor(rental.paymentStatus)}>
-                                        {rental.paymentStatus}
-                                    </Badge>
-                                </div>
-                            )}
+                            {/*{rental.paymentStatus && (*/}
+                            {/*    <div>*/}
+                            {/*        <p className="text-sm font-medium text-muted-foreground mb-1">Payment Status</p>*/}
+                            {/*        <Badge variant={getPaymentStatusColor(rental.paymentStatus)}>*/}
+                            {/*            {rental.paymentStatus}*/}
+                            {/*        </Badge>*/}
+                            {/*    </div>*/}
+                            {/*)}*/}
                         </div>
                     </div>
 

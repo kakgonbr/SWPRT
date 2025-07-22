@@ -1,12 +1,15 @@
-﻿namespace rental_services.Server.Repositories
+﻿using rental_services.Server.Models;
+
+namespace rental_services.Server.Repositories
 {
     public interface IVehicleRepository
     {
         Task<List<Models.Vehicle>> GetAllAsync();
         Task<Models.Vehicle?> GetByIdAsync(int id);
-        Task AddAsync(Models.Vehicle product);
-        Task UpdateAsync(Models.Vehicle product);
-        Task DeleteAsync(int id);
-        void SaveAsync();
+        Task<Models.Vehicle> AddAsync(Models.Vehicle vehicle);
+        Task<int> UpdateAsync(Models.Vehicle vehicle);
+        Task<int> DeleteAsync(int id);
+        Task<int> SaveAsync();
+        void DeleteRange(List<Vehicle> toDelete);
     }
 }

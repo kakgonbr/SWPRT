@@ -11,8 +11,7 @@ import {
 import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
-import { useToast } from '../hooks/use-toast'
-
+import { useToast } from '../contexts/toast-context'
 interface ChangePasswordDialogProps {
     isOpen: boolean
     onClose: () => void
@@ -114,7 +113,7 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
 
         setIsLoading(true)
         try {
-            const response = await fetch('/api/user/change-password', {
+            const response = await fetch('/api/users/change-password', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -134,7 +133,7 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
                 handleClose()
             } else {
                 const errorData = await response.json()
-                if (response.status === 400 && errorData.message === 'Current password is incorrect') {
+                if (response.status === 400 || response.status === 500) {
                     setErrors(prev => ({
                         ...prev,
                         currentPassword: 'Current password is incorrect'

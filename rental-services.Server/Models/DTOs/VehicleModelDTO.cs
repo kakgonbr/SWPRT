@@ -10,17 +10,19 @@
         public string Description { get; set; } = null!;
 
         public long RatePerDay { get; set; }
+        
+        public int Quantity { get; set; }
 
         public string? ImageFile { get; set; }
 
         public int UpFrontPercentage { get; set; }
-
+ 
         public bool IsAvailable { get; set; }
         
         public decimal Rating { get; set; }
 
         public string VehicleType { get; set; } = null!;
 
-        public string Shop { get; set; } = null!;
+        public IEnumerable<string> Shops { get; set; } = null!;
     }
 }

@@ -34,25 +34,22 @@ export default function BikeDeleteDialog({
                         Delete Bike
                     </DialogTitle>
                     <DialogDescription className="pt-2">
-                        Are you sure you want to delete <strong>{bike?.name}</strong>?
-                        This action cannot be undone and will permanently remove the bike from the system.
+                        Are you sure you want to delete <strong>{bike?.displayName}</strong>?
+                        Deleting this model will set its status to be "Unavailable".
                     </DialogDescription>
                 </DialogHeader>
 
                 {bike && (
                     <div className="flex items-center space-x-4 py-4 bg-muted/50 rounded-lg px-4">
                         <img
-                            src={bike.imageUrl.split('"')[0]}
-                            alt={bike.name}
+                            src={bike.imageFile ? bike.imageFile.split('"')[0] : '/images/placeholder-bike.png'}
+                            alt={bike.displayName}
                             className="w-16 h-16 object-cover rounded"
-                            onError={(e) => {
-                                e.currentTarget.src = '/placeholder-bike.png'
-                            }}
                         />
                         <div>
-                            <p className="font-medium">{bike.name}</p>
-                            <p className="text-sm text-muted-foreground">{bike.type}</p>
-                            <p className="text-sm">${bike.pricePerDay}/day</p>
+                            <p className="font-medium">{bike.displayName}</p>
+                            <p className="text-sm text-muted-foreground">{bike.vehicleType}</p>
+                            <p className="text-sm">${bike.ratePerDay}/day</p>
                         </div>
                     </div>
                 )}

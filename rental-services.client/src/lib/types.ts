@@ -1,11 +1,11 @@
 export type UserRole = 'renter' | 'admin' | 'staff';
 
 export interface User {
-    id: string;
+    userId: number;
     email: string;
-    name: string;
+    fullName: string;
     role: UserRole;
-    status: boolean; //0: active, 1: deactive
+    isActive: boolean; //0: active, 1: deactive
     avatarUrl?: string;
     lastLogin?: Date;
     feedbackCount?: number;
@@ -13,7 +13,29 @@ export interface User {
     address?: string;
     credentialIdNumber?: string;
     credentialIdImageUrl?: string;
-    createdAt: Date; // Added to track user sign-up date
+    creationDate: Date; // Added to track user sign-up date
+}
+
+export interface DashboardStats {
+    totalUsers: number
+    totalBikes: number
+    activeRentals: number
+    monthlyRevenue: number
+    recentUsers: number
+    availableBikes: number
+}
+
+export interface VehicleModelDTO {
+    modelId: number;
+    displayName: string;
+    description: string;
+    ratePerDay: number;
+    imageFile: string;
+    upFrontPercentage: number; //deposit money when place a rental
+    isAvailable: boolean;   
+    rating: number;
+    vehicleType: string;
+    shop: string;
 }
 
 export interface Bike {
@@ -42,12 +64,12 @@ export interface Bike {
 export interface Rental {
     id: string;
     bikeId: string;
-    userId: string;
+    userId: number
     startDate: Date;
     endDate: Date;
     totalPrice: number;
     options: string[];
-    status: 'Upcoming' | 'Active' | 'Completed' | 'Cancelled';
+    status: 'Awaiting Payment' | 'Upcoming' | 'Active' | 'Completed' | 'Cancelled';
     bikeName: string;
     bikeImageUrl: string;
     orderDate: Date;
@@ -76,7 +98,7 @@ export type AdminSupportMessageStatus = 'New' | 'In Progress' | 'Replied' | 'Res
 // Kept for staff panel reference if needed.
 export interface AdminSupportMessage {
     id: string;
-    userId: string;
+    userId: number;
     userName: string;
     userEmail: string;
     subject: string;
@@ -85,3 +107,44 @@ export interface AdminSupportMessage {
     status: AdminSupportMessageStatus;
 }
 
+export interface ChatDTO {
+    chatId: number;
+    userId: number;
+    staffId?: number;
+    status: string;
+    priority: string;
+    openTime: string;
+    subject: string;
+    userName: string;
+    staffName: string;
+    hasNewCustomerMessage: boolean;
+}
+
+export interface ChatMessageDTO {
+    chatMessageId: number;
+    chatId: number;
+    senderId: number;
+    content: string;
+    sendTime: string;
+}
+
+export interface ServerInfo {
+    siteName: string,
+    siteDescription: string,
+    contactEmail: string,
+    supportPhone: string
+}
+
+export interface ReportDTO {
+    reportId: number;
+    userId: number;
+    typeId: number;
+    title: string;
+    body: string;
+    imagePath?: string; 
+    reportTime: string;
+    status: string;
+    typeName?: string;
+    userName?: string;
+    userEmail?: string;
+}

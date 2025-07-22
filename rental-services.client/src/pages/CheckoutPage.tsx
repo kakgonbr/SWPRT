@@ -1,6 +1,5 @@
-// src/pages/CheckoutPage.tsx
-import {useState, useEffect} from 'react'
-import {useNavigate, useSearchParams, Link} from 'react-router-dom'
+﻿import React, { useState, useEffect } from 'react'
+import { useNavigate, Link, useParams, useLocation } from 'react-router-dom'
 import {
     ArrowLeft,
     Calendar,
@@ -8,43 +7,111 @@ import {
     CreditCard,
     Shield
 } from 'lucide-react'
-import {Button} from '../components/ui/button'
-import {Input} from '../components/ui/input'
-import {Label} from '../components/ui/label'
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '../components/ui/card'
-import {Checkbox} from '../components/ui/checkbox'
-import {Separator} from '../components/ui/separator'
-import {Calendar as CalendarComponent} from '../components/ui/calendar'
-import {Popover, PopoverContent, PopoverTrigger} from '../components/ui/popover'
-import {useAuth} from '../contexts/auth-context'
-import {useToast} from '../hooks/use-toast'
-import {MOCK_BIKES, RENTAL_OPTIONS} from '../lib/mock-data'
-import {format, addDays, differenceInDays} from 'date-fns'
-import {cn} from '../lib/utils'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Label } from '../components/ui/label'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import { Checkbox } from '../components/ui/checkbox'
+import { Separator } from '../components/ui/separator'
+import { Calendar as CalendarComponent } from '../components/ui/calendar'
+import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover'
+import { useAuth } from '../contexts/auth-context'
+import { useToast } from '../contexts/toast-context.tsx'
+import { RENTAL_OPTIONS } from '../lib/mock-data'
+import { format, differenceInDays } from 'date-fns'
+import { cn } from '../lib/utils'
+import {
+    bikeApi,
+    //rentalAPI
+} from "../lib/api.ts";
+import { type VehicleModelDTO } from '../lib/types'
+import type { Booking } from '../types/booking.ts'
+
+const API = import.meta.env.VITE_API_BASE_URL;
 
 export default function CheckoutPage() {
     const navigate = useNavigate()
-    const [searchParams] = useSearchParams()
-    const {user, isAuthenticated, loading} = useAuth()
-    const {toast} = useToast()
-
-    const bikeId = searchParams.get('bikeId')
-    const bike = MOCK_BIKES.find(b => b.id === bikeId)
-
+    const { user, isAuthenticated, loading } = useAuth()
+    const { toast } = useToast()
+    const [error, setError] = useState<string>('');
+    const [loadingState, setLoadingState] = useState(true);
+    const { id } = useParams<{ id: string }>();
+    const [termsTick, setTermsTick] = useState<boolean>(false);
+    const [bike, setBike] = useState<VehicleModelDTO>();
+    const location = useLocation();
     const [startDate, setStartDate] = useState<Date>()
     const [endDate, setEndDate] = useState<Date>()
+
+    const rentalParams = location.state?.rentalParams;
+
+    console.log(`RENTAL PARAMS OF CHECKOUT: ${rentalParams}`);
+
+    useEffect(() => {
+        if (rentalParams) {
+            const params = new URLSearchParams(rentalParams);
+            const startDateStr = params.get(`startDate`);
+            const endDateStr = params.get(`endDate`);
+
+            if (startDateStr) {
+                setStartDate(new Date(startDateStr));
+            }
+
+            if (endDateStr) {
+                setEndDate(new Date(endDateStr));
+            }
+        }
+    }, [rentalParams]);
+
+    console.log(`start date: ${startDate}, end date: ${endDate} in checkout page`);
+
+
+    console.log(`bike id: ${id}`);
+
+    const getVehicleModelDetailById = async () => {
+        if (!id) return;
+        setLoadingState(true);
+        setError('');
+
+        try {
+            const bikeId = parseInt(id, 10);
+            if (isNaN(bikeId)) {
+                setError("Invalid bike ID");
+                setLoadingState(false);
+                return;
+            }
+            const data = await bikeApi.getBikeById(bikeId);
+            setBike(data);
+            // Auto-select the bike's shop location when data is loaded
+            setSelectedLocation("bikeShop");
+        } catch (error) {
+            console.error(`Error fetching bike details: `, error);
+            setError("Failed to load bike details. Please try again later.");
+        } finally {
+            setLoadingState(false);
+        }
+    };
+
+    useEffect(() => {
+        getVehicleModelDetailById();
+    }, [id]);
+
+    // Add a retry function
+    const retryFetch = () => {
+        setError('');
+        getVehicleModelDetailById();
+    };
+
+    const handleTermsChange = (checked: boolean) => {
+        setTermsTick(checked);
+    }
+
+
     const [selectedOptions, setSelectedOptions] = useState(
-        RENTAL_OPTIONS.map(option => ({...option, selected: false}))
+        RENTAL_OPTIONS.map(option => ({ ...option, selected: false }))
     )
     const [isSubmitting, setIsSubmitting] = useState(false)
 
     const [selectedLocation, setSelectedLocation] = useState<string>('')
-
-    const LOCATIONS = [
-        {id: "loc1", name: "Hanoi Downtown", address: "15 Tran Hung Dao St, Hoan Kiem"},
-        {id: "loc2", name: "Hanoi West", address: "88 Cau Giay St, Cau Giay"},
-        {id: "loc3", name: "Hanoi South", address: "102 Nguyen Van Cu St, Long Bien"},
-    ]
 
     useEffect(() => {
         if (loading) return
@@ -54,23 +121,18 @@ export default function CheckoutPage() {
             return
         }
 
-        if (!bikeId || !bike) {
-            navigate('/bikes')
-            return
-        }
+        // if (!bikeId || !bike) {
+        //     navigate('/')
+        //     return
+        // }
 
-        // Set default dates (today + 1 to today + 3)
-        const tomorrow = addDays(new Date(), 1)
-        const dayAfterTomorrow = addDays(new Date(), 3)
-        setStartDate(tomorrow)
-        setEndDate(dayAfterTomorrow)
-    }, [bikeId, bike, isAuthenticated, loading, navigate])
+    }, [id, bike, isAuthenticated, loading, navigate])
 
     const handleOptionToggle = (optionId: string) => {
         setSelectedOptions(prev =>
             prev.map(option =>
                 option.id === optionId
-                    ? {...option, selected: !option.selected}
+                    ? { ...option, selected: !option.selected }
                     : option
             )
         )
@@ -78,9 +140,8 @@ export default function CheckoutPage() {
 
     const calculateTotal = () => {
         if (!startDate || !endDate || !bike) return 0
-
         const days = differenceInDays(endDate, startDate)
-        const bikeTotal = bike.pricePerDay * days
+        const bikeTotal = bike.ratePerDay * days
         const optionsTotal = selectedOptions
             .filter(option => option.selected)
             .reduce((sum, option) => sum + (option.price * days), 0)
@@ -90,7 +151,22 @@ export default function CheckoutPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        if (!startDate || !endDate || !bike || !user || !selectedLocation) {
+
+        //TODO: update the terms tick and payment information when done
+
+        if (!termsTick) {
+            console.log("Terms not checked, showing toast") // Debug log
+            console.log("Current termsTick value: ", termsTick);
+            const toastResult = toast({
+                title: "Terms Agreement Required",
+                description: "Please agree to the Terms and Conditions to proceed.",
+                variant: "destructive",
+            });
+            console.log("Toast result: ", toastResult);
+            return
+        }
+
+        if (!startDate || !endDate || !bike || !user || !selectedLocation || !termsTick) {
             toast({
                 title: "Missing Information",
                 description: "Please select dates and a pickup location.",
@@ -102,23 +178,70 @@ export default function CheckoutPage() {
         setIsSubmitting(true)
 
         try {
-            // Simulate API call
-            await new Promise(resolve => setTimeout(resolve, 2000))
+            const booking: Booking = {
+                id: '',
+                customerId: user.userId,
+                customerName: user.fullName,
+                customerEmail: user.email,
+                vehicleModelId: bike.modelId,
+                bikeName: bike.displayName,
+                bikeImageUrl: bike.imageFile,
+                startDate: startDate.toISOString().split('T')[0],
+                endDate: endDate.toISOString().split('T')[0],
+                status: 'Awaiting Payment',
+                pricePerDay: bike.ratePerDay,
+                //TODO: change the up front percentage to fixed deposit price for each bike
+                deposit: bike.upFrontPercentage,
+                pickupLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
+                returnLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
+                paymentMethod: 'Credit Card'
+            };
 
-            const locationName = LOCATIONS.find(loc => loc.id === selectedLocation)?.name
+            console.log(`passing booking api data: ${booking.customerId, booking.customerName, booking.vehicleModelId, booking.startDate}`)
 
-            toast({
-                title: "Booking Confirmed!",
-                description: `Your rental for ${bike.name} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')} at ${locationName}.`,
-            })
+            //payment should be complete in order to call this api
+            //update the booking status before calling the api
+            //const bookingResult = await rentalAPI.createBooking(booking);
 
-            navigate('/rentals')
+            //console.log(`booking result ${bookingResult}`);
+
+            //toast({
+            //    title: "Booking Confirmed!",
+            //    description: `Your rental for ${bike.displayName} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')} at ${location}.`,
+            //})
+
+            const response = await fetch(`${API}/api/rentals/book`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'text/plain',
+                    'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                    'Content-type': 'application/json'
+                },
+                body: JSON.stringify(booking)
+            });
+            if (!response.ok) {
+                throw new Error(`API call failed with status ${response.status}`);
+            }
+
+            // Read plain text response
+            const rawText: string = await response.text();
+
+            // Handle possible null or empty string
+            const result: string | null = rawText.trim().length > 0 ? rawText.trim() : null;
+
+            if (result !== null) {
+                window.location.href = result;
+            } else {
+                throw new Error("Cannot get payment URL.")
+            }
         } catch (error) {
             toast({
                 title: "Booking Failed",
                 description: "There was an error processing your booking. Please try again.",
                 variant: "destructive",
             })
+            console.error(`Error booking bike:`, error);
+            setError("Booking failed, There was an error processing your booking. Please try again.");
         } finally {
             setIsSubmitting(false)
         }
@@ -128,6 +251,24 @@ export default function CheckoutPage() {
         return (
             <div className="flex justify-center items-center h-64">
                 <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary"></div>
+            </div>
+        )
+    }
+
+    if (loadingState) {
+        return (
+            <div className="container mx-auto px-4 py-8 max-w-6xl">
+                <Button variant="ghost" className="mb-6" asChild>
+                    <Link to="/bikes">
+                        <ArrowLeft className="w-4 h-4 mr-2" />
+                        Back to Bikes
+                    </Link>
+                </Button>
+
+                <div className="flex flex-col items-center justify-center h-64">
+                    <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-primary mb-4"></div>
+                    <p className="text-muted-foreground">Loading bike details...</p>
+                </div>
             </div>
         )
     }
@@ -143,11 +284,33 @@ export default function CheckoutPage() {
         <div className="container mx-auto px-4 py-8 max-w-6xl">
             {/* Back Button */}
             <Button variant="ghost" className="mb-6" asChild>
-                <Link to={`/bikes/${bike.id}`}>
-                    <ArrowLeft className="w-4 h-4 mr-2"/>
+                <Link
+                    to={`/bikes/${bike.modelId}`}
+                    state={{
+                        rentalParams: rentalParams
+                    }}
+                >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
                     Back to Bike Details
                 </Link>
             </Button>
+
+            {/* Error Message */}
+            {error && (
+                <div
+                    className="bg-destructive/15 border border-destructive text-destructive px-4 py-3 rounded-md mb-6 flex items-start justify-between">
+                    <div className="flex items-start">
+                        <div className="mr-2 mt-0.5">⚠️</div>
+                        <div>
+                            <p className="font-medium">Error</p>
+                            <p className="text-sm">{error}</p>
+                        </div>
+                    </div>
+                    <Button variant="outline" size="sm" onClick={retryFetch} className="ml-4">
+                        Retry
+                    </Button>
+                </div>
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                 {/* Booking Form */}
@@ -172,8 +335,9 @@ export default function CheckoutPage() {
                                                     "w-full justify-start text-left font-normal",
                                                     !startDate && "text-muted-foreground"
                                                 )}
+                                                disabled={!!rentalParams}
                                             >
-                                                <Calendar className="mr-2 h-4 w-4"/>
+                                                <Calendar className="mr-2 h-4 w-4" />
                                                 {startDate ? format(startDate, "PPP") : "Pick a date"}
                                             </Button>
                                         </PopoverTrigger>
@@ -182,7 +346,7 @@ export default function CheckoutPage() {
                                                 mode="single"
                                                 selected={startDate}
                                                 onSelect={setStartDate}
-                                                disabled={(date: Date) => date < new Date()}
+                                                disabled={(date: Date) => date < new Date() || !!rentalParams}
                                                 initialFocus
                                             />
                                         </PopoverContent>
@@ -199,8 +363,9 @@ export default function CheckoutPage() {
                                                     "w-full justify-start text-left font-normal",
                                                     !endDate && "text-muted-foreground"
                                                 )}
+                                                disabled={!!rentalParams}
                                             >
-                                                <Calendar className="mr-2 h-4 w-4"/>
+                                                <Calendar className="mr-2 h-4 w-4" />
                                                 {endDate ? format(endDate, "PPP") : "Pick a date"}
                                             </Button>
                                         </PopoverTrigger>
@@ -209,7 +374,7 @@ export default function CheckoutPage() {
                                                 mode="single"
                                                 selected={endDate}
                                                 onSelect={setEndDate}
-                                                disabled={(date: Date) => date < (startDate || new Date())}
+                                                disabled={(date: Date) => date < (startDate || new Date()) || !!rentalParams}
                                                 initialFocus
                                             />
                                         </PopoverContent>
@@ -221,7 +386,7 @@ export default function CheckoutPage() {
                                 <div className="p-3 bg-muted rounded-lg">
                                     <p className="text-sm text-muted-foreground">
                                         Rental duration: <span
-                                        className="font-medium">{days} {days === 1 ? 'day' : 'days'}</span>
+                                            className="font-medium">{days} {days === 1 ? 'day' : 'days'}</span>
                                     </p>
                                 </div>
                             )}
@@ -230,28 +395,25 @@ export default function CheckoutPage() {
                             <div className="space-y-2 mt-4">
                                 <Label>Pickup Location</Label>
                                 <div className="space-y-3">
-                                    {LOCATIONS.filter(location =>
-                                        // This would ideally check which locations have this bike available
-                                        bike.availableLocations?.includes(location.id) || true
-                                    ).map((location) => (
-                                        <div key={location.id} className="flex items-center space-x-3">
-                                            <Checkbox
-                                                id={location.id}
-                                                checked={selectedLocation === location.id}
-                                                onCheckedChange={() => setSelectedLocation(location.id)}
-                                            />
-                                            <div className="flex-1">
-                                                <Label htmlFor={location.id} className="cursor-pointer font-medium">
-                                                    {location.name}
-                                                </Label>
-                                                <p className="text-xs text-muted-foreground">{location.address}</p>
-                                            </div>
+                                    <div className="flex items-center space-x-3">
+                                        <Checkbox
+                                            id="bikeShop"
+                                            checked={selectedLocation === "bikeShop"}
+                                            onCheckedChange={() => setSelectedLocation("bikeShop")}
+                                        />
+                                        <div className="flex-1">
+                                            <Label htmlFor="bikeShop" className="cursor-pointer font-medium">
+                                                {bike.shop}
+                                            </Label>
+                                            <p className="text-xs text-muted-foreground">
+                                                {bike.vehicleType} pickup location
+                                            </p>
                                         </div>
-                                    ))}
+                                    </div>
                                 </div>
                             </div>
 
-                            <Separator/>
+                            <Separator />
 
                             {/* Rental Options */}
                             <div className="space-y-4">
@@ -338,27 +500,27 @@ export default function CheckoutPage() {
                             {/* Bike Details */}
                             <div className="flex space-x-4">
                                 <img
-                                    src={bike.imageUrl.split('"')[0]}
-                                    alt={bike.name}
+                                    src={`images/` + bike.imageFile.split('"')[0]}
+                                    alt={bike.displayName}
                                     className="w-20 h-20 object-cover rounded-lg"
                                 />
                                 <div className="flex-1">
-                                    <h3 className="font-semibold">{bike.name}</h3>
-                                    <p className="text-sm text-muted-foreground">{bike.type}</p>
+                                    <h3 className="font-semibold">{bike.displayName}</h3>
+                                    <p className="text-sm text-muted-foreground">{bike.vehicleType}</p>
                                     <div className="flex items-center mt-1">
-                                        <MapPin className="w-3 h-3 mr-1"/>
-                                        <span className="text-xs text-muted-foreground">{bike.location}</span>
+                                        <MapPin className="w-3 h-3 mr-1" />
+                                        <span className="text-xs text-muted-foreground">{bike.shop}</span>
                                     </div>
                                 </div>
                             </div>
 
-                            <Separator/>
+                            <Separator />
 
                             {/* Pricing Breakdown */}
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
                                     <span>Bike rental ({days} {days === 1 ? 'day' : 'days'})</span>
-                                    <span>${(bike.pricePerDay * days).toFixed(2)}</span>
+                                    <span>${(bike.ratePerDay * days).toFixed(2)}</span>
                                 </div>
 
                                 {selectedOptions
@@ -370,7 +532,7 @@ export default function CheckoutPage() {
                                         </div>
                                     ))}
 
-                                <Separator/>
+                                <Separator />
 
                                 <div className="flex justify-between font-semibold">
                                     <span>Total</span>
@@ -378,12 +540,12 @@ export default function CheckoutPage() {
                                 </div>
                             </div>
 
-                            <Separator/>
+                            <Separator />
 
                             {/* Terms and Conditions */}
                             <div className="space-y-3">
                                 <div className="flex items-start space-x-2">
-                                    <Checkbox id="terms"/>
+                                    <Checkbox id="terms" checked={termsTick} onCheckedChange={(checked) => handleTermsChange(checked === true)} />
                                     <Label htmlFor="terms" className="text-sm cursor-pointer">
                                         I agree to the{' '}
                                         <Link to="/terms" className="text-primary underline">
@@ -393,8 +555,8 @@ export default function CheckoutPage() {
                                 </div>
 
                                 <div className="flex items-start space-x-2">
-                                    <Checkbox id="insurance"/>
-                                    <Label htmlFor="insurance" className="text-sm cursor-pointer">
+                                    <Checkbox id="understandInsurance" />
+                                    <Label htmlFor="understandInsurance" className="text-sm cursor-pointer">
                                         I understand the insurance coverage and liability
                                     </Label>
                                 </div>
@@ -407,17 +569,21 @@ export default function CheckoutPage() {
                                 disabled={isSubmitting || !startDate || !endDate || !selectedLocation}
                             >
                                 {isSubmitting ? (
-                                    <>Processing...</>
+                                    <div className="flex items-center justify-center">
+                                        <div
+                                            className="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full mr-2"></div>
+                                        Processing...
+                                    </div>
                                 ) : (
                                     <>
-                                        <CreditCard className="w-4 h-4 mr-2"/>
+                                        <CreditCard className="w-4 h-4 mr-2" />
                                         Confirm Booking - ${total.toFixed(2)}
                                     </>
                                 )}
                             </Button>
 
                             <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
-                                <Shield className="w-4 h-4"/>
+                                <Shield className="w-4 h-4" />
                                 <span>Secure payment protected by SSL</span>
                             </div>
                         </CardContent>

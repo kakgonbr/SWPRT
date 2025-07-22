@@ -7,9 +7,9 @@ import { Input } from '../../components/ui/input'
 import { Label } from '../../components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card'
 import { Separator } from '../../components/ui/separator'
-import { useToast } from '../../hooks/use-toast'
+import { useToast } from '../../contexts/toast-context'
 import { useAuth } from '../../contexts/auth-context'
-import type {LoginRequest} from "../../contexts/auth-context";
+import type { LoginRequest } from "../../contexts/auth-context";
 
 export default function LoginPage() {
     const navigate = useNavigate()
@@ -45,7 +45,7 @@ export default function LoginPage() {
                     title: "Login Successful",
                     description: "Welcome back to VroomVroom!",
                 });
-                navigate('/', {replace: true});
+                navigate('/', { replace: true });
             } else {
                 toast({
                     title: "Login Failed",
@@ -68,33 +68,7 @@ export default function LoginPage() {
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
         try {
-            // Option 1: Redirect to Google OAuth
-            window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`
-
-            // Option 2: If using Google Sign-In library (uncomment if you prefer this approach)
-            /*
-            const response = await fetch('/api/auth/google-signin', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    // Google token would be here
-                })
-            })
-            
-            if (response.ok) {
-                const data = await response.json()
-                // Handle successful login
-                toast({
-                    title: "Login Successful",
-                    description: "Welcome back to VroomVroom!",
-                })
-                navigate('/')
-            } else {
-                throw new Error('Google login failed')
-            }
-            */
+            window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login/google`
         } catch (error) {
             console.error('Google login error:', error)
             toast({
@@ -112,7 +86,7 @@ export default function LoginPage() {
     const fillDemoCredentials = (userType: 'renter' | 'admin' | 'staff') => {
         const demoUsers = {
             renter: { email: 'renter@motorent.com', password: 'demo123' },
-            admin: { email: 'admin@motorent.com', password: 'demo123' },
+            admin: { email: 'admin@vroomvroom.vn', password: 'Abc@12345' },
             staff: { email: 'staff@motorent.com', password: 'demo123' }
         }
 

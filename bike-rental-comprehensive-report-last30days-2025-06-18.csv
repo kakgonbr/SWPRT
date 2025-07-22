@@ -1,0 +1,35 @@
+BIKE RENTAL SERVICE - COMPREHENSIVE REPORT
+Report Period: Last 30 Days
+Date Range: 2025-05-19 to 2025-06-18
+Generated on: 2025-06-18 15:56:07
+
+SUMMARY STATISTICS
+Metric,Value
+Total Rentals,4
+Total Revenue,$740.00
+Average Rental Value,$185.00
+Completed Rentals,1
+Active Rentals,1
+Cancelled Rentals,0
+New Users (Period),1
+Total Users,5
+Total Bikes,7
+Available Bikes,6
+
+RENTAL DETAILS
+Rental ID,User Name,User Email,Bike Name,Bike Type,Start Date,End Date,Duration (Days),Total Price,Status,Order Date
+rental1,Alice Wonderland,renter@motorent.com,Urban Sprinter Z250,Scooter,2025-06-08,2025-06-11,3,$135,Completed,2025-06-06 15:53:44
+rental2,Alice Wonderland,renter@motorent.com,Adventure Pro 500X,Adventure,2025-06-20,2025-06-23,3,$225,Upcoming,2025-06-17 15:53:44
+rental4,Bob The Builder,admin@motorent.com,EcoVolt Commuter,Electric,2025-06-16,2025-06-21,5,$275,Active,2025-06-15 15:53:44
+rental5,Charlie Brown,staff@motorent.com,CityHopper 125,Scooter,2025-06-25,2025-06-28,3,$105,Upcoming,2025-06-18 15:53:44
+
+POPULAR BIKES
+Bike Name,Bike Type,Rental Count,Revenue
+Urban Sprinter Z250,Scooter,1,$135.00
+Adventure Pro 500X,Adventure,1,$225.00
+EcoVolt Commuter,Electric,1,$275.00
+CityHopper 125,Scooter,1,$105.00
+
+USER DETAILS
+User ID,Name,Email,Role,Status,Created At,Total Rentals,Total Spent
+user1,Alice Wonderland,renter@motorent.com,renter,Active,2025-06-01 00:00:00,2,$360.00

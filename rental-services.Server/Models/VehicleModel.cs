@@ -9,8 +9,6 @@ public partial class VehicleModel
 
     public int VehicleTypeId { get; set; }
 
-    public int ShopId { get; set; }
-
     public string ModelName { get; set; } = null!;
 
     public long RatePerDay { get; set; }
@@ -29,13 +27,9 @@ public partial class VehicleModel
 
     public virtual ICollection<Review> Reviews { get; set; } = new List<Review>();
 
-    public virtual Shop Shop { get; set; } = null!;
-
     public virtual VehicleType VehicleType { get; set; } = null!;
 
     public virtual ICollection<Vehicle> Vehicles { get; set; } = new List<Vehicle>();
 
     public virtual ICollection<Peripheral> Peripherals { get; set; } = new List<Peripheral>();
-
-    public virtual ICollection<Peripheral> PeripheralsNavigation { get; set; } = new List<Peripheral>();
 }

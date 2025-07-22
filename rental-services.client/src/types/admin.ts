@@ -1,5 +1,5 @@
 export interface SystemSettings {
-    id: string
+    //id: string
     siteName: string
     siteDescription: string
     contactEmail: string
@@ -7,35 +7,35 @@ export interface SystemSettings {
     maxRentalDays: number
     minRentalHours: number
     cancellationDeadlineHours: number
-    defaultCurrency: string
-    timezone: string
-    maintenanceMode: boolean
-    maintenanceMessage: string
-    maintenanceStartTime?: string
-    maintenanceEndTime?: string
+    //defaultCurrency: string
+    //timezone: string
+    //maintenanceMode: boolean
+    //maintenanceMessage: string
+    //maintenanceStartTime?: string
+    //maintenanceEndTime?: string
     emailNotifications: boolean
     smsNotifications: boolean
     autoApprovalEnabled: boolean
     requireIdVerification: boolean
     maxConcurrentRentals: number
-    updatedAt: string
-    updatedBy: string
+    updatedAt?: string
+    updatedBy?: string
 }
 
 export interface PopupBanner {
-    id: string
+    bannerId: string
     title: string
     message: string
     type: 'info' | 'warning' | 'success' | 'error' | 'promotion'
     isActive: boolean
-    startDate: string
-    endDate: string
-    displayPages: string[]
+    startTime: string
+    endTime: string
+    //displayPages: string[]
     buttonText?: string
     buttonLink?: string
     priority: number
     showOnce: boolean
-    backgroundColor?: string
+    background?: string
     textColor?: string
     createdAt: string
     updatedAt: string

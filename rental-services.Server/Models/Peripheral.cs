@@ -11,7 +11,7 @@ public partial class Peripheral
 
     public long RatePerDay { get; set; }
 
-    public virtual ICollection<VehicleModel> Models { get; set; } = new List<VehicleModel>();
+    public virtual ICollection<Booking> Bookings { get; set; } = new List<Booking>();
 
-    public virtual ICollection<VehicleModel> ModelsNavigation { get; set; } = new List<VehicleModel>();
+    public virtual ICollection<VehicleModel> Models { get; set; } = new List<VehicleModel>();
 }
