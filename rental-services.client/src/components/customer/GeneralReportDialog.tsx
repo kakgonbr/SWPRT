@@ -28,8 +28,7 @@ import {
     Shield,
     Smartphone
 } from 'lucide-react'
-import { useToast } from '../../hooks/use-toast'
-
+import { useToast } from '../../contexts/toast-context'
 interface GeneralReportDialogProps {
     isOpen: boolean
     onClose: () => void

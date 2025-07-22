@@ -1,61 +1,74 @@
 // src/contexts/auth-context.tsx
 
 //@ts-ignore
-import React, { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
+import React, {
+    createContext,
+    useContext,
+    useState,
+    useEffect,
+    type ReactNode,
+} from "react";
+import { useNavigate } from "react-router-dom";
+
 const API = import.meta.env.VITE_API_BASE_URL;
 
 interface AuthContextType {
-    user: UserDto | null,
-    isAuthenticated: boolean,
-    login: (data: LoginRequest) => Promise<LoginResponse>,
-    logout: () => void,
-    register: (data: SignupRequest) => Promise<any>,
-    loading: boolean,
+    user: UserDto | null;
+    isAuthenticated: boolean;
+    login: (data: LoginRequest) => Promise<LoginResponse>;
+    handleGoogleCallback: (token: string) => Promise<void>;
+    logout: () => void;
+    register: (data: SignupRequest) => Promise<any>;
+    loading: boolean;
 }
 
 interface UserDto {
-    userId: number,
-    email: string,
-    phoneNumber: string,
-    fullName: string,
-    address: string | null,
-    creationDate: Date,
-    emailConfirmed: boolean,
-    dateOfBirth: Date | null,
-    isActive: boolean,
-    role: string,
-    driverLicenses: DriverLicenseDto | null
+    userId: number;
+    email: string;
+    phoneNumber: string | null;
+    passwordHash?: string | null;
+    role: string;
+    fullName: string;
+    address: string | null;
+    creationDate: Date;
+    emailConfirmed: boolean;
+    dateOfBirth: Date | null;
+    isActive: boolean;
+    driverLicenses: DriverLicenseDto[] | null;
 }
 
 interface DriverLicenseDto {
-    licenseId: string,
-    holderName: string,
-    dateOfIssue: Date
+    licenseId: string;
+    holderName: string;
+    dateOfIssue: Date;
+    imageLicenseUrl?: string;
 }
 
 export interface LoginRequest {
-    email: string,
-    password: string
+    email: string;
+    password: string;
 }
+
 interface LoginResponse {
-    accessToken: string,
-    refreshToken: string | null,
-    expiresAt: Date,
-    user: UserDto
+    accessToken: string;
+    refreshToken: string | null;
+    expiresAt: Date;
+    user: UserDto;
 }
 
 export interface SignupRequest {
-    email: string,
-    password: string,
-    phone: string,
-    name: string
+    email: string;
+    password: string;
+    phoneNumber: string;
+    name: string;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined)
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-    const [user, setUser] = useState<UserDto | null>(null)
-    const [loading, setLoading] = useState(true)
+export function AuthProvider({children}: { children: ReactNode }) {
+    const [user, setUser] = useState<UserDto | null>(null);
+    const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     useEffect(() => {
         // Check for stored user on app start
@@ -65,21 +78,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (rawToken && !rawUser) {
             fetch(`${API}/api/auth/me`, {
                 headers: {
-                    Authorization: `Bearer ${rawToken}`
-                }
+                    Authorization: `Bearer ${rawToken}`,
+                },
             })
-                .then(response => {
-                    if (!response.ok) throw new Error('Refresh failed: ' + response.statusText);
+                .then((response) => {
+                    if (!response.ok)
+                        throw new Error("Refresh failed: " + response.statusText);
                     return response.json();
                 })
                 .then((user: UserDto) => {
+                    user.role = user.role.toLowerCase();
                     setUser(user);
-                    localStorage.setItem('user', JSON.stringify(user));
+                    localStorage.setItem("user", JSON.stringify(user));
                 })
                 .catch((error) => {
                     // Invalid token -> delete it
-                    localStorage.removeItem('token');
-                    localStorage.removeItem('user');
+                    localStorage.removeItem("token");
+                    localStorage.removeItem("user");
                     console.error("Error fetching user data:", error);
                 })
                 .finally(() => setLoading(false));
@@ -95,64 +110,87 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     //@ts-ignore
     const login = async (data: LoginRequest): Promise<LoginResponse> => {
         const response = await fetch(`${API}/api/auth/login`, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json'
+                "Content-Type": "application/json",
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
         });
         if (!response.ok) {
-            throw new Error('Login failed: ' + response.statusText);
+            throw new Error("Login failed: " + response.statusText);
         }
-        const result : LoginResponse = await response.json();
+        const result: LoginResponse = await response.json();
         // Persist user data and token
-        localStorage.setItem('token', result.accessToken);
+        localStorage.setItem("token", result.accessToken);
+        result.user.role = result.user.role.toLowerCase();
         setUser(result.user);
-        localStorage.setItem('user', JSON.stringify(result.user));
+        localStorage.setItem("user", JSON.stringify(result.user));
         return result;
+    };
+    
+    const handleGoogleCallback = async (token: string) => {
+        try {
+            const response = await fetch(`${API}/api/auth/me`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.Message || "Failed to fetch user data");
+            }
+            const user: UserDto = await response.json();
+            setUser(user);
+            localStorage.setItem("token", token);
+            localStorage.setItem("user", JSON.stringify(user));
+            navigate("/", { replace: true });
+        } catch (error: any) {
+            console.error("Google callback error:", error);
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            navigate("/auth/login", { replace: true });
+            throw new Error(error.message || "Google login failed");
+        }
     }
 
     const register = async (data: SignupRequest) => {
         const response = await fetch(`${API}/api/auth/signup`, {
-            method: 'POST',
+            method: "POST",
             headers: {
-                'Content-Type': 'application/json'
+                "Content-Type": "application/json",
             },
-            body: JSON.stringify(data)
+            body: JSON.stringify(data),
         });
         if (!response.ok) {
             const error = await response.json();
-            throw new Error('Sign up failed: ' + error.Message);
+            throw new Error("Sign up failed: " + error.Message);
         }
         return response.json();
-    }
+    };
 
     const logout = () => {
-        setUser(null)
-        localStorage.removeItem('user')
-        localStorage.removeItem('token')
-    }
+        setUser(null);
+        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+    };
 
     const value = {
         user,
         isAuthenticated: !!user,
         login,
+        handleGoogleCallback,
         logout,
         register,
         loading,
-    }
+    };
 
-    return (
-        <AuthContext.Provider value={value}>
-            {children}
-        </AuthContext.Provider>
-    )
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-    const context = useContext(AuthContext)
+    const context = useContext(AuthContext);
     if (context === undefined) {
-        throw new Error('useAuth must be used within an AuthProvider')
+        throw new Error("useAuth must be used within an AuthProvider");
     }
     return context;
 }

@@ -6,7 +6,7 @@ import { useDashboardStats } from '../../hooks/useDashboardStats'
 import { useUserManagement } from '../../hooks/useUserManagement'
 import { type User } from '../../components/admin/UserEditDialog'
 
-import DashboardHeader from '../../components/admin/DashboardHeader'
+//import DashboardHeader from '../../components/admin/DashboardHeader'
 import StatsCards from '../../components/admin/StartCards'
 import DashboardTabs from '../../components/admin/DashboardTabs'
 import UserEditDialog from '../../components/admin/UserEditDialog'
@@ -26,7 +26,8 @@ export default function AdminDashboard() {
         isSaving,
         handleEditUser,
         handleSaveUser,
-        handleCancel
+        handleCancel,
+        refreshToken
     } = useUserManagement()
 
     // Authentication and authorization check
@@ -78,13 +79,13 @@ export default function AdminDashboard() {
             </div>
 
             {/* Dashboard Header */}
-            <DashboardHeader />
+            {/*<DashboardHeader />*/}
 
             {/* Stats Cards */}
             <StatsCards stats={stats} />
 
             {/* Dashboard Tabs */}
-            <DashboardTabs onEditUser={handleEditUser} />
+            <DashboardTabs onEditUser={handleEditUser} refreshToken={ refreshToken } />
 
             {/* Export Report Section */}
             <ExportReportSection />

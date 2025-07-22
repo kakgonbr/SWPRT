@@ -13,7 +13,7 @@ public partial class Feedback
 
     public string Body { get; set; } = null!;
 
-    public string ImagePath { get; set; } = null!;
+    public string? ImagePath { get; set; }
 
     public virtual User User { get; set; } = null!;
 }

@@ -1,108 +1,42 @@
-// src/components/chat/ChatWidget.tsx
-import { useState, useRef, useEffect } from 'react'
+import { useState } from 'react'
 import {
-    //@ts-ignore
-    MessageSquare,
     X,
-    Send,
     Bot,
     User,
     Minimize2,
     Maximize2
 } from 'lucide-react'
 import { Button } from '../ui/button'
-import { Input } from '../ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '../ui/card'
+import { Card, CardHeader, CardTitle, CardContent } from '../ui/card'
 import { useChatWidget } from '../../contexts/chat-widget-context'
-import { useAuth } from '../../contexts/auth-context'
 import { useIsMobile } from '../../hooks/use-mobile'
-import { format } from 'date-fns'
+import AIChat from './AIChat'
+import StaffChat from './StaffChat'
 
-interface ChatMessage {
-    id: string
-    content: string
-    sender: 'user' | 'bot'
-    timestamp: Date
-}
-
-const CHAT_RESPONSES = [
-    "Hello! I'm VroomBot, your virtual assistant. How can I help you today?",
-    "I can help you with bike rentals, location information, pricing, and general questions about our services.",
-    "For urgent matters, please call our 24/7 hotline: +84 123 456 789",
-    "Would you like me to help you find the perfect bike for your trip?",
-    "Our most popular bikes are the Honda Winner X and Yamaha Exciter. Both are great for city and highway riding.",
-    "We have locations in Ho Chi Minh City, Hanoi, Da Nang, Hoi An, and Nha Trang.",
-    "You can pick up and drop off bikes at any of our locations during business hours.",
-    "Our rental rates start from $15/day for scooters and $25/day for motorcycles.",
-    "All rentals include basic insurance. Additional coverage is available for $5/day.",
-    "Is there anything specific about our bikes or services you'd like to know?"
-]
+export type ChatMode = 'ai' | 'staff' | null
 
 export default function ChatWidget() {
     const { isOpen, closeChatWidget } = useChatWidget()
-    const { user } = useAuth()
     const isMobile = useIsMobile()
     const [isMinimized, setIsMinimized] = useState(false)
-    const [message, setMessage] = useState('')
-    const [messages, setMessages] = useState<ChatMessage[]>([
-        {
-            id: '1',
-            content: "Hello! I'm VroomBot, your virtual assistant. How can I help you today?",
-            sender: 'bot',
-            timestamp: new Date()
-        }
-    ])
-    const [isTyping, setIsTyping] = useState(false)
-    const messagesEndRef = useRef<HTMLDivElement>(null)
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-    }
-
-    useEffect(() => {
-        scrollToBottom()
-    }, [messages])
-
-    const handleSendMessage = async () => {
-        if (!message.trim()) return
-
-        const userMessage: ChatMessage = {
-            id: Date.now().toString(),
-            content: message.trim(),
-            sender: 'user',
-            timestamp: new Date()
-        }
-
-        setMessages(prev => [...prev, userMessage])
-        setMessage('')
-        setIsTyping(true)
-
-        setTimeout(() => {
-            const randomResponse = CHAT_RESPONSES[Math.floor(Math.random() * CHAT_RESPONSES.length)]
-            const botMessage: ChatMessage = {
-                id: (Date.now() + 1).toString(),
-                content: randomResponse,
-                sender: 'bot',
-                timestamp: new Date()
-            }
-
-            setMessages(prev => [...prev, botMessage])
-            setIsTyping(false)
-        }, 1000 + Math.random() * 2000)
-    }
-
-    const handleKeyPress = (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault()
-            handleSendMessage()
-        }
-    }
+    const [chatMode, setChatMode] = useState<ChatMode>(null)
 
     if (!isOpen) return null
 
-    const widgetWidth = isMobile ? 'w-full max-w-sm' : 'w-80'
-    const widgetHeight = isMinimized ? 'h-14' : (isMobile ? 'h-[85vh]' : 'h-96')
-    const widgetPosition = isMobile ? 'bottom-4 left-4 right-4' : 'bottom-4 right-4'
+    // Make the widget bigger for easier use
+    const widgetWidth = isMobile ? 'w-full max-w-md' : 'w-[28rem]'
+    const widgetHeight = isMinimized ? 'h-16' : (isMobile ? 'h-[90vh]' : 'h-[34rem]')
+    const widgetPosition = isMobile ? 'bottom-4 left-4 right-4' : 'bottom-6 right-6'
+
+    // Card title based on chat mode
+    let cardTitle = 'VroomBot';
+    let cardSubtitle = 'Online now';
+    let cardIcon = <Bot className="w-4 h-4 text-primary" />;
+    if (chatMode === 'staff') {
+        cardTitle = 'Staff Support';
+        cardSubtitle = 'A staff member will assist you';
+        cardIcon = <User className="w-4 h-4 text-primary" />;
+    }
 
     return (
         <div className={`fixed ${widgetPosition} z-50`}>
@@ -111,11 +45,11 @@ export default function ChatWidget() {
                     <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                             <div className="w-8 h-8 bg-primary-foreground rounded-full flex items-center justify-center">
-                                <Bot className="w-4 h-4 text-primary" />
+                                {cardIcon}
                             </div>
                             <div>
-                                <CardTitle className="text-sm">VroomBot</CardTitle>
-                                <p className="text-xs opacity-80">Online now</p>
+                                <CardTitle className="text-sm">{cardTitle}</CardTitle>
+                                <p className="text-xs opacity-80">{cardSubtitle}</p>
                             </div>
                         </div>
                         <div className="flex space-x-1">
@@ -144,85 +78,24 @@ export default function ChatWidget() {
                         </div>
                     </div>
                 </CardHeader>
-
                 {!isMinimized && (
-                    <CardContent className={`p-0 flex flex-col ${isMobile ? 'h-[calc(85vh-4rem)]' : 'h-80'}`}>
-                        {/* Messages */}
-                        <div className="flex-1 overflow-y-auto p-3 space-y-3">
-                            {messages.map((msg) => (
-                                <div
-                                    key={msg.id}
-                                    className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                                >
-                                    <div className="flex items-start space-x-2 max-w-[85%]">
-                                        {msg.sender === 'bot' && (
-                                            <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                                                <Bot className="w-3 h-3 text-primary-foreground" />
-                                            </div>
-                                        )}
-                                        <div>
-                                            <div
-                                                className={`p-2 rounded-lg text-sm ${msg.sender === 'user'
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'bg-muted'
-                                                    }`}
-                                            >
-                                                {msg.content}
-                                            </div>
-                                            <p className="text-xs text-muted-foreground mt-1">
-                                                {format(msg.timestamp, 'HH:mm')}
-                                            </p>
-                                        </div>
-                                        {msg.sender === 'user' && (
-                                            <div className="w-6 h-6 bg-secondary rounded-full flex items-center justify-center flex-shrink-0">
-                                                <User className="w-3 h-3" />
-                                            </div>
-                                        )}
-                                    </div>
+                    <CardContent className={`p-0 flex flex-col ${isMobile ? 'h-[calc(90vh-4rem)]' : 'h-[30rem]'}`}>
+                        {/* Chat Mode Selection */}
+                        {chatMode === null && (
+                            <div className="flex flex-col items-center justify-center h-full gap-4">
+                                <p className="text-base font-medium">Who would you like to chat with?</p>
+                                <div className="flex gap-4">
+                                    <Button variant="default" onClick={() => setChatMode('ai')}>
+                                        <Bot className="w-4 h-4 mr-2" /> AI bot
+                                    </Button>
+                                    <Button variant="secondary" onClick={() => setChatMode('staff')}>
+                                        <User className="w-4 h-4 mr-2" /> Staff
+                                    </Button>
                                 </div>
-                            ))}
-
-                            {isTyping && (
-                                <div className="flex justify-start">
-                                    <div className="flex items-start space-x-2">
-                                        <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                                            <Bot className="w-3 h-3 text-primary-foreground" />
-                                        </div>
-                                        <div className="bg-muted p-2 rounded-lg">
-                                            <div className="flex space-x-1">
-                                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                                                <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div ref={messagesEndRef} />
-                        </div>
-
-                        {/* Input */}
-                        <div className="p-3 border-t">
-                            <div className="flex space-x-2">
-                                <Input
-                                    value={message}
-                                    onChange={(e) => setMessage(e.target.value)}
-                                    onKeyPress={handleKeyPress}
-                                    placeholder={user ? `Hi ${user.fullName.split(' ')[0]}, ask me anything...` : "Ask me anything..."}
-                                    className="flex-1"
-                                // size={isMobile ? "sm" : "default"}
-                                />
-                                <Button size={isMobile ? "sm" : "icon"} onClick={handleSendMessage} disabled={!message.trim()}>
-                                    <Send className="h-4 w-4" />
-                                </Button>
                             </div>
-                            {!isMobile && (
-                                <p className="text-xs text-muted-foreground mt-1">
-                                    Press Enter to send • For urgent matters call +84 123 456 789
-                                </p>
-                            )}
-                        </div>
+                        )}
+                        {chatMode === 'ai' && <AIChat onBack={() => setChatMode(null)} />}
+                        {chatMode === 'staff' && <StaffChat onBack={() => setChatMode(null)} />}
                     </CardContent>
                 )}
             </Card>

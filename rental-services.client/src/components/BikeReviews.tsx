@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Textarea } from './ui/textarea'
 import { Input } from './ui/input'
 import { Label } from './ui/label'
-import { useToast } from '../hooks/use-toast'
+import { useToast } from '../contexts/toast-context'
 import { useAuth } from '../contexts/auth-context'
 import type { BikeReview } from '../lib/mock-data'
 
