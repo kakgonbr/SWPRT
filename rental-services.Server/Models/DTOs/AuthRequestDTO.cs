@@ -26,6 +26,7 @@ public record UserDto(
     bool EmailConfirmed, 
     DateOnly? DateOfBirth,
     bool IsActive,
+    string Sub,
     IEnumerable<DriverLicenseDto>? DriverLicenses
 );
 

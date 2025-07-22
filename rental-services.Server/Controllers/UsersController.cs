@@ -1,4 +1,5 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using rental_services.Server.Models.DTOs;
@@ -50,14 +51,18 @@ namespace rental_services.Server.Controllers
             try
             {
                 // Get sub from JWT token
-                var sub = JwtRegisteredClaimNames.Sub;
-                var user = _userService.GetUserBySubAsync(JwtRegisteredClaimNames.Sub)!;
-                if (user == null)
+                var sub = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub") ?? User.FindFirst(JwtRegisteredClaimNames.Sub);
+                if (sub == null)
                 {
                     return Unauthorized("Invalid user token");
                 }
+                var user = await _userService.GetUserBySubAsync(sub.Value);
+                if (user == null)
+                {
+                    return Unauthorized("User not found");
+                }
 
-                var result = await _userService.ChangePasswordAsync(sub, request.CurrentPassword, request.NewPassword);
+                var result = await _userService.ChangePasswordAsync(sub.Value, request.CurrentPassword, request.NewPassword);
         
                 if (!result.Success)
                 {

@@ -13,7 +13,7 @@ public partial class User
 
     public string? PasswordHash { get; set; }
 
-    public string Role { get; set; } = null!;
+    public string Role { get; set; } = "Customer";
 
     public string? FullName { get; set; }
 
