@@ -1,12 +1,12 @@
 namespace rental_services.Server.Utils
 {
-    public class RentalTrackerCleanup : BackgroundService
+    public class CleanupService : BackgroundService
     {
         private readonly IServiceProvider _serviceProvider;
-        private readonly ILogger<RentalTrackerCleanup> _logger;
+        private readonly ILogger<CleanupService> _logger;
         private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
 
-        public RentalTrackerCleanup(IServiceProvider serviceProvider, ILogger<RentalTrackerCleanup> logger)
+        public CleanupService(IServiceProvider serviceProvider, ILogger<CleanupService> logger)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
@@ -14,7 +14,7 @@ namespace rental_services.Server.Utils
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            _logger.LogInformation("RentalTrackerCleanup started.");
+            _logger.LogInformation("CleanupService started.");
 
             using (var scope = _serviceProvider.CreateScope())
             {
@@ -32,6 +32,9 @@ namespace rental_services.Server.Utils
                     {
                         var rentalService = scope.ServiceProvider.GetRequiredService<Services.IRentalService>();
                         await rentalService.CleanupPendingAsync();
+
+                        var imageService = scope.ServiceProvider.GetRequiredService<Services.IImageService>();
+                        imageService.CleanupPending();
                     }
                 }
                 catch (Exception ex)
@@ -42,7 +45,7 @@ namespace rental_services.Server.Utils
                 await Task.Delay(_interval, stoppingToken);
             }
 
-            _logger.LogInformation("RentalTrackerCleanup stopped.");
+            _logger.LogInformation("CleanupService stopped.");
         }
     }
 }

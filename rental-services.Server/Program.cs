@@ -118,11 +118,12 @@ namespace rental_services.Server
                 .AddScoped<IAdminControlPanelService, AdminControlPanelService>()
                 .AddSingleton<IMaintenanceService, MaintenanceService>()
                 .AddScoped<IReportRepository, ReportRepository>()
-                .AddScoped<IReportService, ReportService>();
+                .AddScoped<IReportService, ReportService>()
+                .AddScoped<IImageService, ImageService>();
             builder.Services.AddScoped<rental_services.Server.Repositories.IFeedbackRepository, rental_services.Server.Repositories.FeedbackRepository>();
             builder.Services.AddScoped<rental_services.Server.Services.IFeedbackService, rental_services.Server.Services.FeedbackService>();
 
-            builder.Services.AddHostedService<Utils.RentalTrackerCleanup>();
+            builder.Services.AddHostedService<Utils.CleanupService>();
 
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>

@@ -10,14 +10,15 @@ namespace rental_services.Server.Controllers
     //[Authorize]
     public class ImagesController : ControllerBase
     {
-        private static readonly HashSet<ImageUploadTracker> _imageTrackers = new();
         private readonly ILogger<ImagesController> _logger;
         private readonly Services.IUserService _userService;
+        private readonly Services.IImageService _imageService;
 
-        public ImagesController(ILogger<ImagesController> logger, Services.IUserService userService)
+        public ImagesController(ILogger<ImagesController> logger, Services.IUserService userService, Services.IImageService imageService)
         {
             _logger = logger;
             _userService = userService;
+            _imageService = imageService;
         }
 
         [Authorize(Roles = Utils.Config.Role.Admin)]
@@ -35,58 +36,24 @@ namespace rental_services.Server.Controllers
             return Ok(new { message = "File uploaded.", url, name = status });
         }
 
-        private class ImageUploadTracker
-        {
-            public DateTime UploadTime { get; init; }
-            public bool IsExpired => UploadTime.AddMinutes(Utils.Config.Image.ExpireInMinutes) < Utils.CustomDateTime.CurrentTime;
-            public int CustomerId { get; init; }
-            public string ImageName { get; init; } = null!;
-            public ImageUploadTracker()
-            {
-                UploadTime = Utils.CustomDateTime.CurrentTime;
-            }
-
-            public override bool Equals(object? obj)
-            {
-                if (obj is ImageUploadTracker other)
-                    return CustomerId == other.CustomerId;
-
-                return false;
-            }
-
-            public override int GetHashCode()
-            {
-                return CustomerId;
-            }
-
-            public override string ToString()
-            {
-                return $"Tracker: CID : {CustomerId}, IMG: {ImageName}";
-            }
-        }
-
-        public async Task CleanupPendingAsync()
-        {
-            foreach (var tracker in _imageTrackers)
-            {
-                if (tracker.IsExpired)
-                {
-                    _logger.LogInformation("Clearing tracker for {BookingId}", tracker.BookingId);
-
-                    await _bookingRepository.DeleteAsync(tracker.BookingId);
-                    rentalTrackers.Remove(tracker);
-                }
-            }
-        }
-
+        /// <summary>
+        /// For customer image uploading.<br></br>
+        /// An uploaded image will be tracked and be deleted after 3 minutes.<br></br>
+        /// Call the consume method of the image service object to persist the image.
+        /// </summary>
+        /// <param name="file"></param>
+        /// <returns></returns>
         [Authorize]
         [HttpPost]
         public async Task<IActionResult> Upload([FromForm] IFormFile file)
         {
             string? sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            Models.User? dbUser = null;
+            User? dbUser = null;
 
-            dbUser = await _userService.GetUserBySubAsync(sub));
+            if (sub is null || (dbUser = await _userService.GetUserBySubAsync(sub)) is null)
+            {
+                return Unauthorized();
+            }
 
             string status = await Utils.ImageUploadHandler.Upload(file);
 
@@ -94,6 +61,8 @@ namespace rental_services.Server.Controllers
             {
                 return BadRequest(status);
             }
+
+            _imageService.CheckImagePresent(status, dbUser.UserId);
 
             var url = $"{Request.Scheme}://{Request.Host}/images/{status}";
             return Ok(new { message = "File uploaded.", url, name = status });
