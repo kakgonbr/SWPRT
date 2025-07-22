@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using rental_services.Server.Models.DTOs;
 using rental_services.Server.Services;
@@ -40,6 +42,39 @@ namespace rental_services.Server.Controllers
             }
 
             return await _userService.UpdateUser(newUser) ? Ok("Updated.") : BadRequest("Failed.");
+        }
+        
+        [HttpPost("change-password")]
+        [Authorize]
+        public async Task<ActionResult> ChangePassword([FromBody] ChangePasswordRequest request)
+        {
+            try
+            {
+                // Get sub from JWT token
+                var sub = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub") ?? User.FindFirst(JwtRegisteredClaimNames.Sub);
+                if (sub == null)
+                {
+                    return Unauthorized("Invalid user token");
+                }
+                var user = await _userService.GetUserBySubAsync(sub.Value);
+                if (user == null)
+                {
+                    return Unauthorized("User not found");
+                }
+
+                var result = await _userService.ChangePasswordAsync(sub.Value, request.CurrentPassword, request.NewPassword);
+        
+                if (!result.Success)
+                {
+                    return BadRequest(new { message = result.ErrorMessage });
+                }
+
+                return Ok(new { message = "Password changed successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = "An error occurred while changing password" });
+            }
         }
     }
 }

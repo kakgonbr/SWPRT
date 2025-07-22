@@ -22,6 +22,7 @@ import ProfilePage from './pages/ProfilePage'
 import LocationFinderPage from './pages/LocationFinderPage'
 import LoginPage from './pages/auth/LoginPage'
 import SignupPage from './pages/auth/SignupPage'
+import GoogleCallbackPage from './pages/auth/GoogleCallbackPage.tsx'
 import { AdminDashboard } from './pages/admin'
 import AdminControlPanel from './pages/admin/AdminControlPanel'
 
@@ -61,6 +62,7 @@ function App() {
                                                     <Route path="/profile" element={<ProfilePage />} />
                                                     <Route path="/location-finder" element={<LocationFinderPage />} />
                                                     <Route path="/auth/login" element={<LoginPage />} />
+                                                    <Route path="/auth/login/google/callback" element={<GoogleCallbackPage />} />
                                                     <Route path="/auth/signup" element={<SignupPage />} />
                                                     <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
                                                     <Route path="/admin" element={<AdminDashboard />} />
@@ -89,5 +91,3 @@ function App() {
 }
 
 export default App
-// mike oxm maul
-//nigga balls

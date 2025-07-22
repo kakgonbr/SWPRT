@@ -56,12 +56,4 @@ namespace rental_services.Server.Controllers
             return Ok(result);
         }
     }
-
-    // Dùng riêng cho nhận form-data từ FE
-    public class FeedbackFormDto
-    {
-        public string Title { get; set; } = null!;
-        public string Body { get; set; } = null!;
-        public IFormFile? Screenshot { get; set; }
-    }
 } 

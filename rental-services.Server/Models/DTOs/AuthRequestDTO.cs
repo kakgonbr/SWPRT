@@ -18,14 +18,15 @@ public record UserDto(
     int UserId, 
     string Email, 
     string? PhoneNumber, 
+    string? PasswordHash,
+    string Role,
     string? FullName, 
     string? Address, 
     DateOnly CreationDate, 
     bool EmailConfirmed, 
     DateOnly? DateOfBirth,
     bool IsActive,
-    string Role,
-    // TODO: Change DriverLicenseDto? to IEnumerable<DriverLicenseDto>? if multiple licenses are allowed
+    string Sub,
     IEnumerable<DriverLicenseDto>? DriverLicenses
 );
 
@@ -65,4 +66,9 @@ public record LoginResponse(
     string? RefreshToken, 
     DateTime ExpiresAt,
     UserDto User
+);
+
+public record ForgotPasswordRequest(
+    string Email,
+    string newPassword
 );

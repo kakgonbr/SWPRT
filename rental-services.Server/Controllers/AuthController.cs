@@ -1,6 +1,8 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
@@ -23,14 +25,16 @@ public class AuthController : ControllerBase
     private readonly IPasswordHasher<User> _hasher;
     private readonly RentalContext _db;
     private readonly IUserService _userService;
+    private AutoMapper.IMapper _mapper;
 
     public AuthController(IOptions<JwtSettings> jwtSettings, IPasswordHasher<User> hasher, RentalContext db,
-        IUserService userService)
+        IUserService userService, AutoMapper.IMapper mapper)
     {
         _jwtSettings = jwtSettings.Value;
         _hasher = hasher;
         _db = db;
         _userService = userService;
+        _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper), "Mapper cannot be null");
     }
 
     /// <summary>
@@ -102,9 +106,7 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Login([FromBody] LoginRequest request)
     {
         // Check if the user exists in the database
-        var existingUser = _db.Users
-            .Include(u => u.DriverLicenses)
-            .SingleOrDefault(u => u.Email == request.Email);
+        var existingUser = await _userService.GetUser(request.Email);
         if (existingUser == null || existingUser.PasswordHash == null)
         {
             Console.WriteLine("AuthController: Email not found in database.");
@@ -112,28 +114,31 @@ public class AuthController : ControllerBase
         }
 
         // Check against hashed password
+        var mappedUser = _mapper.Map<User>(existingUser);
         var verifyHashedPassword =
-            _hasher.VerifyHashedPassword(existingUser, existingUser.PasswordHash, request.Password);
+            _hasher.VerifyHashedPassword(mappedUser, mappedUser.PasswordHash, request.Password);
         if (verifyHashedPassword == PasswordVerificationResult.Failed)
         {
-            Console.WriteLine("AuthController: Password verification failed for user " + existingUser.Email);
+            Console.WriteLine("AuthController: Password verification failed for user " + mappedUser.Email);
             return Unauthorized(new { Message = "Cannot log in: Invalid credentials" });
         }
 
         // Generate JWT token
-        var accessToken = GenerateJwtToken(existingUser, out var expires);
+        var accessToken = GenerateJwtToken(mappedUser, out var expires) ?? throw new ArgumentNullException("GenerateJwtToken(_mapper.Map<User>(mappedUser), out var expires)");
         var userDto = new UserDto(
-            existingUser.UserId,
-            existingUser.Email,
-            existingUser.PhoneNumber,
-            existingUser.FullName,
-            existingUser.Address,
-            existingUser.CreationDate,
-            existingUser.EmailConfirmed,
-            existingUser.DateOfBirth,
-            existingUser.IsActive,
-            existingUser.Role,
-            existingUser.DriverLicenses.Select(dl => new DriverLicenseDto(
+            mappedUser.UserId,
+            mappedUser.Email,
+            mappedUser.PhoneNumber,
+            null,
+            mappedUser.Role,
+            mappedUser.FullName,
+            mappedUser.Address,
+            mappedUser.CreationDate,
+            mappedUser.EmailConfirmed,
+            mappedUser.DateOfBirth,
+            mappedUser.IsActive,
+            mappedUser.Sub,
+            mappedUser.DriverLicenses.Select(dl => new DriverLicenseDto(
                 dl.LicenseId,
                 dl.HolderName,
                 dl.DateOfIssue
@@ -141,6 +146,90 @@ public class AuthController : ControllerBase
             ))
         );
         return Ok(new LoginResponse(accessToken, null, expires, userDto));
+    }
+    
+    
+    [HttpPost("login/google")]
+    public IActionResult GoogleLogin()
+    {
+        // Redirect to Google OAuth login
+        var props = new AuthenticationProperties { RedirectUri = "/api/auth/login/google/callback" };
+        return Challenge(props, GoogleDefaults.AuthenticationScheme);
+    }
+    
+    [HttpGet("login/google/callback")]
+    public async Task<IActionResult> GoogleCallback()
+    {
+        // Authenticate the user with Google
+        var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+        if (!result.Succeeded)
+        {
+            Console.WriteLine("AuthController: Google authentication failed.");
+            return BadRequest(new { Message = "Google authentication failed." });
+        }
+
+        // Extract user info from Google
+        var claims = result.Principal.Claims;
+        var email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+        var name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+        var googleId = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+        
+        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleId))
+        {
+            Console.WriteLine("AuthController: Unable to retrieve user information from Google.");
+            return BadRequest(new { Message = "Unable to retrieve user information from Google." });
+        }
+        
+        var user = _mapper.Map<User>(_userService.GetUser(email));
+        if (user == null)
+        {
+            user = new User
+            {
+                Email = email,
+                FullName = name,
+                GoogleuserId = googleId,
+                Role = "User", // Default role
+                CreationDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                EmailConfirmed = true, // Google verifies email
+                Sub = Guid.NewGuid().ToString(),
+                PhoneNumber = "", // Optional: Prompt user to add later
+                IsActive = true
+            };
+            try
+            {
+                _userService.CreateUser(user);
+                await _db.SaveChangesAsync();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("AuthController: Error creating Google user: " + e.Message);
+                return BadRequest(new { Message = "Failed to create user: " + e.Message });
+            }
+        }
+        // Generate JWT token
+        var accessToken = GenerateJwtToken(user, out var expires);
+        var userDto = new UserDto(
+            user.UserId,
+            user.Email,
+            user.PhoneNumber,
+            null,
+            user.Role,
+            user.FullName,
+            user.Address,
+            user.CreationDate,
+            user.EmailConfirmed,
+            user.DateOfBirth,
+            user.IsActive,
+            user.Sub,
+            user.DriverLicenses?.Select(dl => new DriverLicenseDto(
+                dl.LicenseId,
+                dl.HolderName,
+                dl.DateOfIssue
+            ))
+        );
+        
+        var redirectUrl = $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:3000"}/auth/login/google/callback?token={accessToken}";
+        return Redirect(redirectUrl);
     }
 
     /// <summary>
@@ -155,6 +244,16 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Logout([FromBody] string refreshToken)
     {
         return Ok(new { Message = "Refresh token revoked successfully." });
+    }
+    
+    /// <summary>
+    /// A
+    /// </summary>
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+    {
+        // This endpoint is not implemented yet
+        return Ok(new { Message = "Forgot password functionality is not implemented yet." });
     }
 
     /// <summary>
@@ -173,28 +272,27 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> Me()
     {
-        var userId = int.Parse(User.FindFirstValue(JwtRegisteredClaimNames.Sub)!);
-        var user = await _userService.GetUser(userId);
+        var userSub = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub") ?? User.FindFirst(JwtRegisteredClaimNames.Sub);
+        var user = await _userService.GetUserBySubAsync(userSub.Value);
         if (user == null) return NotFound(new { Message = "User not found" });
-        //var dto = new UserDto(
-        //    user.UserId,
-        //    user.Email,
-        //    user.PhoneNumber,
-        //    user.FullName,
-        //    user.Address,
-        //    user.CreationDate,
-        //    user.EmailConfirmed,
-        //    user.DateOfBirth,
-        //    user.IsActive,
-        //    user.Role,
-        //    user.DriverLicenses.Select(dl => new DriverLicenseDto(
-        //        dl.LicenseId, 
-        //        dl.HolderName,
-        //        dl.DateOfIssue,
-        //        dl.ImageLicenseUrl
-        //    )).SingleOrDefault()
-        //);
-        return Ok(user);
+        return Ok(new UserDto(
+            user.UserId,
+            user.Email,
+            user.PhoneNumber,
+            null,
+            user.Role,
+            user.FullName,
+            user.Address,
+            user.CreationDate,
+            user.EmailConfirmed,
+            user.DateOfBirth,
+            user.IsActive,
+            user.Sub,
+            user.DriverLicenses?.Select(dl => new DriverLicenseDto(
+                dl.LicenseId,
+                dl.HolderName,
+                dl.DateOfIssue
+            ))));
     }
 
     /// <summary>
@@ -210,12 +308,18 @@ public class AuthController : ControllerBase
     /// </returns>
     private string GenerateJwtToken(User user, out DateTime expiration)
     {
+        // Add null checks and default values
+        var sub = user.Sub ?? throw new ArgumentNullException(nameof(user.Sub), "User Sub cannot be null");
+        var email = user.Email ?? throw new ArgumentNullException(nameof(user.Email), "User Email cannot be null");
+        var role = user.Role ?? "Customer"; // Default role if null
+        var userId = user.UserId.ToString();
+        
         var claims = new[]
         {
-            new Claim(JwtRegisteredClaimNames.Sub, user.Sub),
-            new Claim(JwtRegisteredClaimNames.Email, user.Email),
-            new Claim(ClaimTypes.Role, user.Role),
-            new Claim("VroomVroomUserId", user.UserId.ToString())
+            new Claim(JwtRegisteredClaimNames.Sub, sub),
+            new Claim(JwtRegisteredClaimNames.Email, email),
+            new Claim(ClaimTypes.Role, role),
+            new Claim("VroomVroomUserId", userId),
         };
 
         string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? _jwtSettings.Key;
