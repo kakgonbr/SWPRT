@@ -172,11 +172,11 @@ public class AuthController : ControllerBase
     }
     
     
-    [HttpPost("login/google")]
+    [HttpGet("login/google")]
     public IActionResult GoogleLogin()
     {
         // Redirect to Google OAuth login
-        var props = new AuthenticationProperties { RedirectUri = "/api/auth/login/google/callback" };
+        var props = new AuthenticationProperties { RedirectUri = Url.Action("GoogleCallback", "Auth") };
         return Challenge(props, GoogleDefaults.AuthenticationScheme);
     }
     

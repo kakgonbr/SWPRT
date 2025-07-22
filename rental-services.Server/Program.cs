@@ -58,7 +58,7 @@ namespace rental_services.Server
             builder.Services
                 .AddAuthentication(options =>
                 {
-                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
                     options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
                 })
                 .AddJwtBearer(options =>
@@ -92,7 +92,7 @@ namespace rental_services.Server
                 {
                     options.ClientId = googleClientId;
                     options.ClientSecret = googleClientSecret;
-                    options.CallbackPath = "/api/auth/google"; // Must match Google Cloud Console redirect URI
+                    options.CallbackPath = "/api/auth/login/google/callback"; // Must match Google Cloud Console redirect URI
                     options.SaveTokens = true; // Save Google tokens if needed
                     options.Scope.Add("email"); // Request email scope
                     options.Scope.Add("profile"); // Request profile scope
