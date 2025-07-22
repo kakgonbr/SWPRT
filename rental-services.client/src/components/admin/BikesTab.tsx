@@ -480,7 +480,7 @@ export default function BikesTab() {
                                 <div key={bike.modelId} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                                     <div className="flex items-center space-x-4">
                                         <img
-                                            src={bike.imageFile ? '/images' + bike.imageFile.split('"')[0] : '/images/placeholder-bike.png'}
+                                            src={bike.imageFile ? 'images/' + bike.imageFile.split('"')[0] : '/images/placeholder-bike.png'}
                                             alt={bike.displayName}
                                             className="w-16 h-16 object-cover rounded"
                                         />

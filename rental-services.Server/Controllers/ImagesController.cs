@@ -20,7 +20,7 @@ namespace rental_services.Server.Controllers
             }
 
             var url = $"{Request.Scheme}://{Request.Host}/images/{status}";
-            return Ok(new { message = "File uploaded.", url });
+            return Ok(new { message = "File uploaded.", url, name = status });
         }
     }
 }
