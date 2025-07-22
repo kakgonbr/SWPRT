@@ -201,6 +201,25 @@ namespace rental_services.Server.Services
                 }
             }
 
+            if (vehicleModel.Vehicles is not null)
+            {
+                foreach (var vDto in vehicleModel.Vehicles)
+                {
+                    var dbVehicle = await _vehicleRepository.GetByIdAsync(vDto.VehicleId);
+
+                    if (dbVehicle is null)
+                    {
+                        dbVehicle = await _vehicleRepository.AddAsync(_mapper.Map<Vehicle>(vDto));
+                    }
+                    else
+                    {
+                        _mapper.Map(vDto, dbVehicle);
+                    }
+
+                    newModel.Vehicles.Add(dbVehicle);
+                }
+            }
+
             return await _vehicleModelRepository.SaveAsync() != 0;
         }
 

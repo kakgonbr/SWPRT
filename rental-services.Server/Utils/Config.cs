@@ -53,6 +53,7 @@ namespace rental_services.Server.Utils
         {
             public static string ImagePath = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\images" : "/var/www/images";
             public static TimeSpan CleanupInterval = TimeSpan.FromDays(3);
+            public static int ExpireInMinutes = 3;
         }
 
         /// <summary>
