@@ -1,5 +1,9 @@
 import { useState } from 'react'
-import { Calendar, MapPin, Phone, FileText, DollarSign, X, Mail } from 'lucide-react'
+import {
+    Calendar, MapPin, Phone, FileText, DollarSign,
+    //X,
+    Mail
+} from 'lucide-react'
 import {
     Dialog,
     DialogContent,
@@ -8,7 +12,7 @@ import {
     DialogTitle,
 } from '../ui/dialog'
 import { Badge } from '../ui/badge'
-import { Button } from '../ui/button'
+//import { Button } from '../ui/button'
 import { Separator } from '../ui/separator'
 import { format, differenceInDays } from 'date-fns'
 import { type Booking } from '../../types/booking'
@@ -72,9 +76,9 @@ export default function RentalDetailsDialog({
                                 Rental ID: {rental.id}
                             </DialogDescription>
                         </div>
-                        <Button variant="ghost" size="icon" onClick={onClose}>
-                            <X className="h-4 w-4" />
-                        </Button>
+                        {/*<Button variant="ghost" size="icon" onClick={onClose}>*/}
+                        {/*    <X className="h-4 w-4" />*/}
+                        {/*</Button>*/}
                     </div>
                 </DialogHeader>
 
@@ -94,7 +98,7 @@ export default function RentalDetailsDialog({
                                 />
                             ) : (
                                 <img
-                                    src={rental.bikeImageUrl.split('"')[0]}
+                                    src={`images/` + rental.bikeImageUrl.split('"')[0]}
                                     alt={rental.bikeName}
                                     className="w-20 h-20 object-cover rounded"
                                     onError={() => setImgError(true)}

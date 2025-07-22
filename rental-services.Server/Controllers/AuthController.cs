@@ -54,6 +54,28 @@ public class AuthController : ControllerBase
             return BadRequest(new { Message = "Cannot sign up: Email already exists." });
         }
 
+        if (!Utils.Validator.PhoneNumber(request.PhoneNumber))
+        {
+            return BadRequest(new { Message = "Invalid phone number format" });
+        }
+
+        if (!Utils.Validator.Email(request.Email))
+        {
+            return BadRequest(new { Message = "Invalid email format" });
+        }
+
+        if (!Utils.Validator.Password(request.Password))
+        {
+            return BadRequest(new { Message = "Password must be between 8 to 32 characters, contain a lowercase character, an uppercase character, a number and a special character at least." });
+        }
+
+        string normalizedPhoneNumber = request.PhoneNumber.Replace(" ", "");
+
+        if (normalizedPhoneNumber[0] == '0')
+        {
+            normalizedPhoneNumber = string.Concat("+84", normalizedPhoneNumber.AsSpan(1));
+        }
+
         // Create new user
         var newUser = new User
         {
@@ -115,6 +137,7 @@ public class AuthController : ControllerBase
 
         // Check against hashed password
         var mappedUser = _mapper.Map<User>(existingUser);
+        mappedUser.Sub = existingUser.Sub; // for editing, changed the dto to ignore sub, do this manually
         var verifyHashedPassword =
             _hasher.VerifyHashedPassword(mappedUser, mappedUser.PasswordHash, request.Password);
         if (verifyHashedPassword == PasswordVerificationResult.Failed)

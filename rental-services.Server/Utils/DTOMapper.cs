@@ -136,9 +136,10 @@ namespace rental_services.Server.Utils
             CreateMap<UserDto, User>()
                 .ForMember(dest => dest.Role, opt =>
                     opt.MapFrom(src => src.Role[0].ToString().ToUpper() + src.Role.Substring(1)
-                    ))
+                ))
                 .ForMember(dest => dest.DriverLicenses, opt => opt.Ignore())
                 .ForMember(dest => dest.PhoneNumber, opt => opt.Ignore())
+                .ForMember(dest => dest.Sub, opt => opt.Ignore())
                 .ForMember(dest => dest.CreationDate, opt => opt.Ignore());
 
             CreateMap<Banner, BannerDTO>()
