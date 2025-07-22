@@ -751,6 +751,7 @@ import {
 import {
     useQuery,
 } from '@tanstack/react-query'
+import { useToast } from '../../contexts/toast-context';
 //import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 
@@ -898,7 +899,8 @@ export interface IBikeModelForm {
     ratePerDay: number;
     upFrontPercentage: number;
     isAvailable: boolean;
-    imageFile?: File | null;
+    imageFile?: string;
+    previewFile?: File | null;
     imagePreviewUrl?: string;
     vehicles: IVehicle[];
     peripherals: IPeripheral[];
@@ -920,8 +922,9 @@ const makeEmptyForm = (): IBikeModelForm => ({
     ratePerDay: 0,
     upFrontPercentage: 0,
     isAvailable: true,
-    imageFile: null,
-    imagePreviewUrl: undefined,
+    imageFile: '',
+    previewFile: null,
+    imagePreviewUrl: '',
     vehicles: [],
     peripherals: []
 });
@@ -953,8 +956,10 @@ export const BikeEditDialog: React.FC<BikeEditDialogProps> = ({
     peripherals,
     shops,
     onSubmit,
-    isSaving = false,
+    isSaving = false
 }) => {
+    const { toast } = useToast();
+
     /* Fetch the bike whenever dialog opens */
     const { data, isLoading } = useQuery({
         queryKey: ['bike', bikeId],
@@ -978,10 +983,55 @@ export const BikeEditDialog: React.FC<BikeEditDialogProps> = ({
         }
     }, [bikeId, data]);
 
+    const handleImageUpload = async (imageFile: File): Promise<string> => {
+        const formData = new FormData();
+        formData.append("file", imageFile);
+
+        const response = await fetch(`${API}/api/images`, {
+            method: "POST",
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            toast({
+                title: "Failed to upload image",
+                description: "Image failed to upload.",
+                variant: "destructive"
+            });
+            throw new Error("Image upload failed");
+        }
+
+        const data = await response.json();
+        return data.name;
+    };
+
     /* ---------------- Callbacks ---------------- */
     const handleSubmit = async () => {
-        await onSubmit(formData);
-    };
+        try {
+            let imageFile = formData.imageFile;
+
+            if (formData.previewFile) {
+                imageFile = await handleImageUpload(formData.previewFile);
+            }
+
+            const payload: IBikeModelForm = {
+                ...formData,
+                imageFile,
+            };
+
+            await onSubmit(payload); // the original one from props
+        } catch (err) {
+            console.error("Submission error", err);
+            toast({
+                title: "Submission failed",
+                description: "An unexpected error occurred.",
+                variant: "destructive",
+            });
+        }
+    }
 
     const togglePeripheral = (pid: number, checked: boolean) =>
         setFormData(prev => {
@@ -1025,15 +1075,17 @@ export const BikeEditDialog: React.FC<BikeEditDialogProps> = ({
     //        ],
     //    }));
 
-    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setFormData(prev => ({
-            ...prev,
-            imageFile: file,
-            imagePreviewUrl: URL.createObjectURL(file),
-        }));
-    };
+    //const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //    const file = e.target.files?.[0];
+    //    if (!file) return;
+    //    setFormData(prev => ({
+    //        ...prev,
+    //        imageFile: file,
+    //        imagePreviewUrl: URL.createObjectURL(file),
+    //    }));
+    //};
+
+
 
     const addVehicleWithParams = (shopId: number, condition: VehicleCondition) => {
         setFormData(prev => ({
@@ -1178,6 +1230,55 @@ export const BikeEditDialog: React.FC<BikeEditDialogProps> = ({
                         {/* Image upload / preview */}
                         {/* -------------------------------------------------- */}
                         <div className="space-y-2">
+                            {/*    <Label>Model image</Label>*/}
+                            {/*    <div className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center">*/}
+                            {/*        {formData.imagePreviewUrl ? (*/}
+                            {/*            <div className="relative">*/}
+                            {/*                <img*/}
+                            {/*                    src={formData.imagePreviewUrl}*/}
+                            {/*                    alt="preview"*/}
+                            {/*                    className="w-40 h-40 object-cover rounded-lg"*/}
+                            {/*                />*/}
+                            {/*                <Button*/}
+                            {/*                    type="button"*/}
+                            {/*                    variant="destructive"*/}
+                            {/*                    size="icon"*/}
+                            {/*                    className="absolute -top-2 -right-2"*/}
+                            {/*                    onClick={() => setFormData(prev => ({*/}
+                            {/*                        ...prev,*/}
+                            {/*                        imageFile: null,*/}
+                            {/*                        imagePreviewUrl: undefined,*/}
+                            {/*                    }))}*/}
+                            {/*                >*/}
+                            {/*                    <Trash2 className="w-4 h-4" />*/}
+                            {/*                </Button>*/}
+                            {/*            </div>*/}
+                            {/*        ) : (*/}
+                            {/*            <>*/}
+                            {/*                <Upload className="w-10 h-10 opacity-50 mb-2" />*/}
+                            {/*                <p className="text-sm text-muted-foreground">PNG/JPG (MAX 5MB)</p>*/}
+                            {/*                <Button*/}
+                            {/*                    type="button"*/}
+                            {/*                    variant="outline"*/}
+                            {/*                    onClick={() => fileInputRef.current?.click()}*/}
+                            {/*                    className="mt-2"*/}
+                            {/*                >*/}
+                            {/*                    <Upload className="w-4 h-4 mr-2" />*/}
+                            {/*                    Select file*/}
+                            {/*                </Button>*/}
+                            {/*            </>*/}
+                            {/*        )}*/}
+
+                            {/*        */}{/* hidden input */}
+                            {/*        <input*/}
+                            {/*            ref={fileInputRef}*/}
+                            {/*            type="file"*/}
+                            {/*            accept="image/*"*/}
+                            {/*            className="hidden"*/}
+                            {/*            onChange={handleImageSelect}*/}
+                            {/*        />*/}
+                            {/*    </div>*/}
+
                             <Label>Model image</Label>
                             <div className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center">
                                 {formData.imagePreviewUrl ? (
@@ -1192,11 +1293,13 @@ export const BikeEditDialog: React.FC<BikeEditDialogProps> = ({
                                             variant="destructive"
                                             size="icon"
                                             className="absolute -top-2 -right-2"
-                                            onClick={() => setFormData(prev => ({
-                                                ...prev,
-                                                imageFile: null,
-                                                imagePreviewUrl: undefined,
-                                            }))}
+                                            onClick={() =>
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    previewFile: null,
+                                                    imagePreviewUrl: undefined,
+                                                }))
+                                            }
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
@@ -1217,16 +1320,31 @@ export const BikeEditDialog: React.FC<BikeEditDialogProps> = ({
                                     </>
                                 )}
 
-                                {/* hidden input */}
                                 <input
                                     ref={fileInputRef}
                                     type="file"
                                     accept="image/*"
                                     className="hidden"
-                                    onChange={handleImageSelect}
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            const reader = new FileReader();
+                                            reader.onloadend = () => {
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    previewFile: file,
+                                                    imagePreviewUrl: reader.result as string,
+                                                }));
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }
+                                    }}
                                 />
                             </div>
+
+
                         </div>
+
 
                         {/* -------------------------------------------------- */}
                         {/* Vehicle instances list */}
