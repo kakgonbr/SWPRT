@@ -81,7 +81,7 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
             newErrors.newPassword = 'Password must be at least 8 characters long'
             isValid = false
         } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.newPassword)) {
-            newErrors.newPassword = 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+            newErrors.newPassword = 'Password must be between 8 to 32 characters, contain at least one uppercase letter, one lowercase letter, one number and one special character'
             isValid = false
         }
 

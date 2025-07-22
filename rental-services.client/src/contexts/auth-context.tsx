@@ -163,7 +163,7 @@ export function AuthProvider({children}: { children: ReactNode }) {
         });
         if (!response.ok) {
             const error = await response.json();
-            throw new Error("Sign up failed: " + error.Message);
+            throw new Error("Sign up failed: " + error.message);
         }
         return response.json();
     };
