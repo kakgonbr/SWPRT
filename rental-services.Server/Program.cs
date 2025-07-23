@@ -162,6 +162,8 @@ namespace rental_services.Server
             // Configure SignalR
             builder.Services.AddSignalR();
 
+            builder.Services.AddHttpClient();
+
             // Build app
             var app = builder.Build();
             

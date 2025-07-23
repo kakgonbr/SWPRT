@@ -148,3 +148,10 @@ export interface ReportDTO {
     userName?: string;
     userEmail?: string;
 }
+
+export interface AIChatMessageDTO {
+    aiChatMessageId: number;
+    userId: number;
+    isHuman: boolean;
+    content: string;
+}
