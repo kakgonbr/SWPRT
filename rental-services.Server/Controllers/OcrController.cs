@@ -61,6 +61,8 @@ namespace rental_services.Server.Controllers
 
             var parser = new GplxParser(extractedText);
             var gplxData = parser.Parse();
+        
+
 
             return Ok(new
             {

@@ -137,29 +137,29 @@ export default function IdReviewDialog({
     console.log("extractedData:", extractedData);
   }, [isOpen, extractedData]);
 
-  const formatDate = (dateString: string) => {
-    try {
-      if (!dateString)
-        return <span className="text-red-500 italic">No information available</span>;
-      const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    } catch {
-      return dateString;
-    }
-  };
+  //const formatDate = (dateString: string) => {
+  //  try {
+  //    if (!dateString)
+  //      return <span className="text-red-500 italic">No information available</span>;
+  //    const date = new Date(dateString);
+  //    return date.toLocaleDateString("en-US", {
+  //      year: "numeric",
+  //      month: "long",
+  //      day: "numeric",
+  //    });
+  //  } catch {
+  //    return dateString;
+  //  }
+  //};
 
-  const formatDateForInput = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toISOString().split("T")[0];
-    } catch {
-      return dateString;
-    }
-  };
+  //const formatDateForInput = (dateString: string) => {
+  //  try {
+  //    const date = new Date(dateString);
+  //    return date.toISOString().split("T")[0];
+  //  } catch {
+  //    return dateString;
+  //  }
+  //};
 
   const handleInputChange = (field: keyof ExtractedIdData, value: string) => {
     if (editedData) {
@@ -570,9 +570,9 @@ export default function IdReviewDialog({
                           <div className="space-y-1">
                             <Input
                               type="date"
-                              value={formatDateForInput(
+                              value={
                                 displayData.dateOfBirth || ""
-                              )}
+                              }
                               onChange={(e) =>
                                 handleInputChange("dateOfBirth", e.target.value)
                               }
@@ -596,7 +596,7 @@ export default function IdReviewDialog({
                                 ? "bg-red-50 border-red-200" 
                                 : "bg-gray-50"
                             }`}>
-                              {formatDate(displayData.dateOfBirth || "")}
+                              {displayData.dateOfBirth || ""}
                             </p>
                             {fieldErrors.dateOfBirth && (
                               <p className="text-sm text-red-600 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200">
@@ -620,9 +620,9 @@ export default function IdReviewDialog({
                           <div className="space-y-1">
                             <Input
                               type="date"
-                              value={formatDateForInput(
+                              value={
                                 displayData.dateOfIssue || ""
-                              )}
+                              }
                               onChange={(e) =>
                                 handleInputChange("dateOfIssue", e.target.value)
                               }
@@ -646,7 +646,7 @@ export default function IdReviewDialog({
                                 ? "bg-red-50 border-red-200" 
                                 : "bg-gray-50"
                             }`}>
-                              {formatDate(displayData.dateOfIssue || "")}
+                                 {displayData.dateOfIssue || ""}
                             </p>
                             {fieldErrors.dateOfIssue && (
                               <p className="text-sm text-red-600 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200">
