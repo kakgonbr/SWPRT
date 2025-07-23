@@ -61,6 +61,8 @@ namespace rental_services.Server.Controllers
 
             var parser = new GplxParser(extractedText);
             var gplxData = parser.Parse();
+        
+
 
             return Ok(new
             {
@@ -93,7 +95,7 @@ namespace rental_services.Server.Controllers
             }
             catch (BadHttpRequestException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
