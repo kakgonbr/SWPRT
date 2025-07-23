@@ -4,5 +4,6 @@
     {
         void CheckImagePresent(string imageName, int userId);
         void CleanupPending();
+        public bool ConsumeImage(int userId);
     }
 }

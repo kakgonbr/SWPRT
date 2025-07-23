@@ -126,7 +126,7 @@ export default function ReportDetailDialog({
                         {report.imagePath && (
                             <div>
                                 <Label>Image</Label>
-                                <img src={report.imagePath} alt="Report" className="max-h-60 rounded border mt-2" />
+                                <img src={"images/" + report.imagePath} alt="Report" className="max-h-60 rounded border mt-2" />
                             </div>
                         )}
                     </div>
