@@ -1,13 +1,12 @@
 // src/pages/HomePage.tsx
 import { Link, useNavigate } from 'react-router-dom'
 import { useState } from 'react'
-import { Search, Bike, MapPin, Star, Shield, Clock, Calendar, ArrowRight} from 'lucide-react'
+import { Search, MapPin, Shield, Clock, Calendar, ArrowRight} from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { useToast } from '../contexts/toast-context'
-import { MOCK_BIKES } from '../lib/mock-data'
 
 export default function HomePage() {
     const [startDate, setStartDate] = useState('')
@@ -15,7 +14,6 @@ export default function HomePage() {
     const [location, setLocation] = useState('')
     const navigate = useNavigate()
     const { toast } = useToast()
-    const featuredBikes = MOCK_BIKES.slice(0, 3)
     //const [maintenanceMessage, setMaintenanceMessage] = useState<string>("");
 
     //useEffect(() => {
@@ -266,80 +264,6 @@ export default function HomePage() {
                             </CardContent>
                         </Card>
                     </div>
-                </div>
-            </section>
-
-            {/* Featured Bikes Section */}
-            <section className="py-16">
-                <div className="container mx-auto px-4">
-                    <div className="text-center mb-12">
-                        <h2 className="text-3xl font-bold mb-4">Featured Bikes</h2>
-                        <p className="text-muted-foreground">
-                            Popular choices for every type of rider
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {featuredBikes.map((bike) => (
-                            <Card key={bike.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                                <div className="aspect-video relative">
-                                    <img
-                                        src={bike.imageUrl.split('"')[0]}
-                                        alt={bike.name}
-                                        className="w-full h-full object-cover"
-                                    />
-                                </div>
-                                <CardHeader>
-                                    <CardTitle className="flex justify-between items-start">
-                                        <span>{bike.name}</span>
-                                        <span className="text-primary font-bold">${bike.pricePerDay}/day</span>
-                                    </CardTitle>
-                                    <CardDescription className="flex items-center">
-                                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400 mr-1" />
-                                        {bike.rating}
-                                        <span className="mx-2">•</span>
-                                        <MapPin className="w-4 h-4 mr-1" />
-                                        {bike.location}
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
-                                        {bike.description}
-                                    </p>
-                                    <Button className="w-full" asChild>
-                                        <Link to={`/bikes/${bike.id}`}>
-                                            <Bike className="w-4 h-4 mr-2" />
-                                            View Details
-                                        </Link>
-                                    </Button>
-                                </CardContent>
-                            </Card>
-                        ))}
-                    </div>
-
-                    <div className="text-center mt-8">
-                        <Button variant="outline" size="lg" asChild>
-                            <Link to="/bikes">View All Bikes</Link>
-                        </Button>
-                    </div>
-                </div>
-            </section>
-
-            {/* CTA Section */}
-            <section className="py-16 bg-primary">
-                <div className="container mx-auto px-4 text-center">
-                    <h2 className="text-3xl font-bold text-primary-foreground mb-4">
-                        Ready to Start Your Adventure?
-                    </h2>
-                    <p className="text-primary-foreground/80 mb-8 max-w-2xl mx-auto">
-                        Join thousands of riders who trust VroomVroom for their Vietnamese adventures.
-                        Book your perfect bike today!
-                    </p>
-                    <Button size="lg" variant="secondary" asChild>
-                        <Link to="/auth/signup">
-                            Get Started Now
-                        </Link>
-                    </Button>
                 </div>
             </section>
         </div>
