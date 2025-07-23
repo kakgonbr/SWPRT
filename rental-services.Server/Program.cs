@@ -3,6 +3,8 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using rental_services.Server.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -39,6 +41,13 @@ namespace rental_services.Server
             
             // Schedulers
             //builder.Services.AddHostedService<Utils.FileCleanupService>();
+            
+            // Cookie policy to allow cross-site cookies
+            builder.Services.AddCookiePolicy(options =>
+            {
+                options.MinimumSameSitePolicy = SameSiteMode.None;
+                options.Secure = CookieSecurePolicy.Always;
+            });
 
             // Configure forwarded headers for NGINX
             builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -58,8 +67,18 @@ namespace rental_services.Server
             builder.Services
                 .AddAuthentication(options =>
                 {
-                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                    // Use JWT for API authentication
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    // Use Google for external login challenge
                     options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+                    // Use Cookie to persist OAuth state
+                    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                })
+                .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+                {
+                    options.Cookie.Name           = "ExternalAuth";
+                    options.Cookie.SameSite       = SameSiteMode.None;
+                    options.Cookie.SecurePolicy   = CookieSecurePolicy.Always;
                 })
                 .AddJwtBearer(options =>
                 {
@@ -96,6 +115,11 @@ namespace rental_services.Server
                     options.SaveTokens = true; // Save Google tokens if needed
                     options.Scope.Add("email"); // Request email scope
                     options.Scope.Add("profile"); // Request profile scope
+                    options.Scope.Add("openid"); // Request OpenID scope
+                    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
+                    // OAuth correlation cookies
+                    options.CorrelationCookie.SameSite = SameSiteMode.None;
+                    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
                 });
             
             // Policies for API authorization
@@ -170,6 +194,7 @@ namespace rental_services.Server
             // Use files
             app.UseDefaultFiles();
             app.UseStaticFiles();
+            app.UseCookiePolicy();
 
             // Use NGINX forwarded headers
             app.UseForwardedHeaders();
@@ -188,6 +213,7 @@ namespace rental_services.Server
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
+                // app.UseHttpsRedirection();
             }
             // Use authentication and authorization
             app.UseRouting();

@@ -55,8 +55,8 @@ namespace rental_services.Server.Controllers
                 // _logger.LogError(ex, "Lỗi nghiêm trọng trong quá trình xử lý OCR");
                 // return StatusCode(500, $"Lỗi OCR: {ex.Message}");
                 var baseException = ex.GetBaseException();
-    _logger.LogError(ex, "Lỗi nghiêm trọng trong quá trình xử lý OCR");
-    return StatusCode(500, $"Lỗi OCR: {baseException.Message}");
+                _logger.LogError(ex, "Lỗi nghiêm trọng trong quá trình xử lý OCR");
+                return StatusCode(500, $"Lỗi OCR: {baseException.Message}");
             }
 
             var parser = new GplxParser(extractedText);
@@ -84,7 +84,7 @@ namespace rental_services.Server.Controllers
             {
                 // Lưu dữ liệu vào database khi user confirm
                 await _ocrService.ProcessGplxDataAsync(int.Parse(userIdClaim), gplxData);
-                
+
                 return Ok(new
                 {
                     message = "Thông tin bằng lái đã được xác nhận và lưu thành công.",
@@ -102,4 +102,4 @@ namespace rental_services.Server.Controllers
             }
         }
     }
-} 
+}
