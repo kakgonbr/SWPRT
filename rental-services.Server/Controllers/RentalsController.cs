@@ -201,5 +201,6 @@ namespace rental_services.Server.Controllers
 
             return await _rentalService.HandleCancelAndRefundAsync(dbUser.UserId, bookingId) ? Ok() : BadRequest();
         }
+
     }
 }

@@ -1,34 +1,9 @@
-import { openDB } from 'idb';
-import type { DBSchema } from 'idb';
+import { getDB } from './db';
 import type { ChatMessageDTO } from '../lib/types';
 
-const DB_NAME = 'chat-db';
 const STORE_NAME = 'messages';
 
-interface ChatDBSchema extends DBSchema {
-    messages: {
-        key: number; // chatMessageId
-        value: ChatMessageDTO;
-        indexes: {
-            'chatId': number;
-            'chatId_sendTime': [number, string];
-        };
-    };
-}
-
-async function getDB() {
-    return openDB<ChatDBSchema>(DB_NAME, 1, {
-        upgrade(db) {
-            if (!db.objectStoreNames.contains(STORE_NAME)) {
-                const store = db.createObjectStore(STORE_NAME, { keyPath: 'chatMessageId' });
-                store.createIndex('chatId', 'chatId');
-                store.createIndex('chatId_sendTime', ['chatId', 'sendTime']);
-            }
-        },
-    });
-}
-
-//save messages to IndexedD
+//save messages to Indexedb
 export async function cacheMessages(_chatId: number, messages: ChatMessageDTO[]) {
     const db = await getDB();
     const tx = db.transaction(STORE_NAME, 'readwrite');

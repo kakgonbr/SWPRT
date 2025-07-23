@@ -41,10 +41,8 @@ export default function RentalManagementTab({
     onRejectRental
 }: RentalManagementTabProps) {
     const [rentalFilter, setRentalFilter] = useState<'all' | 'awaiting payment' | 'confirmed' | 'upcoming' | 'active' | 'completed' | 'cancelled'>('all')
-
     const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
     const [selectedRentalForDetails, setSelectedRentalForDetails] = useState<Booking | null>(null);
-
     // Currency formatting function for VND
     const formatVND = (amount: number): string => {
         return new Intl.NumberFormat('vi-VN', {
@@ -110,7 +108,6 @@ export default function RentalManagementTab({
             console.error(`error calculate days between start and end dates: ${error}`);
             return 1;
         }
-
     }
 
     const getStatusBadgeVariant = (status: BookingStatus) => {
@@ -270,7 +267,7 @@ export default function RentalManagementTab({
                                             <TableCell className="font-medium">{formatVND(totalCost)}</TableCell>
                                             <TableCell className="text-center">
                                                 <div className="flex items-center justify-center gap-2">
-                                                    {rental.status === 'Confirmed' ? (
+                                                    {rental.status === 'Upcoming' ? (
                                                         <>
                                                             <Button
                                                                 size="sm"
