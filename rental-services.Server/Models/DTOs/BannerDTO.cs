@@ -12,9 +12,9 @@
 
         public DateTime EndTime { get; set; }
 
-        public string ButtonText { get; set; } = null!;
+        public string? ButtonText { get; set; } = null!;
 
-        public string ButtonLink { get; set; } = null!;
+        public string? ButtonLink { get; set; } = null!;
 
         public string Type { get; set; } = null!;
 

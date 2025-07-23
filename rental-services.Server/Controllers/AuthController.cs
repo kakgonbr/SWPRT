@@ -138,6 +138,7 @@ public class AuthController : ControllerBase
         // Check against hashed password
         var mappedUser = _mapper.Map<User>(existingUser);
         mappedUser.Sub = existingUser.Sub; // for editing, changed the dto to ignore sub, do this manually
+        mappedUser.PasswordHash = existingUser.PasswordHash; // for editing, changed the dto to ignore password, do this manually
         var verifyHashedPassword =
             _hasher.VerifyHashedPassword(mappedUser, mappedUser.PasswordHash, request.Password);
         if (verifyHashedPassword == PasswordVerificationResult.Failed)

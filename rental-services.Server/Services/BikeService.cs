@@ -264,7 +264,7 @@ namespace rental_services.Server.Services
                     bool isAvailable = true;
                     foreach (var booking in vehicle.Bookings)
                     {
-                        if (!(booking.EndDate < startDate || booking.StartDate > endDate))
+                        if (!(booking.EndDate < startDate || booking.StartDate > endDate) || booking.Status == Utils.Config.BookingStatus.Upcoming || booking.Status == Utils.Config.BookingStatus.Active)
                         {
                             isAvailable = false;
                             break;

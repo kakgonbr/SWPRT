@@ -78,7 +78,7 @@ namespace rental_services.Server.Services
                 {
                     UserId = rental.UserId,
                     BookingId = rental.BookingId,
-                    Amount = (long)(rental.Vehicle.Model.RatePerDay * ((double) rental.Vehicle.Model.UpFrontPercentage / 100))
+                    Amount = CalculateAmount(rental.Vehicle.Model)
                 });
             }
         }
@@ -229,6 +229,11 @@ namespace rental_services.Server.Services
             return await _bookingRepository.UpdateStatusAsync(id, status) != 0;
         }
 
+        private static long CalculateAmount(Models.VehicleModel model)
+        {
+            return (long)(model.RatePerDay * ((double)model.UpFrontPercentage / 100));
+        }
+
         public enum CreateRentalResult
         {
             CREATE_SUCCESS,
@@ -258,14 +263,14 @@ namespace rental_services.Server.Services
 
             Models.VehicleModel? model = await _vehicleModelRepository.GetByIdAsync(modelId);
 
-            if (model is null)
+            if (model is null || !model.IsAvailable)
             {
                 // cant be
                 return CreateRentalResult.CREATE_FAILURE;
             }
 
             // round down? idk
-            long amount = (long)(model.RatePerDay * ((double) model.UpFrontPercentage / 100));
+            long amount = CalculateAmount(model);
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
@@ -485,6 +490,11 @@ namespace rental_services.Server.Services
             await _bookingRepository.DeleteAsync(bookingId);
 
             return true;
+        }
+
+        public async Task<string> GetTotalPaymentLink(int userId)
+        {
+
         }
     }
 }
