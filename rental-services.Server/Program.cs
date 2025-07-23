@@ -135,6 +135,8 @@ namespace rental_services.Server
             //real-time 
             builder.Services.AddSignalR();
 
+            builder.Services.AddHttpClient();
+
             // Build app
             var app = builder.Build();
             // Use files
