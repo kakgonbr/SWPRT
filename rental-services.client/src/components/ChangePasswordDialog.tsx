@@ -81,7 +81,7 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
             newErrors.newPassword = 'Password must be at least 8 characters long'
             isValid = false
         } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.newPassword)) {
-            newErrors.newPassword = 'Password must contain at least one uppercase letter, one lowercase letter, and one number'
+            newErrors.newPassword = 'Password must be between 8 to 32 characters, contain at least one uppercase letter, one lowercase letter, one number and one special character'
             isValid = false
         }
 
@@ -113,7 +113,7 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
 
         setIsLoading(true)
         try {
-            const response = await fetch('/api/user/change-password', {
+            const response = await fetch('/api/users/change-password', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -133,7 +133,7 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
                 handleClose()
             } else {
                 const errorData = await response.json()
-                if (response.status === 400 && errorData.message === 'Current password is incorrect') {
+                if (response.status === 400 || response.status === 500) {
                     setErrors(prev => ({
                         ...prev,
                         currentPassword: 'Current password is incorrect'

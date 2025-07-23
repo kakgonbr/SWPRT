@@ -14,6 +14,7 @@ namespace rental_services.Server.Repositories
         public async Task<Models.DTOs.ServerStatisticsDTO> GetStatistics()
         {
             // sql uses its own time, no custom time needed
+            var currentDateTime = DateTime.Now;
             var currentDate = DateOnly.FromDateTime(DateTime.Now);
 
             Models.DTOs.ServerStatisticsDTO serverStatistics = new()
@@ -23,7 +24,7 @@ namespace rental_services.Server.Repositories
                 TotalBikes = await _rentalContext.VehicleModels.CountAsync(),
                 AvailableBikes = await _rentalContext.VehicleModels.Where(vm => vm.IsAvailable).CountAsync(),
                 ActiveRentals = await _rentalContext.Bookings.Where(b => !b.Status.Equals("Awaiting Payment") && !b.Status.Equals("Cancelled") && b.StartDate > currentDate && b.EndDate < currentDate).CountAsync(),
-                MonthlyRevenue = await _rentalContext.Payments.Where(p => p.PaymentDate.AddDays(30) > currentDate).Select(p => p.AmountPaid).SumAsync()
+                MonthlyRevenue = await _rentalContext.Payments.Where(p => p.PaymentDate.AddDays(30) > currentDateTime).Select(p => p.AmountPaid).SumAsync()
             };
 
             return serverStatistics;
@@ -32,6 +33,7 @@ namespace rental_services.Server.Repositories
         public async Task<List<Models.DTOs.ServerStatisticsDTO>> GetOfDuration(int? days = null)
         {
             var currentDate = DateOnly.FromDateTime(DateTime.Now);
+            var currentDateTime = DateTime.Now;
             var serverStatistics = new List<Models.DTOs.ServerStatisticsDTO>();
 
             async Task<Models.DTOs.ServerStatisticsDTO> BuildSnapshotAsync(int daysBack)
@@ -50,7 +52,7 @@ namespace rental_services.Server.Repositories
                         .CountAsync(),
 
                     MonthlyRevenue = await _rentalContext.Payments
-                        .Where(p => EF.Functions.DateDiffDay(p.PaymentDate, currentDate) >= daysBack)
+                        .Where(p => EF.Functions.DateDiffDay(p.PaymentDate, currentDateTime) >= daysBack)
                         .SumAsync(p => (decimal?)p.AmountPaid) ?? 0m
                 };
             }

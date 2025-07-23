@@ -15,12 +15,10 @@ import { Badge } from "./ui/badge";
 import { Textarea } from "./ui/textarea";
 import {
   CheckCircle,
-  AlertTriangle,
   User,
   Calendar,
   CreditCard,
   MapPin,
-  Eye,
   Edit3,
   Save,
   X,
@@ -47,7 +45,6 @@ interface IdReviewDialogProps {
   onConfirm: (editedData: ExtractedIdData) => void;
   onReject: () => void;
   extractedData: ExtractedIdData | null;
-  uploadedImageUrl: string | null;
   isProcessing?: boolean;
 }
 
@@ -114,10 +111,8 @@ export default function IdReviewDialog({
   onConfirm,
   onReject,
   extractedData,
-  uploadedImageUrl,
   isProcessing = false,
 }: IdReviewDialogProps) {
-  const [showFullImage, setShowFullImage] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedData, setEditedData] = useState<ExtractedIdData | null>(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
@@ -140,8 +135,7 @@ export default function IdReviewDialog({
     console.log("IdReviewDialog props:");
     console.log("isOpen:", isOpen);
     console.log("extractedData:", extractedData);
-    console.log("uploadedImageUrl:", uploadedImageUrl);
-  }, [isOpen, extractedData, uploadedImageUrl]);
+  }, [isOpen, extractedData]);
 
   const formatDate = (dateString: string) => {
     try {
@@ -323,59 +317,23 @@ export default function IdReviewDialog({
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* ID Document Image */}
+              {/* Cột trái: Card hướng dẫn */}
               <div className="space-y-4">
-                <div>
-                  <Label className="text-base font-medium">
-                    Uploaded Document
-                  </Label>
-                  <div className="mt-2">
-                    {uploadedImageUrl ? (
-                      <div className="relative">
-                        <img
-                          src={uploadedImageUrl}
-                          alt="Uploaded ID Document"
-                          className="w-full max-w-md rounded-lg border shadow-sm cursor-pointer hover:shadow-md transition-shadow"
-                          onClick={() => setShowFullImage(true)}
-                        />
-                        <Button
-                          size="sm"
-                          variant="secondary"
-                          className="absolute top-2 right-2"
-                          onClick={() => setShowFullImage(true)}
-                        >
-                          <Eye className="h-4 w-4 mr-1" />
-                          View Full Size
-                        </Button>
-                      </div>
-                    ) : (
-                      <div className="w-full max-w-md h-48 bg-gray-100 rounded-lg border flex items-center justify-center">
-                        <p className="text-muted-foreground">
-                          No image available
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
                 <Card className="bg-blue-50 border-blue-200">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
-                      <AlertTriangle className="h-5 w-5 text-blue-600 mt-0.5" />
+                      <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
                       <div className="text-sm">
                         <p className="font-medium text-blue-800 mb-1">
                           Please verify your information carefully
                         </p>
                         <p className="text-blue-700">
-                          Once confirmed, this information will be saved to your
-                          profile.
+                          Once confirmed, this information will be saved to your profile.
                         </p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
-
-                {/* Edit Instructions */}
                 <Card className="bg-amber-50 border-amber-200">
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
@@ -385,16 +343,14 @@ export default function IdReviewDialog({
                           Found incorrect information?
                         </p>
                         <p className="text-amber-700">
-                          Click "Edit Information" to correct any details that
-                          don't match your ID document.
+                          Click \"Edit Information\" to correct any details that don't match your ID document.
                         </p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </div>
-
-              {/* Extracted Information */}
+              {/* Cột phải: Extracted Information */}
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <Label className="text-base font-medium">
@@ -513,6 +469,9 @@ export default function IdReviewDialog({
                                   : ""
                               }`}
                               placeholder="e.g. 012345678912"
+
+                              disabled={isEditing}
+
                             />
                             {fieldErrors.idNumber && (
                               <p className="text-sm text-red-600 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200">
@@ -565,6 +524,9 @@ export default function IdReviewDialog({
                                   : ""
                               }`}
                               placeholder="e.g. B1"
+
+                              disabled={isEditing}
+
                             />
                             {fieldErrors.licenseClass && (
                               <p className="text-sm text-red-600 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200">
@@ -792,24 +754,6 @@ export default function IdReviewDialog({
               )}
             </div>
           </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Full Size Image Modal */}
-      <Dialog open={showFullImage} onOpenChange={setShowFullImage}>
-        <DialogContent className="max-w-6xl">
-          <DialogHeader>
-            <DialogTitle>ID Document - Full Size</DialogTitle>
-          </DialogHeader>
-          {uploadedImageUrl && (
-            <div className="flex justify-center">
-              <img
-                src={uploadedImageUrl}
-                alt="ID Document Full Size"
-                className="max-w-full max-h-[80vh] object-contain rounded-lg"
-              />
-            </div>
-          )}
         </DialogContent>
       </Dialog>
     </>

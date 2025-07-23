@@ -113,18 +113,18 @@ export default function SignupPage() {
                     title: "Account Created",
                     description: "Welcome to VroomVroom! Your account has been created successfully.",
                 })
-                navigate('/login')
+                navigate('/auth/login')
             } else {
                 toast({
                     title: "Registration Failed",
-                    description: "Failed to create account. Please try again.",
+                    description: "Failed to create account. " + success.message,
                     variant: "destructive",
                 })
             }
-        } catch (error) {
+        } catch (error: any) {
             toast({
                 title: "Error",
-                description: "An error occurred during registration. Please try again.",
+                description: "An error occurred during registration." + error.message,
                 variant: "destructive",
             })
         } finally {
@@ -226,7 +226,7 @@ export default function SignupPage() {
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="phoneNumber">phoneNumber number</Label>
+                                <Label htmlFor="phoneNumber">Phone number</Label>
                                 <Input
                                     id="phoneNumber"
                                     name="phoneNumber"

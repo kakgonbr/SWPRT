@@ -8,6 +8,7 @@ import React, {
     useEffect,
     type ReactNode,
 } from "react";
+import { useNavigate } from "react-router-dom";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -15,6 +16,7 @@ interface AuthContextType {
     user: UserDto | null;
     isAuthenticated: boolean;
     login: (data: LoginRequest) => Promise<LoginResponse>;
+    handleGoogleCallback: (token: string) => Promise<void>;
     logout: () => void;
     register: (data: SignupRequest) => Promise<any>;
     loading: boolean;
@@ -23,14 +25,15 @@ interface AuthContextType {
 interface UserDto {
     userId: number;
     email: string;
-    phoneNumber: string;
+    phoneNumber: string | null;
+    passwordHash?: string | null;
+    role: string;
     fullName: string;
     address: string | null;
     creationDate: Date;
     emailConfirmed: boolean;
     dateOfBirth: Date | null;
     isActive: boolean;
-    role: string;
     driverLicenses: DriverLicenseDto[] | null;
 }
 
@@ -65,6 +68,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({children}: { children: ReactNode }) {
     const [user, setUser] = useState<UserDto | null>(null);
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
 
     useEffect(() => {
         // Check for stored user on app start
@@ -123,6 +127,31 @@ export function AuthProvider({children}: { children: ReactNode }) {
         localStorage.setItem("user", JSON.stringify(result.user));
         return result;
     };
+    
+    const handleGoogleCallback = async (token: string) => {
+        try {
+            const response = await fetch(`${API}/api/auth/me`, {
+                headers: {
+                    Authorization: `Bearer ${token}`,
+                },
+            });
+            if (!response.ok) {
+                const error = await response.json();
+                throw new Error(error.Message || "Failed to fetch user data");
+            }
+            const user: UserDto = await response.json();
+            setUser(user);
+            localStorage.setItem("token", token);
+            localStorage.setItem("user", JSON.stringify(user));
+            navigate("/", { replace: true });
+        } catch (error: any) {
+            console.error("Google callback error:", error);
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            navigate("/auth/login", { replace: true });
+            throw new Error(error.message || "Google login failed");
+        }
+    }
 
     const register = async (data: SignupRequest) => {
         const response = await fetch(`${API}/api/auth/signup`, {
@@ -134,7 +163,7 @@ export function AuthProvider({children}: { children: ReactNode }) {
         });
         if (!response.ok) {
             const error = await response.json();
-            throw new Error("Sign up failed: " + error.Message);
+            throw new Error("Sign up failed: " + error.message);
         }
         return response.json();
     };
@@ -149,6 +178,7 @@ export function AuthProvider({children}: { children: ReactNode }) {
         user,
         isAuthenticated: !!user,
         login,
+        handleGoogleCallback,
         logout,
         register,
         loading,

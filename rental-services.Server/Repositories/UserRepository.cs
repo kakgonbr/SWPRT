@@ -20,6 +20,13 @@ public class UserRepository : IUserRepository
             .Include(u => u.DriverLicenses)
             .SingleOrDefaultAsync(u => u.UserId == id);
     }
+    
+    public async Task<User?> GetByEmail(string email)
+    {
+        return await _db.Users
+            .Include(u => u.DriverLicenses)
+            .SingleOrDefaultAsync(u => u.Email == email);
+    }
 
     public async Task<User?> GetBySub(string sub)
     {

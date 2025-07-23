@@ -34,10 +34,10 @@ export interface Bike {
 }
 
 
-interface VehicleTypeDTO  { vehicleTypeId: number; vehicleTypeName: string }
+interface VehicleTypeDTO { vehicleTypeId: number; vehicleTypeName: string }
 interface ManufacturerDTO { manufacturerId: number; manufacturerName: string }
-interface ShopDTO         { shopid: number; address: string }
-interface PeripheralDTO   { peripheralId: number; name: string }
+interface ShopDTO { shopid: number; address: string }
+interface PeripheralDTO { peripheralId: number; name: string }
 
 /* ---------- option used by the dialog ---------- */
 export interface LookupOption { id: number; label: string }
@@ -46,24 +46,17 @@ const fetchList = <T,>(endpoint: string) =>
     fetch(`${API}${endpoint}`, {
         method: "GET",
         headers: {
-            Authorization : `Bearer ${localStorage.getItem("token")}`
+            Authorization: `Bearer ${localStorage.getItem("token")}`
         }
     }).then(r => {
-    if (!r.ok) throw new Error('Network error');
-    return r.json() as Promise<T>;
-  });
+        if (!r.ok) throw new Error('Network error');
+        return r.json() as Promise<T>;
+    });
 
-const getVehicleTypes  = () => fetchList<VehicleTypeDTO[]>('/api/bikes/types');
+const getVehicleTypes = () => fetchList<VehicleTypeDTO[]>('/api/bikes/types');
 const getManufacturers = () => fetchList<ManufacturerDTO[]>('/api/bikes/manufacturers');
-const getShops         = () => fetchList<ShopDTO[]>('/api/bikes/shops');
-const getPeripherals   = () => fetchList<PeripheralDTO[]>('/api/bikes/peripherals');
-
-const upsertBike = (p: IBikeModelForm) =>
-  fetch(`${API}/api/bikes`, {
-    method: p.modelId ? 'PATCH' : 'PUT',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem("token")}` },
-    body: JSON.stringify(p)
-  }).then(r => { if (!r.ok) throw new Error('Save failed'); });
+const getShops = () => fetchList<ShopDTO[]>('/api/bikes/shops');
+const getPeripherals = () => fetchList<PeripheralDTO[]>('/api/bikes/peripherals');
 
 export default function BikesTab() {
     const { toast } = useToast()
@@ -113,6 +106,26 @@ export default function BikesTab() {
     const openEdit = (id: number) => { setSelected(id); setEditOpen(true); };
     const close = () => setEditOpen(false);
 
+    const upsertBike = (p: IBikeModelForm) =>
+        fetch(`${API}/api/bikes`, {
+            method: p.modelId ? 'PATCH' : 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem("token")}` },
+            body: JSON.stringify(p)
+        }).then(r => {
+            if (!r.ok) {
+                toast({
+                    title: "Failed to save bike information.",
+                    description: "Please recheck bike information.",
+                    variant: "destructive",
+                });
+                throw new Error('Save failed')
+            }
+            toast({
+                title: "Saved.",
+                description: "Successfully saved bike information.",
+            });
+        });
+
     /* ---- save mutation ---- */
     const qc = useQueryClient();
     const mutation = useMutation({
@@ -159,6 +172,7 @@ export default function BikesTab() {
     const locations = Array.from(
         new Set(bikes.flatMap(bike => bike.shops))
     );
+
 
     // Helper function to format bike name as "Type - Location"
 
@@ -297,6 +311,7 @@ export default function BikesTab() {
                     toast({
                         title: "Failed to delete model.",
                         description: err,
+                        variant: "destructive"
                     })
                 });
 
@@ -419,7 +434,7 @@ export default function BikesTab() {
                                     <div className="flex items-center justify-between">
                                         <div className="flex items-center space-x-4">
                                             <img
-                                                src={nameData.imageUrl.split('"')[0]}
+                                                src={'images/' + nameData.imageUrl.split('"')[0]}
                                                 alt={nameData.name}
                                                 className="w-16 h-16 object-cover rounded"
                                             />
@@ -465,7 +480,7 @@ export default function BikesTab() {
                                 <div key={bike.modelId} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
                                     <div className="flex items-center space-x-4">
                                         <img
-                                            src={bike.imageFile ? bike.imageFile.split('"')[0] : '/images/placeholder-bike.png'}
+                                            src={bike.imageFile ? 'images/' + bike.imageFile.split('"')[0] : '/images/placeholder-bike.png'}
                                             alt={bike.displayName}
                                             className="w-16 h-16 object-cover rounded"
                                         />

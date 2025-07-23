@@ -31,6 +31,8 @@ namespace rental_services.Server.Repositories
                 .Include(vm => vm.Peripherals)
                 .Include(vm => vm.Vehicles)
                     .ThenInclude(v => v.Shop)
+                .Include(vm => vm.Vehicles)
+                    .ThenInclude(v => v.Bookings)
                 .SingleOrDefaultAsync(vm => vm.ModelId == id);
         }
 
@@ -93,6 +95,8 @@ namespace rental_services.Server.Repositories
                 .Where(vm => vm.IsAvailable)
                 .Include(vm => vm.Vehicles)
                     .ThenInclude(v => v.Shop)
+                .Include(vm => vm.Vehicles)
+                    .ThenInclude(v => v.Bookings)
                 .Include(vm => vm.VehicleType)
                 .Include(vm => vm.Manufacturer)
                 .ToListAsync();
@@ -113,6 +117,8 @@ namespace rental_services.Server.Repositories
                 )
                 .Include(vm => vm.Vehicles)
                     .ThenInclude(v => v.Shop)
+                .Include(vm => vm.Vehicles)
+                    .ThenInclude(v => v.Bookings)
                 .Include(vm => vm.VehicleType)
                 .Include(vm => vm.Manufacturer)
                 .ToListAsync();

@@ -44,7 +44,7 @@ export interface Peripheral {
 export interface Rental {
     id: string
     bikeName: string
-    bikeId: number
+    vehicleModelId: number
     bikeImageUrl: string
     customerName: string
     customerEmail: string
@@ -107,7 +107,7 @@ export default function RentalsPage() {
         }
 
         const fetchRentals = async () => {
-            await fetch(`${API}/api/rentals`, {
+            await fetch(`${API}/api/rentals/${user?.userId}`, {
                 headers: {
                     Authorization: `Bearer ${localStorage.getItem("token")}`
                 }
@@ -150,7 +150,7 @@ export default function RentalsPage() {
                 setRentals([]);
 
                 toast({
-                    title: "Booking Failed",
+                    title: "Fetch failed",
                     description: `There was an error fetching bookings: ${err.message}. Please try again.`,
                     variant: "destructive",
                 })
@@ -175,7 +175,7 @@ export default function RentalsPage() {
             
     }, [user, isAuthenticated, loading, navigate, toast])
 
-    const upcomingRentals = rentals.filter(r => r.status === 'Upcoming' || r.status === 'Active')
+    const upcomingRentals = rentals.filter(r => r.status === 'Upcoming' || r.status === 'Active' || r.status === 'Awaiting Payment')
     const pastRentals = rentals.filter(r => r.status === 'Completed' || r.status === 'Cancelled')
 
     const handleCancelClick = (rental: Rental) => {
@@ -197,28 +197,54 @@ export default function RentalsPage() {
         setShowCancelDialog(false)
 
         try {
-            // TODO
-            // Simulate API call
-            //await new Promise(resolve => setTimeout(resolve, 2000))
+            let response: Response;
+            try {
+                response = await fetch(`${API}/api/rentals/cancel/${rentalToCancel.id}`, {
+                    method: 'GET',
+                    headers: {
+                        'Authorization': `Bearer ${localStorage.getItem("token")}`
+                    }
+                });
+            } catch (networkError) {
+                console.error(networkError);
+                toast({
+                    title: 'Network Error',
+                    description: 'Unable to reach server. Please try again later.',
+                    variant: "destructive"
+                });
+                return;
+            }
 
-            //// Update the rental status in state
-            //setRentals(prev => prev.map(rental =>
-            //    rental.id === rentalToCancel.id
-            //        ? { ...rental, status: 'Cancelled' as const }
-            //        : rental
-            //))
+            if (response.status === 400) {
+                toast({ title: 'Cancellation Failed', description: "Your data may be out of date, please refresh the page.", variant: "destructive" });
+                return;
+            }
 
-            //// Calculate refund amount (example: full refund if cancelled 24h+ before start)
-            //const hoursUntilStart = differenceInHours(rentalToCancel.startDate, new Date())
-            //const refundPercentage = hoursUntilStart >= 24 ? 100 : hoursUntilStart >= 12 ? 50 : 0
-            //const refundAmount = (rentalToCancel.totalPrice * refundPercentage) / 100
+            if (response.status !== 200) {
+                toast({
+                    title: 'Server Error',
+                    description: `Unexpected response (${response.status}).`,
+                    variant: "destructive"
+                });
+                return;
+            }
 
-            //toast({
-            //    title: "Rental Cancelled Successfully",
-            //    description: refundPercentage > 0
-            //        ? `Your rental has been cancelled. You will receive a ${refundPercentage}% refund of $${refundAmount.toFixed(2)}.`
-            //        : "Your rental has been cancelled. No refund is available for cancellations less than 12 hours before the start date.",
-            //})
+            setRentals(prev => prev.map(rental =>
+                rental.id === rentalToCancel.id
+                    ? { ...rental, status: 'Cancelled' as const }
+                    : rental
+            ))
+
+            const hoursUntilStart = differenceInHours(rentalToCancel.startDate, new Date())
+            const refundPercentage = hoursUntilStart >= 24 ? 100 : hoursUntilStart >= 12 ? 50 : 0
+            const refundAmount = (rentalToCancel.totalPrice! * refundPercentage) / 100
+
+            toast({
+                title: "Rental Cancelled Successfully",
+                description: refundPercentage > 0
+                    ? `Your rental has been cancelled. You will receive a ${refundPercentage}% refund of $${refundAmount.toFixed(2)}.`
+                    : "Your rental has been cancelled. No refund is available for cancellations less than 12 hours before the start date.",
+            })
 
         } catch (error) {
             console.error('Error cancelling rental:', error)
@@ -235,10 +261,7 @@ export default function RentalsPage() {
 
     const canCancelRental = (rental: Rental) => {
         // Can only cancel upcoming rentals, not active ones
-        if (rental.status !== 'Upcoming') return false
-
-        // Check if rental start date is in the future
-        return rental.startDate > new Date()
+        return rental.status === 'Upcoming'
     }
 
     // Add function to check if report is allowed
@@ -268,7 +291,7 @@ export default function RentalsPage() {
                 <CardHeader className="p-0 relative">
                     <div className="aspect-[16/7] relative w-full">
                         <img
-                            src={rental.bikeImageUrl.split('"')[0]}
+                            src={'images/' + rental.bikeImageUrl.split('"')[0]}
                             alt={rental.bikeName}
                             className="w-full h-full object-cover"
                         />
@@ -318,9 +341,52 @@ export default function RentalsPage() {
                 </CardContent>
                 <CardFooter className="p-4 border-t space-y-2">
                     <div className="flex gap-2 w-full">
-                        <Button variant="outline" size="sm" className="flex-1" asChild>
-                            <Link to={`/bikes/${rental.bikeId}`}>View Details</Link>
-                        </Button>
+
+                        {rental.status === 'Awaiting Payment' ?  
+                            (
+                                <Button variant="outline"
+                                    size="sm"
+                                    className="flex-1 text-orange-600 border-orange-200 hover:bg-orange-50" onClick={async () => {
+                                    try {
+                                        const response = await fetch(`${API}/api/rentals/pay`, {
+                                            method: 'GET',
+                                            headers: {
+                                                Accept: 'text/plain',
+                                                Authorization: `Bearer ${localStorage.getItem("token")}`
+                                            }
+                                        });
+
+                                        if (!response.ok) {
+                                            throw new Error(`API call failed with status ${response.status}`);
+                                        }
+
+                                        const rawText: string = await response.text();
+
+                                        const result: string | null = rawText.trim().length > 0 ? rawText.trim() : null;
+
+                                        if (result !== null) {
+                                            window.location.href = result;
+                                        } else {
+                                            throw new Error("Cannot get payment URL.")
+                                        }
+                                    } catch (error : any) {
+                                        toast({
+                                            title: "Payment link request failed",
+                                            description: `There was an error requesting payment link: ${error.message}, please refresh the page.`,
+                                            variant: "destructive",
+                                        })
+                                    }
+                                }}>
+                                Payment required
+                                </Button>
+                            )
+                        :
+                            (
+                                <Button variant = "outline" size = "sm" className = "flex-1">
+                                    <Link to={`/bikes/${rental.vehicleModelId}`}>View Details</Link>
+                                </Button>
+                            )}
+                        
 
                         {/* Report Issue Button */}
                         {canReportIssue(rental) && (

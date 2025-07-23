@@ -34,6 +34,7 @@ import {
     Calendar,
     //Save
 } from 'lucide-react'
+import { useToast } from '../../contexts/toast-context'
 export interface MaintenanceInfo {
     start: string | null
     end: string | null
@@ -47,6 +48,7 @@ export default function MaintenanceMode() {
     const [isSaving, setIsSaving] = useState(false)
     const rawToken = localStorage.getItem("token");
     const [isMaintenanceActive, setMaintenanceActive] = useState(false);
+    const { toast } = useToast();
 
     useEffect(() => {
         setIsLoading(true)
@@ -74,7 +76,12 @@ export default function MaintenanceMode() {
                 end: endTime && endTime.trim() !== "" ? endTime : null,
             }, rawToken!)
         } catch (e) {
-            alert("Failed to set maintenance period.")
+            //alert("Failed to set maintenance period.")
+            toast({
+                title: "Failed to set maintenance period.",
+                description: "Please recheck maintenance information.",
+                variant: "destructive",
+            });
         } finally {
             setIsSaving(false)
             fetchMaintenanceInfo().then(data => {
@@ -95,7 +102,12 @@ export default function MaintenanceMode() {
             setEndTime("")
             setMaintenanceActive(false)
         } catch (e) {
-            alert("Failed to clear maintenance period.")
+            //alert("Failed to clear maintenance period.")
+            toast({
+                title: "Failed to clear maintenance period.",
+                description: "Please refresh the page.",
+                variant: "destructive",
+            });
         } finally {
             setIsSaving(false)
         }

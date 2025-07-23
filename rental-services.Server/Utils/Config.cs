@@ -13,10 +13,47 @@ namespace rental_services.Server.Utils
             public const string Admin = "Admin";
         }
 
+        public static class BookingStatus
+        {
+            public const string Pending = "Pending";
+            public const string AwaitingPayment = "Awaiting Payment";
+            public const string Confirmed = "Confirmed";
+            public const string Upcoming = "Upcoming";
+            public const string Active = "Active";
+            public const string Completed = "Completed";
+            public const string Cancelled = "Cancelled";
+
+            public static readonly string[] AllStatuses =
+            {
+                Pending, AwaitingPayment, Confirmed, Upcoming, Active, Completed, Cancelled
+            };
+
+            public static bool IsValid(string status)
+            {
+                return AllStatuses.Contains(status);
+            }
+
+            public static bool CanTransitionTo(string currentStatus, string targetStatus)
+            {
+                return currentStatus switch
+                {
+                    Pending => targetStatus is AwaitingPayment or Confirmed or Cancelled,
+                    AwaitingPayment => targetStatus is Confirmed or Cancelled,
+                    Confirmed => targetStatus is Upcoming or Cancelled,
+                    Upcoming => targetStatus is Active or Cancelled,
+                    Active => targetStatus is Completed or Cancelled,
+                    Completed => false,
+                    Cancelled => false,
+                    _ => false
+                };
+            }
+        }
+
         public static class Image
         {
             public static string ImagePath = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\images" : "/var/www/images";
             public static TimeSpan CleanupInterval = TimeSpan.FromDays(3);
+            public static int ExpireInMinutes = 3;
         }
 
         /// <summary>
@@ -29,6 +66,8 @@ namespace rental_services.Server.Utils
             public static readonly string VnpTmnCode = Environment.GetEnvironmentVariable("VNP_TMN");
             public static readonly string SecretKey = Environment.GetEnvironmentVariable("VNP_SECRET");
             public static readonly string VnpApiUrl = "https://sandbox.vnpayment.vn/merchant_webapi/api/transaction";
+            public static readonly int PAYMENT_TIMEOUT_MIN = 15;
+            public static readonly int PAYMENT_MAX_TRIES = 3;
 
             public static string Md5(string message) => Hash(message, MD5.Create());
             public static string Sha256(string message) => Hash(message, SHA256.Create());

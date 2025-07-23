@@ -14,15 +14,19 @@ namespace rental_services.Server.Controllers
     public class IPNController : ControllerBase
     {
         private readonly ILogger<IPNController> _logger;
+        private readonly Services.IRentalService _rentalService;
 
-        public IPNController(ILogger<IPNController> logger)
+        public IPNController(ILogger<IPNController> logger, Services.IRentalService rentalService)
         {
+            _rentalService = rentalService;
             _logger = logger;
         }
 
         [HttpGet]
-        public IActionResult Get()
+        public async Task<IActionResult> Get()
         {
+            _logger.LogInformation("IPN Received a GET request from {ip}", HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString());
+
             var queryParams = HttpContext.Request.Query;
             var fields = new Dictionary<string, string>(StringComparer.Ordinal);
 
@@ -46,8 +50,8 @@ namespace rental_services.Server.Controllers
             string? payDate = queryParams["vnp_PayDate"];
             string? responseCode = queryParams["vnp_ResponseCode"];
 
-            if (!int.TryParse(txnRef, out int orderId))
-                return BadRequest("Invalid transaction reference");
+            if (txnRef is null)
+                return BadRequest("No order id");
 
             if (!long.TryParse(amountStr, out long rawAmount))
                 return BadRequest("Invalid amount");
@@ -59,40 +63,33 @@ namespace rental_services.Server.Controllers
             bool success = false;
             if (string.Equals(calculatedHash, secureHash, StringComparison.OrdinalIgnoreCase))
             {
-                _logger.LogInformation("Order {OrderId}, amount {Amount}, date {Date}", orderId, paidAmount, payDate);
+                _logger.LogInformation("Order {OrderId}, amount {Amount}, date {Date}", txnRef, paidAmount, payDate);
 
-                if (IsOrderValid(orderId, paidAmount))
+                if (responseCode == "00")
                 {
-                    if (responseCode == "00")
+                    if (await _rentalService.InformPaymentSuccessAsync(int.Parse(txnRef.Split("_")[0]), (long) decimal.Truncate(paidAmount)))
                     {
-                        // TODO
-                        _logger.LogInformation("Order is valid, response code valid");
+                        _logger.LogInformation("Payment successful.");
                     }
                     else
                     {
-                        // TODO
-                        _logger.LogInformation("Order is valid, response code invalid");
+                        _logger.LogWarning("Payment successful, but payment failed to proceed further, refunding");
+                        // TODO: REFUNDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
+                        await _rentalService.HandleCancelAndRefundAsync(-1, int.Parse(txnRef.Split("_")[0]));
                     }
                 }
                 else
                 {
-                    // TODO
-                    _logger.LogInformation("Order is invalid");
+                    await _rentalService.InformPaymentFailureAsync(int.Parse(txnRef.Split("_")[0]));
+                    _logger.LogInformation("Response code is not 00");
                 }
             }
             else
             {
-                // TODO
                 _logger.LogInformation("Hash doesnt match");
             }
 
             return Ok();
-        }
-
-        private bool IsOrderValid(int orderId, decimal paidAmount)
-        {
-            // TODO
-            return true;
         }
     }
 }

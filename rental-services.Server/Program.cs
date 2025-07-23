@@ -15,6 +15,9 @@ using System.Runtime.InteropServices;
 using rental_services.Server.Middlewares;
 using Microsoft.AspNetCore.HttpOverrides;
 using System.Net;
+using rental_services.Server.Models.DTOs;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authentication.Google;
 
 namespace rental_services.Server
 {
@@ -30,28 +33,33 @@ namespace rental_services.Server
             var builder = WebApplication.CreateBuilder(args);
             builder.Logging.ClearProviders();
             builder.Logging.AddConsole();
-            // automapper
+            
+            // Auto Mapper
             builder.Services.AddAutoMapper(typeof(Utils.DTOMapper));
-            // schedulers
+            
+            // Schedulers
             //builder.Services.AddHostedService<Utils.FileCleanupService>();
 
+            // Configure forwarded headers for NGINX
             builder.Services.Configure<ForwardedHeadersOptions>(options =>
             {
                 options.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
                 options.KnownProxies.Add(IPAddress.Parse("127.0.0.1")); // Replace with NGINX IP if needed
             });
-
-
-            // Bind JWT config
+            
+            // Bind secrets
             string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new InvalidOperationException("Environment Variable 'JWT_KEY' not found.");
             string jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? throw new InvalidOperationException("Environment Variable 'JWT_ISSUER' not found.");
             string jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? throw new InvalidOperationException("Environment Variable 'JWT_AUDIENCE' not found.");
-            // Add JWT bearer authentication
+            string googleClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? throw new InvalidOperationException("Environment Variable 'GOOGLE_CLIENT_ID' not found.");
+            string googleClientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? throw new InvalidOperationException("Environment Variable 'GOOGLE_CLIENT_SECRET' not found.");
+            
+            // Add JWT + Google Authentication
             builder.Services
                 .AddAuthentication(options =>
                 {
-                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
                 })
                 .AddJwtBearer(options =>
                 {
@@ -79,23 +87,35 @@ namespace rental_services.Server
                             return Task.CompletedTask;
                         }
                     };
+                })
+                .AddGoogle(options =>
+                {
+                    options.ClientId = googleClientId;
+                    options.ClientSecret = googleClientSecret;
+                    options.CallbackPath = "/api/auth/login/google/callback"; // Must match Google Cloud Console redirect URI
+                    options.SaveTokens = true; // Save Google tokens if needed
+                    options.Scope.Add("email"); // Request email scope
+                    options.Scope.Add("profile"); // Request profile scope
                 });
-            // TODO: Add policies later for AddAuthorization()
+            
+            // Policies for API authorization
             builder.Services.AddAuthorization(options =>
             {
                 options.AddPolicy("AdminOrStaff", policy =>
                 policy.RequireRole("Admin", "Staff"));
-            }
-            );
+            });
+            
             // Add passsword hasher
             builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
-            // Add services to the container.
+            
             // Add EF Core with SQL Server
             builder.Services.AddDbContext<RentalContext>(options =>
                 options.UseSqlServer(Environment.GetEnvironmentVariable("DATABASE_CONNECTION") ?? throw new InvalidOperationException("Environment Variable 'DATABASE_CONNECTION' not found.")));
+            
             // Register services and repositories
             builder.Services
                 .AddScoped<IUserRepository, UserRepository>()
+                .AddScoped<IPaymentRepository, PaymentRepository>()
                 .AddScoped<IUserService, UserService>()
                 .AddScoped<IVehicleModelRepository, VehicleModelRepository>()
                 .AddScoped<IVehicleRepository, VehicleRepository>()
@@ -105,6 +125,7 @@ namespace rental_services.Server
                 .AddScoped<IVehicleTypeRepository, VehicleTypeRepository>()
                 .AddScoped<IBikeService, BikeService>()
                 .AddScoped<IOcrService, OcrService>()
+                .AddScoped<IDriverLicenseRepository, DriverLicenseRepository>() // Đăng ký repository mới
                 .AddScoped<IChatRepository, ChatRepository>()
                 .AddScoped<IChatService, ChatService>()
                 .AddScoped<IBookingRepository, BookingRepository>()
@@ -115,7 +136,12 @@ namespace rental_services.Server
                 .AddScoped<IAdminControlPanelService, AdminControlPanelService>()
                 .AddSingleton<IMaintenanceService, MaintenanceService>()
                 .AddScoped<IReportRepository, ReportRepository>()
-                .AddScoped<IReportService, ReportService>();
+                .AddScoped<IReportService, ReportService>()
+                .AddScoped<IImageService, ImageService>()
+                .AddScoped<rental_services.Server.Repositories.IFeedbackRepository, rental_services.Server.Repositories.FeedbackRepository>()
+                .AddScoped<rental_services.Server.Services.IFeedbackService, rental_services.Server.Services.FeedbackService>();
+          
+            builder.Services.AddHostedService<Utils.CleanupService>();
 
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
@@ -128,29 +154,29 @@ namespace rental_services.Server
                         .AllowCredentials();
                 });
             });
-            // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            
+            // Configure Swagger/OpenAPI
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
 
-            //real-time 
+            // Configure SignalR
             builder.Services.AddSignalR();
 
             builder.Services.AddHttpClient();
 
             // Build app
             var app = builder.Build();
+            
             // Use files
             app.UseDefaultFiles();
             app.UseStaticFiles();
 
-            // nginx
+            // Use NGINX forwarded headers
             app.UseForwardedHeaders();
-
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Directory.Exists(@"C:\images"))
             {
                 Directory.CreateDirectory(@"C:\images");
             }
-
             app.UseStaticFiles(new StaticFileOptions
             {
                 FileProvider = new PhysicalFileProvider(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\images" : "/var/www/images"),
@@ -165,16 +191,12 @@ namespace rental_services.Server
             }
             // Use authentication and authorization
             app.UseRouting();
-
             app.UseCors("AllowLocalhost3000");
-
             app.UseAuthentication();
             app.UseAuthorization();
-
             app.UseMiddleware<MaintenanceMiddleware>();
 
             app.MapFallbackToFile("index.html");
-            //
             //app.UseHttpsRedirection(); // nginx handles https
             app.MapControllers();
             

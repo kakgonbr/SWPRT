@@ -743,11 +743,16 @@ import { Switch } from '../ui/switch';
 import { Textarea } from '../ui/textarea';
 import { Button } from '../ui/button';
 import { Checkbox } from '../ui/checkbox';
-import { Upload, Trash2, Save, X, Plus } from 'lucide-react';
+import {
+    Upload, Trash2, Save, X,
+    //Plus
+} from 'lucide-react';
 
 import {
     useQuery,
 } from '@tanstack/react-query'
+import { useToast } from '../../contexts/toast-context';
+//import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '../ui/dropdown-menu';
 
 
 const API = import.meta.env.VITE_API_BASE_URL;
@@ -793,60 +798,78 @@ const CONDITION_OPTIONS: VehicleCondition[] = [
 ];
 
 /* --------------------------  VEHICLE ROW  -------------------------- */
-const VehicleRow = (
-    props: {
-        vehicle: IVehicle;
-        idx: number;
-        shops: Option[];
-        onChange: (partial: Partial<IVehicle>) => void;
-        onDelete: () => void;
-    },
-) => (
-    <div
-        className="grid grid-cols-[1fr_160px_40px] items-center gap-4 border rounded-lg p-3"
-    >
-        {/* Shop selector */}
-        <Select
-            value={String(props.vehicle.shopId)}
-            onValueChange={val => props.onChange({ shopId: Number(val) })}
-        >
-            <SelectTrigger>
-                <SelectValue placeholder="Select shop" />
-            </SelectTrigger>
-            <SelectContent>
-                {props.shops.map(s => (
-                    <SelectItem key={s.id} value={String(s.id)}>{s.label}</SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+//const VehicleRow = (
+//    props: {
+//        vehicle: IVehicle;
+//        idx: number;
+//        shops: Option[];
+//        onChange: (partial: Partial<IVehicle>) => void;
+//        onDelete: () => void;
+//    },
+//) => (
+//    <div
+//        className="grid grid-cols-[1fr_160px_40px] items-center gap-4 border rounded-lg p-3"
+//    >
+//        {/* Shop selector */}
+//        <Select
+//            value={String(props.vehicle.shopId)}
+//            onValueChange={val => props.onChange({ shopId: Number(val) })}
+//        >
+//            <SelectTrigger>
+//                <SelectValue placeholder="Select shop" />
+//            </SelectTrigger>
+//            <SelectContent>
+//                {props.shops.map(s => (
+//                    <SelectItem key={s.id} value={String(s.id)}>{s.label}</SelectItem>
+//                ))}
+//            </SelectContent>
+//        </Select>
 
-        {/* Condition selector */}
-        <Select
-            value={props.vehicle.condition}
-            onValueChange={val => props.onChange({ condition: val as VehicleCondition })}
-        >
-            <SelectTrigger>
-                <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-                {CONDITION_OPTIONS.map(opt => (
-                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                ))}
-            </SelectContent>
-        </Select>
+//        {/* Condition selector */}
+//        <Select
+//            value={props.vehicle.condition}
+//            onValueChange={val => props.onChange({ condition: val as VehicleCondition })}
+//        >
+//            <SelectTrigger>
+//                <SelectValue />
+//            </SelectTrigger>
+//            <SelectContent>
+//                {CONDITION_OPTIONS.map(opt => (
+//                    <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+//                ))}
+//            </SelectContent>
+//        </Select>
 
-        {/* Delete icon */}
-        <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            onClick={props.onDelete}
-            aria-label="Delete vehicle row"
-        >
-            <Trash2 className="w-4 h-4" />
-        </Button>
-    </div>
-);
+//        {/* Delete icon */}
+//        <Button
+//            type="button"
+//            variant="ghost"
+//            size="icon"
+//            onClick={props.onDelete}
+//            aria-label="Delete vehicle row"
+//        >
+//            <Trash2 className="w-4 h-4" />
+//        </Button>
+//    </div>
+//);
+
+type GroupedVehicles = Record<
+    number, // shopId
+    Partial<Record<VehicleCondition, IVehicle[]>> // condition -> vehicle[]
+>;
+
+const groupVehiclesByShop = (vehicles: IVehicle[]): GroupedVehicles => {
+    return vehicles.reduce((acc, vehicle) => {
+        if (!acc[vehicle.shopId]) {
+            acc[vehicle.shopId] = {};
+        }
+        if (!acc[vehicle.shopId][vehicle.condition]) {
+            acc[vehicle.shopId][vehicle.condition] = [];
+        }
+        acc[vehicle.shopId][vehicle.condition]!.push(vehicle);
+        return acc;
+    }, {} as GroupedVehicles);
+};
 
 /* ------------------------------------------------------------------ */
 /* 0. Utilities – unchanged                                            */
@@ -876,7 +899,8 @@ export interface IBikeModelForm {
     ratePerDay: number;
     upFrontPercentage: number;
     isAvailable: boolean;
-    imageFile?: File | null;
+    imageFile?: string;
+    previewFile?: File | null;
     imagePreviewUrl?: string;
     vehicles: IVehicle[];
     peripherals: IPeripheral[];
@@ -898,8 +922,9 @@ const makeEmptyForm = (): IBikeModelForm => ({
     ratePerDay: 0,
     upFrontPercentage: 0,
     isAvailable: true,
-    imageFile: null,
-    imagePreviewUrl: undefined,
+    imageFile: '',
+    previewFile: null,
+    imagePreviewUrl: '',
     vehicles: [],
     peripherals: []
 });
@@ -931,8 +956,10 @@ export const BikeEditDialog: React.FC<BikeEditDialogProps> = ({
     peripherals,
     shops,
     onSubmit,
-    isSaving = false,
+    isSaving = false
 }) => {
+    const { toast } = useToast();
+
     /* Fetch the bike whenever dialog opens */
     const { data, isLoading } = useQuery({
         queryKey: ['bike', bikeId],
@@ -956,10 +983,55 @@ export const BikeEditDialog: React.FC<BikeEditDialogProps> = ({
         }
     }, [bikeId, data]);
 
+    const handleImageUpload = async (imageFile: File): Promise<string> => {
+        const formData = new FormData();
+        formData.append("file", imageFile);
+
+        const response = await fetch(`${API}/api/images/admin`, {
+            method: "POST",
+            headers: {
+                'Authorization': `Bearer ${localStorage.getItem("token")}`,
+            },
+            body: formData,
+        });
+
+        if (!response.ok) {
+            toast({
+                title: "Failed to upload image",
+                description: "Image failed to upload.",
+                variant: "destructive"
+            });
+            throw new Error("Image upload failed");
+        }
+
+        const data = await response.json();
+        return data.name;
+    };
+
     /* ---------------- Callbacks ---------------- */
     const handleSubmit = async () => {
-        await onSubmit(formData);
-    };
+        try {
+            let imageFile = formData.imageFile;
+
+            if (formData.previewFile) {
+                imageFile = await handleImageUpload(formData.previewFile);
+            }
+
+            const payload: IBikeModelForm = {
+                ...formData,
+                imageFile,
+            };
+
+            await onSubmit(payload); // the original one from props
+        } catch (err) {
+            console.error("Submission error", err);
+            toast({
+                title: "Submission failed",
+                description: "An unexpected error occurred.",
+                variant: "destructive",
+            });
+        }
+    }
 
     const togglePeripheral = (pid: number, checked: boolean) =>
         setFormData(prev => {
@@ -980,37 +1052,63 @@ export const BikeEditDialog: React.FC<BikeEditDialogProps> = ({
             (value: IBikeModelForm[K]) =>
                 setFormData(prev => ({ ...prev, [key]: value }));
 
-    const updateVehicle = (idx: number, patch: Partial<IVehicle>) =>
-        setFormData(prev => ({
-            ...prev,
-            vehicles: prev.vehicles.map((v, i) =>
-                i === idx ? { ...v, ...patch } : v,
-            ),
-        }));
+    //const updateVehicle = (idx: number, patch: Partial<IVehicle>) =>
+    //    setFormData(prev => ({
+    //        ...prev,
+    //        vehicles: prev.vehicles.map((v, i) =>
+    //            i === idx ? { ...v, ...patch } : v,
+    //        ),
+    //    }));
 
-    const removeVehicle = (idx: number) =>
-        setFormData(prev => ({
-            ...prev,
-            vehicles: prev.vehicles.filter((_, i) => i !== idx),
-        }));
+    //const removeVehicle = (idx: number) =>
+    //    setFormData(prev => ({
+    //        ...prev,
+    //        vehicles: prev.vehicles.filter((_, i) => i !== idx),
+    //    }));
 
-    const addVehicle = () =>
+    //const addVehicle = () =>
+    //    setFormData(prev => ({
+    //        ...prev,
+    //        vehicles: [
+    //            ...prev.vehicles,
+    //            { shopId: shops[0]?.id ?? 0, condition: 'Normal' },
+    //        ],
+    //    }));
+
+    //const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //    const file = e.target.files?.[0];
+    //    if (!file) return;
+    //    setFormData(prev => ({
+    //        ...prev,
+    //        imageFile: file,
+    //        imagePreviewUrl: URL.createObjectURL(file),
+    //    }));
+    //};
+
+
+
+    const addVehicleWithParams = (shopId: number, condition: VehicleCondition) => {
         setFormData(prev => ({
             ...prev,
             vehicles: [
                 ...prev.vehicles,
-                { shopId: shops[0]?.id ?? 0, condition: 'Normal' },
+                { shopId, condition },
             ],
         }));
+    };
 
-    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setFormData(prev => ({
-            ...prev,
-            imageFile: file,
-            imagePreviewUrl: URL.createObjectURL(file),
-        }));
+    const removeVehicleBatch = (shopId: number, condition: VehicleCondition, count: number) => {
+        setFormData(prev => {
+            let removed = 0;
+            const vehicles = prev.vehicles.filter(v => {
+                if (removed < count && v.shopId === shopId && v.condition === condition) {
+                    removed++;
+                    return false;
+                }
+                return true;
+            });
+            return { ...prev, vehicles };
+        });
     };
 
     /* ---------------- Render ---------------- */
@@ -1132,6 +1230,55 @@ export const BikeEditDialog: React.FC<BikeEditDialogProps> = ({
                         {/* Image upload / preview */}
                         {/* -------------------------------------------------- */}
                         <div className="space-y-2">
+                            {/*    <Label>Model image</Label>*/}
+                            {/*    <div className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center">*/}
+                            {/*        {formData.imagePreviewUrl ? (*/}
+                            {/*            <div className="relative">*/}
+                            {/*                <img*/}
+                            {/*                    src={formData.imagePreviewUrl}*/}
+                            {/*                    alt="preview"*/}
+                            {/*                    className="w-40 h-40 object-cover rounded-lg"*/}
+                            {/*                />*/}
+                            {/*                <Button*/}
+                            {/*                    type="button"*/}
+                            {/*                    variant="destructive"*/}
+                            {/*                    size="icon"*/}
+                            {/*                    className="absolute -top-2 -right-2"*/}
+                            {/*                    onClick={() => setFormData(prev => ({*/}
+                            {/*                        ...prev,*/}
+                            {/*                        imageFile: null,*/}
+                            {/*                        imagePreviewUrl: undefined,*/}
+                            {/*                    }))}*/}
+                            {/*                >*/}
+                            {/*                    <Trash2 className="w-4 h-4" />*/}
+                            {/*                </Button>*/}
+                            {/*            </div>*/}
+                            {/*        ) : (*/}
+                            {/*            <>*/}
+                            {/*                <Upload className="w-10 h-10 opacity-50 mb-2" />*/}
+                            {/*                <p className="text-sm text-muted-foreground">PNG/JPG (MAX 5MB)</p>*/}
+                            {/*                <Button*/}
+                            {/*                    type="button"*/}
+                            {/*                    variant="outline"*/}
+                            {/*                    onClick={() => fileInputRef.current?.click()}*/}
+                            {/*                    className="mt-2"*/}
+                            {/*                >*/}
+                            {/*                    <Upload className="w-4 h-4 mr-2" />*/}
+                            {/*                    Select file*/}
+                            {/*                </Button>*/}
+                            {/*            </>*/}
+                            {/*        )}*/}
+
+                            {/*        */}{/* hidden input */}
+                            {/*        <input*/}
+                            {/*            ref={fileInputRef}*/}
+                            {/*            type="file"*/}
+                            {/*            accept="image/*"*/}
+                            {/*            className="hidden"*/}
+                            {/*            onChange={handleImageSelect}*/}
+                            {/*        />*/}
+                            {/*    </div>*/}
+
                             <Label>Model image</Label>
                             <div className="border-2 border-dashed rounded-lg p-4 flex flex-col items-center justify-center">
                                 {formData.imagePreviewUrl ? (
@@ -1146,11 +1293,13 @@ export const BikeEditDialog: React.FC<BikeEditDialogProps> = ({
                                             variant="destructive"
                                             size="icon"
                                             className="absolute -top-2 -right-2"
-                                            onClick={() => setFormData(prev => ({
-                                                ...prev,
-                                                imageFile: null,
-                                                imagePreviewUrl: undefined,
-                                            }))}
+                                            onClick={() =>
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    previewFile: null,
+                                                    imagePreviewUrl: undefined,
+                                                }))
+                                            }
                                         >
                                             <Trash2 className="w-4 h-4" />
                                         </Button>
@@ -1171,47 +1320,111 @@ export const BikeEditDialog: React.FC<BikeEditDialogProps> = ({
                                     </>
                                 )}
 
-                                {/* hidden input */}
                                 <input
                                     ref={fileInputRef}
                                     type="file"
                                     accept="image/*"
                                     className="hidden"
-                                    onChange={handleImageSelect}
+                                    onChange={(e) => {
+                                        const file = e.target.files?.[0];
+                                        if (file) {
+                                            const reader = new FileReader();
+                                            reader.onloadend = () => {
+                                                setFormData((prev) => ({
+                                                    ...prev,
+                                                    previewFile: file,
+                                                    imagePreviewUrl: reader.result as string,
+                                                }));
+                                            };
+                                            reader.readAsDataURL(file);
+                                        }
+                                    }}
                                 />
                             </div>
+
+
                         </div>
+
 
                         {/* -------------------------------------------------- */}
                         {/* Vehicle instances list */}
                         {/* -------------------------------------------------- */}
+                        {/*<div className="space-y-2">*/}
+                        {/*    <Label>Physical vehicles *</Label>*/}
+
+                        {/*    <div className="space-y-3">*/}
+                        {/*        {formData.vehicles.map((v, idx) => (*/}
+                        {/*            <VehicleRow*/}
+                        {/*                key={v.vehicleId ?? idx}*/}
+                        {/*                vehicle={v}*/}
+                        {/*                idx={idx}*/}
+                        {/*                shops={shops}*/}
+                        {/*                onChange={patch => updateVehicle(idx, patch)}*/}
+                        {/*                onDelete={() => removeVehicle(idx)}*/}
+                        {/*            />*/}
+                        {/*        ))}*/}
+
+                        {/*        <Button*/}
+                        {/*            type="button"*/}
+                        {/*            variant="secondary"*/}
+                        {/*            size="sm"*/}
+                        {/*            onClick={addVehicle}*/}
+                        {/*            className="w-full"*/}
+                        {/*        >*/}
+                        {/*            <Plus className="w-4 h-4 mr-2" />*/}
+                        {/*            Add vehicle*/}
+                        {/*        </Button>*/}
+                        {/*    </div>*/}
+                        {/*</div>*/}
                         <div className="space-y-2">
                             <Label>Physical vehicles *</Label>
 
                             <div className="space-y-3">
-                                {formData.vehicles.map((v, idx) => (
-                                    <VehicleRow
-                                        key={v.vehicleId ?? idx}
-                                        vehicle={v}
-                                        idx={idx}
-                                        shops={shops}
-                                        onChange={patch => updateVehicle(idx, patch)}
-                                        onDelete={() => removeVehicle(idx)}
-                                    />
-                                ))}
+                                {shops.map((shop) => {
+                                    const shopId = shop.id;
+                                    const conditionMap = groupVehiclesByShop(formData.vehicles)[shopId] ?? {};
 
-                                <Button
-                                    type="button"
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={addVehicle}
-                                    className="w-full"
-                                >
-                                    <Plus className="w-4 h-4 mr-2" />
-                                    Add vehicle
-                                </Button>
+                                    return (
+                                        <div key={shopId} className="border rounded p-3 space-y-2">
+                                            <h4 className="font-semibold">{shop.label}</h4>
+
+                                            {CONDITION_OPTIONS.map((condition) => {
+                                                const vehicles = conditionMap[condition] ?? [];
+
+                                                return (
+                                                    <div key={condition} className="flex items-center gap-4">
+                                                        <span className="text-xs font-medium bg-muted px-2 py-0.5 rounded w-24 text-center">
+                                                            {condition}
+                                                        </span>
+
+                                                        {/* Adjustable count input */}
+                                                        <input
+                                                            type="number"
+                                                            min={0}
+                                                            value={vehicles.length}
+                                                            onChange={(e) => {
+                                                                const newCount = Number(e.target.value);
+                                                                const delta = newCount - vehicles.length;
+
+                                                                if (delta > 0) {
+                                                                    for (let i = 0; i < delta; i++) {
+                                                                        addVehicleWithParams(shopId, condition);
+                                                                    }
+                                                                } else if (delta < 0) {
+                                                                    removeVehicleBatch(shopId, condition, -delta);
+                                                                }
+                                                            }}
+                                                            className="w-20 border rounded px-2 py-1 text-sm"
+                                                        />
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
+
 
                         {/* -------------------------------------------------- */}
                         {/* Peripherals (scrollable)                           */}

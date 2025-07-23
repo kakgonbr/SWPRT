@@ -52,6 +52,21 @@ namespace rental_services.Server.Repositories
                 .ToListAsync();
         }
 
+        public async Task<List<Models.Booking>> GetUnpaid()
+        {
+            return await _rentalContext.Bookings.Where(b => b.Status == "Awaiting Payment")
+                .Include(b => b.Vehicle)
+                    .ThenInclude(b => b.Model)
+                .ToListAsync();
+        }
+
+        public async Task<bool> CanBook(int userId, int vehicleId, DateOnly start, DateOnly end)
+        {
+            return !await _rentalContext.Bookings.AnyAsync(b => (b.UserId == userId && (b.Status == "Awaiting Payment" || b.Status == "Active" || b.Status == "Upcoming"))
+                                                            ||
+                                                            (b.VehicleId == vehicleId && b.StartDate <= end && b.EndDate >= start));
+        }
+
         public async Task<int> UpdateStatusAsync(int id, string status)
         {
             Models.Booking? dbBooking = await _rentalContext.Bookings.FindAsync(id);

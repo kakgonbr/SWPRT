@@ -8,7 +8,6 @@ import {
     Shield
 } from 'lucide-react'
 import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Checkbox } from '../components/ui/checkbox'
@@ -20,8 +19,12 @@ import { useToast } from '../contexts/toast-context.tsx'
 import { RENTAL_OPTIONS } from '../lib/mock-data'
 import { format, differenceInDays } from 'date-fns'
 import { cn } from '../lib/utils'
-import { bikeApi } from "../lib/api.ts";
+import {
+    bikeApi,
+    //rentalAPI
+} from "../lib/api.ts";
 import { type VehicleModelDTO } from '../lib/types'
+import type { Booking } from '../types/booking.ts'
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -47,17 +50,17 @@ export default function CheckoutPage() {
             const params = new URLSearchParams(rentalParams);
             const startDateStr = params.get(`startDate`);
             const endDateStr = params.get(`endDate`);
-            
+
             if (startDateStr) {
                 setStartDate(new Date(startDateStr));
             }
-            
+
             if (endDateStr) {
                 setEndDate(new Date(endDateStr));
             }
         }
     }, [rentalParams]);
-    
+
     console.log(`start date: ${startDate}, end date: ${endDate} in checkout page`);
 
 
@@ -147,7 +150,7 @@ export default function CheckoutPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-        
+
         //TODO: update the terms tick and payment information when done
 
         if (!termsTick) {
@@ -174,26 +177,47 @@ export default function CheckoutPage() {
         setIsSubmitting(true)
 
         try {
-            // Simulate API call
-            //await new Promise(resolve => setTimeout(resolve, 2000))
+            const booking: Booking = {
+                id: '',
+                customerId: user.userId,
+                customerName: user.fullName,
+                customerEmail: user.email,
+                vehicleModelId: bike.modelId,
+                bikeName: bike.displayName,
+                bikeImageUrl: bike.imageFile,
+                startDate: startDate.toISOString().split('T')[0],
+                endDate: endDate.toISOString().split('T')[0],
+                status: 'Awaiting Payment',
+                pricePerDay: bike.ratePerDay,
+                //TODO: change the up front percentage to fixed deposit price for each bike
+                deposit: bike.upFrontPercentage,
+                pickupLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
+                returnLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
+                paymentMethod: 'Credit Card'
+            };
 
-            //const locationName = bike.shop
+            console.log(`passing booking api data: ${booking.customerId, booking.customerName, booking.vehicleModelId, booking.startDate}`)
+
+            //payment should be complete in order to call this api
+            //update the booking status before calling the api
+            //const bookingResult = await rentalAPI.createBooking(booking);
+
+            //console.log(`booking result ${bookingResult}`);
 
             //toast({
             //    title: "Booking Confirmed!",
-            //    description: `Your rental for ${bike.displayName} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')} at ${locationName}.`,
+            //    description: `Your rental for ${bike.displayName} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')} at ${location}.`,
             //})
 
-            //navigate('/rentals')
-
-            // TODO
-            const response = await fetch(`${API}/api/`, {
-                method: 'GET',
+            const response = await fetch(`${API}/api/rentals/book`, {
+                method: 'POST',
                 headers: {
-                    'Accept': 'text/plain'
-                }
+                    'Accept': 'text/plain',
+                    'Authorization': `Bearer ${localStorage.getItem("token")}`,
+                    'Content-type': 'application/json'
+                },
+                body: JSON.stringify(booking)
             });
-
             if (!response.ok) {
                 throw new Error(`API call failed with status ${response.status}`);
             }
@@ -417,52 +441,52 @@ export default function CheckoutPage() {
                     </Card>
 
                     {/* Payment Information */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Payment Information</CardTitle>
-                            <CardDescription>
-                                Enter your payment details
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="cardNumber">Card Number</Label>
-                                    <Input
-                                        id="cardNumber"
-                                        placeholder="1234 5678 9012 3456"
-                                        type="text"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="expiryDate">Expiry Date</Label>
-                                    <Input
-                                        id="expiryDate"
-                                        placeholder="MM/YY"
-                                        type="text"
-                                    />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="cvv">CVV</Label>
-                                    <Input
-                                        id="cvv"
-                                        placeholder="123"
-                                        type="text"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="cardName">Cardholder Name</Label>
-                                    <Input
-                                        id="cardName"
-                                        placeholder="John Doe"
-                                        type="text"
-                                    />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    {/*<Card>*/}
+                    {/*    <CardHeader>*/}
+                    {/*        <CardTitle>Payment Information</CardTitle>*/}
+                    {/*        <CardDescription>*/}
+                    {/*            Enter your payment details*/}
+                    {/*        </CardDescription>*/}
+                    {/*    </CardHeader>*/}
+                    {/*    <CardContent className="space-y-4">*/}
+                    {/*        <div className="grid grid-cols-2 gap-4">*/}
+                    {/*            <div className="space-y-2">*/}
+                    {/*                <Label htmlFor="cardNumber">Card Number</Label>*/}
+                    {/*                <Input*/}
+                    {/*                    id="cardNumber"*/}
+                    {/*                    placeholder="1234 5678 9012 3456"*/}
+                    {/*                    type="text"*/}
+                    {/*                />*/}
+                    {/*            </div>*/}
+                    {/*            <div className="space-y-2">*/}
+                    {/*                <Label htmlFor="expiryDate">Expiry Date</Label>*/}
+                    {/*                <Input*/}
+                    {/*                    id="expiryDate"*/}
+                    {/*                    placeholder="MM/YY"*/}
+                    {/*                    type="text"*/}
+                    {/*                />*/}
+                    {/*            </div>*/}
+                    {/*        </div>*/}
+                    {/*        <div className="grid grid-cols-2 gap-4">*/}
+                    {/*            <div className="space-y-2">*/}
+                    {/*                <Label htmlFor="cvv">CVV</Label>*/}
+                    {/*                <Input*/}
+                    {/*                    id="cvv"*/}
+                    {/*                    placeholder="123"*/}
+                    {/*                    type="text"*/}
+                    {/*                />*/}
+                    {/*            </div>*/}
+                    {/*            <div className="space-y-2">*/}
+                    {/*                <Label htmlFor="cardName">Cardholder Name</Label>*/}
+                    {/*                <Input*/}
+                    {/*                    id="cardName"*/}
+                    {/*                    placeholder="John Doe"*/}
+                    {/*                    type="text"*/}
+                    {/*                />*/}
+                    {/*            </div>*/}
+                    {/*        </div>*/}
+                    {/*    </CardContent>*/}
+                    {/*</Card>*/}
                 </div>
 
                 {/* Order Summary */}
@@ -475,7 +499,7 @@ export default function CheckoutPage() {
                             {/* Bike Details */}
                             <div className="flex space-x-4">
                                 <img
-                                    src={bike.imageFile.split('"')[0]}
+                                    src={`images/` + bike.imageFile.split('"')[0]}
                                     alt={bike.displayName}
                                     className="w-20 h-20 object-cover rounded-lg"
                                 />
