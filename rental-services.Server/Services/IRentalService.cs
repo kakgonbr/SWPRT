@@ -16,5 +16,6 @@ namespace rental_services.Server.Services
         Task<RentalService.CreateRentalResult> CreateRentalAsync(int userId, int modelId, DateOnly start, DateOnly end, string? pickupLocation);
         Task PopulateTrackers();
         Task<bool> HandleCancelAndRefundAsync(int userId, int bookingId);
+        Task<string?> GetTotalPaymentLink(int userId, int bookingId, string userIp);
     }
 }

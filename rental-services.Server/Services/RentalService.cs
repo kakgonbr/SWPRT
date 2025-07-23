@@ -1,4 +1,5 @@
-﻿using System.Globalization;
+﻿using rental_services.Server.Models;
+using System.Globalization;
 
 namespace rental_services.Server.Services
 {
@@ -78,7 +79,7 @@ namespace rental_services.Server.Services
                 {
                     UserId = rental.UserId,
                     BookingId = rental.BookingId,
-                    Amount = (long)(rental.Vehicle.Model.RatePerDay * ((double) rental.Vehicle.Model.UpFrontPercentage / 100))
+                    Amount = CalculateAmount(rental.Vehicle.Model)
                 });
             }
         }
@@ -229,6 +230,11 @@ namespace rental_services.Server.Services
             return await _bookingRepository.UpdateStatusAsync(id, status) != 0;
         }
 
+        private static long CalculateAmount(Models.VehicleModel model)
+        {
+            return (long)(model.RatePerDay * ((double)model.UpFrontPercentage / 100));
+        }
+
         public enum CreateRentalResult
         {
             CREATE_SUCCESS,
@@ -258,14 +264,14 @@ namespace rental_services.Server.Services
 
             Models.VehicleModel? model = await _vehicleModelRepository.GetByIdAsync(modelId);
 
-            if (model is null)
+            if (model is null || !model.IsAvailable)
             {
                 // cant be
                 return CreateRentalResult.CREATE_FAILURE;
             }
 
             // round down? idk
-            long amount = (long)(model.RatePerDay * ((double) model.UpFrontPercentage / 100));
+            long amount = CalculateAmount(model);
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
@@ -485,6 +491,45 @@ namespace rental_services.Server.Services
             await _bookingRepository.DeleteAsync(bookingId);
 
             return true;
+        }
+
+        /// <summary>
+        /// Call to generate a payment link for when a booking transitions from upcoming to active or active to completed depending on the implementation
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="bookingId"></param>
+        /// <param name="userIp"></param>
+        /// <returns></returns>
+        public async Task<string?> GetTotalPaymentLink(int userId, int bookingId, string userIp)
+        {
+            Models.Booking? booking = await _bookingRepository.GetByIdAsync(bookingId);
+
+            if (booking is null || booking.Status != Utils.Config.BookingStatus.Completed || (userId != -1 && booking.UserId != userId))
+            {
+                _logger.LogWarning("Cannot find booking for ID {BookingId}", bookingId);
+                return null;
+            }
+
+            Models.Payment? payment = await _paymentRepository.GetByBookingIdAsync(bookingId);
+
+            if (payment is null)
+            {
+                _logger.LogWarning("Cannot find payment for booking ID {BookingId}", bookingId);
+                return null;
+            }
+
+            int totalDays = booking.EndDate.DayNumber - booking.StartDate.DayNumber;
+
+            long peripheralTotal = 0;
+
+            foreach (Peripheral p in booking.Peripherals)
+            {
+                peripheralTotal += p.RatePerDay * totalDays;
+            }
+
+            long totalAmount = totalDays * booking.Vehicle.Model.RatePerDay + peripheralTotal - payment.AmountPaid;
+
+            return VNPayService.GetLink(userIp, null, totalAmount * 100, null, bookingId.ToString());
         }
     }
 }
