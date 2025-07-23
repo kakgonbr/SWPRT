@@ -44,10 +44,10 @@ interface ExtractedIdData {
   dateOfBirth: string;
   idNumber: string;
   address: string;
-  documentType: string;
+  // documentType?: string;
   licenseClass?: string;
   dateOfIssue?: string;
-  imageUrl?: string;
+  // imageUrl?: string;
   expiryDate?: string;
   placeOfBirth?: string;
   nationality?: string;
@@ -228,7 +228,7 @@ export default function ProfilePage() {
 
       const result = await response.json();
       const serverExtractedData = result.extractedData;
-      const imageUrl = result.imageUrl;
+      // const imageUrl = result.imageUrl;
 
       // Map dữ liệu từ backend sang frontend format
       const mappedData: ExtractedIdData = {
@@ -236,14 +236,14 @@ export default function ProfilePage() {
         dateOfBirth: serverExtractedData.dateOfBirth || "",
         idNumber: serverExtractedData.licenseNumber || "",
         address: serverExtractedData.address || "",
-        documentType: "Driver License",
+        // documentType: "Driver License",
         licenseClass: serverExtractedData.licenseClass || "",
         dateOfIssue: serverExtractedData.dateOfIssue || "",
-        imageUrl: imageUrl,
+        // imageUrl: imageUrl,
       };
 
       setExtractedIdData(mappedData);
-      setUploadedImageUrl(imageUrl);
+      // setUploadedImageUrl(imageUrl);
 
       toast({
         title: "ID Document Processed",
@@ -291,7 +291,7 @@ export default function ProfilePage() {
           licenseClass: editedData.licenseClass,
           address: editedData.address,
           dateOfIssue: editedData.dateOfIssue,
-          imageUrl: editedData.imageUrl,
+          // imageUrl: editedData.imageUrl,
         }),
       });
       //
@@ -352,7 +352,7 @@ export default function ProfilePage() {
 
   const handleIdReject = () => {
     setExtractedIdData(null);
-    setUploadedImageUrl(null);
+    // setUploadedImageUrl(null);
     setIsIdReviewOpen(false);
 
     toast({
