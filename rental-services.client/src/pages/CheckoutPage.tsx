@@ -8,7 +8,6 @@ import {
     Shield
 } from 'lucide-react'
 import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Checkbox } from '../components/ui/checkbox'
@@ -442,52 +441,52 @@ export default function CheckoutPage() {
                     </Card>
 
                     {/* Payment Information */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Payment Information</CardTitle>
-                            <CardDescription>
-                                Enter your payment details
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="cardNumber">Card Number</Label>
-                                    <Input
-                                        id="cardNumber"
-                                        placeholder="1234 5678 9012 3456"
-                                        type="text"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="expiryDate">Expiry Date</Label>
-                                    <Input
-                                        id="expiryDate"
-                                        placeholder="MM/YY"
-                                        type="text"
-                                    />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="cvv">CVV</Label>
-                                    <Input
-                                        id="cvv"
-                                        placeholder="123"
-                                        type="text"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="cardName">Cardholder Name</Label>
-                                    <Input
-                                        id="cardName"
-                                        placeholder="John Doe"
-                                        type="text"
-                                    />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
+                    {/*<Card>*/}
+                    {/*    <CardHeader>*/}
+                    {/*        <CardTitle>Payment Information</CardTitle>*/}
+                    {/*        <CardDescription>*/}
+                    {/*            Enter your payment details*/}
+                    {/*        </CardDescription>*/}
+                    {/*    </CardHeader>*/}
+                    {/*    <CardContent className="space-y-4">*/}
+                    {/*        <div className="grid grid-cols-2 gap-4">*/}
+                    {/*            <div className="space-y-2">*/}
+                    {/*                <Label htmlFor="cardNumber">Card Number</Label>*/}
+                    {/*                <Input*/}
+                    {/*                    id="cardNumber"*/}
+                    {/*                    placeholder="1234 5678 9012 3456"*/}
+                    {/*                    type="text"*/}
+                    {/*                />*/}
+                    {/*            </div>*/}
+                    {/*            <div className="space-y-2">*/}
+                    {/*                <Label htmlFor="expiryDate">Expiry Date</Label>*/}
+                    {/*                <Input*/}
+                    {/*                    id="expiryDate"*/}
+                    {/*                    placeholder="MM/YY"*/}
+                    {/*                    type="text"*/}
+                    {/*                />*/}
+                    {/*            </div>*/}
+                    {/*        </div>*/}
+                    {/*        <div className="grid grid-cols-2 gap-4">*/}
+                    {/*            <div className="space-y-2">*/}
+                    {/*                <Label htmlFor="cvv">CVV</Label>*/}
+                    {/*                <Input*/}
+                    {/*                    id="cvv"*/}
+                    {/*                    placeholder="123"*/}
+                    {/*                    type="text"*/}
+                    {/*                />*/}
+                    {/*            </div>*/}
+                    {/*            <div className="space-y-2">*/}
+                    {/*                <Label htmlFor="cardName">Cardholder Name</Label>*/}
+                    {/*                <Input*/}
+                    {/*                    id="cardName"*/}
+                    {/*                    placeholder="John Doe"*/}
+                    {/*                    type="text"*/}
+                    {/*                />*/}
+                    {/*            </div>*/}
+                    {/*        </div>*/}
+                    {/*    </CardContent>*/}
+                    {/*</Card>*/}
                 </div>
 
                 {/* Order Summary */}

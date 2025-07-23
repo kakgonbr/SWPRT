@@ -1,4 +1,4 @@
-import { format } from 'date-fns'
+import { format, isValid } from 'date-fns'
 import {
     Dialog,
     DialogContent,
@@ -9,27 +9,14 @@ import {
 } from '../ui/dialog'
 import { Button } from '../ui/button'
 import { Badge } from '../ui/badge'
-import { Check, X, Calendar as CalendarIcon, Clock, CheckCircle2 } from 'lucide-react'
-
-interface Rental {
-    id: string
-    customerId: string
-    customerName: string
-    customerEmail: string
-    bikeName: string
-    bikeId: string
-    startDate: string
-    endDate: string
-    status: 'pending' | 'active' | 'completed' | 'cancelled'
-    totalCost: number
-    location: string
-    orderDate: string
-}
+import { Check, X, Calendar as CalendarIcon, CheckCircle2 } from 'lucide-react'
+import type { Booking, BookingStatus } from '../../types/booking'
+import { parseISO } from 'date-fns/parseISO'
 
 interface RentalApprovalDialogProps {
     isOpen: boolean
     onClose: () => void
-    selectedRental: Rental | null
+    selectedRental: Booking | undefined
     onApprove: (rentalId: string) => void
     onReject: (rentalId: string) => void
     isLoading: boolean
@@ -43,35 +30,108 @@ export default function RentalApprovalDialog({
     onReject,
     isLoading
 }: RentalApprovalDialogProps) {
-    const getStatusBadgeVariant = (status: string) => {
+    const getStatusBadgeVariant = (status: BookingStatus) => {
         switch (status) {
-            case 'pending': return 'secondary'
-            case 'active': return 'default'
-            case 'completed': return 'outline'
-            case 'cancelled': return 'destructive'
+            case 'Awaiting Payment': return 'secondary'
+            case 'Confirmed': return 'default'
+            case 'Upcoming': return 'default'
+            case 'Active': return 'default'
+            case 'Completed': return 'outline'
+            case 'Cancelled': return 'destructive'
             default: return 'outline'
         }
     }
 
-    const getRentalStatusIcon = (status: string) => {
+    const getRentalStatusIcon = (status: BookingStatus) => {
         switch (status) {
-            case 'pending': return <Clock className="h-3 w-3" />
-            case 'active': return <CheckCircle2 className="h-3 w-3" />
-            case 'completed': return <Check className="h-3 w-3" />
-            case 'cancelled': return <X className="h-3 w-3" />
+            //case 'Awaiting Payment': return <Calendar className="h-3 w-3" />
+            case 'Confirmed': return <CheckCircle2 className="h-3 w-3" />
+            case 'Upcoming': return <CalendarIcon className="h-3 w-3" />
+            case 'Active': return <CheckCircle2 className="h-3 w-3" />
+            case 'Completed': return <Check className="h-3 w-3" />
+            case 'Cancelled': return <X className="h-3 w-3" />
             default: return null
         }
     }
 
+    const parseDate = (dateString: string | undefined | null): Date => {
+        console.log(`og date: ${selectedRental?.startDate}`);
+
+        // Check if dateString is undefined, null, or empty
+        if (!dateString || dateString.trim() === '') {
+            console.warn('parseDate received invalid input:', dateString);
+            return new Date(); // Return current date as fallback
+        }
+
+        //trying to parse the date to ISO format
+        let date = parseISO(dateString);
+        console.log(`iso parsed date: ${date}`);
+
+        if (!isValid(date)) {
+            date = new Date(dateString);
+            console.log(`new date: ${date}`);
+        }
+
+        if (!isValid(date)) {
+            const parts = dateString.split('-');
+            if (parts.length === 3) {
+                date = new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+            }
+            console.log(`manual parse date: ${date}`);
+        }
+
+        // If all attempts fail, return current date as fallback
+        if (!isValid(date)) {
+            console.error('All date parsing attempts failed for:', dateString);
+            return new Date();
+        }
+
+        return date;
+    }
+
+    const formatDate = (dateString: string, formatString: string): string => {
+        try {
+            const date = parseDate(dateString);
+            return format(date, formatString);
+        } catch (error) {
+            console.error(`error formating date: ${dateString}`, error);
+            return dateString || 'Invalid Date';
+        }
+    }
+
+    const calculateDays = (startDateStr: string, endDateStr: string): number => {
+        try {
+            const startDate = parseDate(startDateStr);
+            const endDate = parseDate(endDateStr);
+            const diffTime = endDate.getTime() - startDate.getTime();
+            return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        } catch (error) {
+            console.error(`error calculate days between start and end dates: ${error}`);
+            return 1;
+        }
+    }
+
+    const formatVND = (amount: number): string => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    }
+
+    const totalCost = selectedRental
+        ? formatVND(selectedRental.pricePerDay * calculateDays(selectedRental.startDate, selectedRental.endDate))
+        : formatVND(0);
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>
-                        {selectedRental?.status === 'pending' ? 'Approve Rental Pickup' : 'Rental Details'}
+                        {selectedRental?.status === 'Upcoming' ? 'Approve Rental Pickup' : 'Rental Details'}
                     </DialogTitle>
                     <DialogDescription>
-                        {selectedRental?.status === 'pending'
+                        {selectedRental?.status === 'Active'
                             ? 'Confirm that the customer has picked up the bike and all requirements are met.'
                             : 'View detailed information about this rental.'
                         }
@@ -87,15 +147,15 @@ export default function RentalApprovalDialog({
                                 <div className="space-y-1 text-sm">
                                     <p><strong>Name:</strong> {selectedRental.customerName}</p>
                                     <p><strong>Email:</strong> {selectedRental.customerEmail}</p>
-                                    <p><strong>Order Date:</strong> {format(new Date(selectedRental.orderDate), "MMM d, yyyy HH:mm")}</p>
+                                    <p><strong>Order Date:</strong>{formatDate(selectedRental.startDate, "MMM d, yyyy HH:mm")}</p>
                                 </div>
                             </div>
                             <div>
                                 <h4 className="font-medium mb-2">Rental Information</h4>
                                 <div className="space-y-1 text-sm">
                                     <p><strong>Bike:</strong> {selectedRental.bikeName}</p>
-                                    <p><strong>Location:</strong> {selectedRental.location}</p>
-                                    <p><strong>Total Cost:</strong> ${selectedRental.totalCost}</p>
+                                    <p><strong>Location:</strong> {selectedRental.pickupLocation}</p>
+                                    <p><strong>Total Cost:</strong> ${totalCost}</p>
                                 </div>
                             </div>
                         </div>
@@ -127,7 +187,7 @@ export default function RentalApprovalDialog({
                             </Badge>
                         </div>
 
-                        {selectedRental.status === 'pending' && (
+                        {selectedRental.status === 'Upcoming' && (
                             <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                                 <h4 className="font-medium text-yellow-800 mb-2">Approval Checklist</h4>
                                 <ul className="text-sm text-yellow-700 space-y-1">
@@ -149,7 +209,7 @@ export default function RentalApprovalDialog({
                     >
                         Close
                     </Button>
-                    {selectedRental?.status === 'pending' && (
+                    {selectedRental?.status === 'Upcoming' && (
                         <>
                             <Button
                                 variant="destructive"
