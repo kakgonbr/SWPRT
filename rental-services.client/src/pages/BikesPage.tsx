@@ -75,6 +75,15 @@ export default function BikesPage() {
         return Array.from(new Set(bikes.map(bike => bike.shop)))
     }, [bikes]);
 
+    const formatVND = (amount: number): string => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    }
+
     // Filter and sort bikes
     const filteredBikes = useMemo(() => {
         console.log(Array.isArray(bikes))
@@ -131,7 +140,7 @@ export default function BikesPage() {
                         </CardDescription>
                     </div>
                     <div className="text-right">
-                        <p className="text-2xl font-bold text-primary">${bikes.ratePerDay}</p>
+                        <p className="text-2xl font-bold text-primary">{formatVND(bikes.ratePerDay)}</p>
                         <p className="text-sm text-muted-foreground">per day</p>
                     </div>
                 </div>
