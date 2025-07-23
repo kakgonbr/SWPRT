@@ -108,7 +108,6 @@ export default function RentalManagementTab({
             console.error(`error calculate days between start and end dates: ${error}`);
             return 1;
         }
-
     }
 
     const getStatusBadgeVariant = (status: BookingStatus) => {
