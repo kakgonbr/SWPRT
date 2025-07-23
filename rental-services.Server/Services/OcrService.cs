@@ -39,7 +39,7 @@ namespace rental_services.Server.Services
 
          if (licenseType == null)
 {
-    return BadRequest(new { message = $"Driver's license class '{gplxData.LicenseClass}' is not supported or could not be recognized." });
+                throw new BadHttpRequestException($"Driver's license class '{gplxData.LicenseClass}' is not supported or could not be recognized.");
 }
 
             var existingLicense = await _driverLicenseRepository.GetByUserAndTypeAsync(user.UserId, licenseType.LicenseTypeId);
