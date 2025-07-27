@@ -23,7 +23,7 @@ namespace rental_services.Server.Services
 
             if (user == null)
             {
-                throw new BadHttpRequestException("Không tìm thấy người dùng từ thông tin xác thực.");
+                throw new BadHttpRequestException("User not found with the provided credentials.");
             }
 
             // Cập nhật thông tin người dùng
