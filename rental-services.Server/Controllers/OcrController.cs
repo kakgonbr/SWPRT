@@ -52,11 +52,10 @@ namespace rental_services.Server.Controllers
             }
             catch (Exception ex)
             {
-                // _logger.LogError(ex, "Lỗi nghiêm trọng trong quá trình xử lý OCR");
-                // return StatusCode(500, $"Lỗi OCR: {ex.Message}");
+               
                 var baseException = ex.GetBaseException();
-                _logger.LogError(ex, "Lỗi nghiêm trọng trong quá trình xử lý OCR");
-                return StatusCode(500, $"Lỗi OCR: {baseException.Message}");
+                _logger.LogError(ex, "Error Ocr");
+                return StatusCode(500, $"Error OCR: {baseException.Message}");
             }
 
             var parser = new GplxParser(extractedText);
@@ -66,7 +65,7 @@ namespace rental_services.Server.Controllers
 
             return Ok(new
             {
-                message = "Xử lý OCR thành công. Vui lòng xem xét và xác nhận thông tin.",
+                message = "OCR  successful. Please review and confirm the information.",
                 extractedData = gplxData,
                 extractedText
             });
@@ -79,7 +78,7 @@ namespace rental_services.Server.Controllers
             var userIdClaim = User.FindFirstValue("VroomVroomUserId");
             if (string.IsNullOrEmpty(userIdClaim))
             {
-                return Unauthorized("Không thể xác định người dùng từ token.");
+                return Unauthorized("Can not identify user from token..");
             }
 
             try
@@ -89,7 +88,7 @@ namespace rental_services.Server.Controllers
 
                 return Ok(new
                 {
-                    message = "Thông tin bằng lái đã được xác nhận và lưu thành công.",
+                    message = "Driver's license information has been successfully confirmed and saved..",
                     success = true
                 });
             }
@@ -99,8 +98,8 @@ namespace rental_services.Server.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi khi lưu thông tin bằng lái");
-                return StatusCode(500, "Lỗi server khi lưu thông tin.");
+                _logger.LogError(ex, "Error saving driver's license information");
+                return StatusCode(500, "Server error while saving information.");
             }
         }
     }
