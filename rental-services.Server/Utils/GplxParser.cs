@@ -42,7 +42,7 @@ using rental_services.Server.Models.DTOs;
             if (idx == -1) idx = nameLine.IndexOf("Họ và tên");
             if (idx == -1) return null;
 
-            // Lấy phần sau nhãn (bỏ luôn dấu : nếu có)
+            // Lấy phần sau nhãn bỏ luôn :
             var afterLabel = nameLine.Substring(idx);
             afterLabel = afterLabel.Replace("Họ tên", "", StringComparison.OrdinalIgnoreCase)
                            .Replace("Họ và tên", "", StringComparison.OrdinalIgnoreCase)
