@@ -46,8 +46,8 @@ namespace rental_services.Server.Repositories
                         .CountAsync(),
 
                     ActiveRentals = await _rentalContext.Bookings
-                        .Where(b => b.Status != "Awaiting Payment" &&
-                                    b.Status != "Cancelled" &&
+                        .Where(b => b.Status != Utils.Config.BookingStatus.AwaitingPayment &&
+                                    b.Status != Utils.Config.BookingStatus.Cancelled &&
                                     EF.Functions.DateDiffDay(b.StartDate, currentDate) >= daysBack)
                         .CountAsync(),
 
