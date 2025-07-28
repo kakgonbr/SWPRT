@@ -260,6 +260,8 @@ namespace rental_services.Server.Services
 
             if (vehicleId == 0)
             {
+                _logger.LogInformation("Create rental request for: UID: {userId}, MDLID: {modelId} failed, no vehicle found.", userId, modelId);
+
                 return CreateRentalResult.CREATE_FAILURE;
             }
 
@@ -268,6 +270,7 @@ namespace rental_services.Server.Services
             if (model is null || !model.IsAvailable)
             {
                 // cant be
+                _logger.LogInformation("Create rental request for: UID: {userId}, MDLID: {modelId} failed, no model found.", userId, modelId);
                 return CreateRentalResult.CREATE_FAILURE;
             }
 
@@ -283,6 +286,7 @@ namespace rental_services.Server.Services
 
             if (!await _bookingRepository.CanBook(userId, vehicleId, booking.StartDate, booking.EndDate))
             {
+                _logger.LogInformation("Create rental request for: UID: {userId}, MDLID: {modelId}, VHCLID: {vehicleId} failed, cannot book.", userId, modelId, vehicleId);
                 return CreateRentalResult.CREATE_FAILURE;
             }
 
