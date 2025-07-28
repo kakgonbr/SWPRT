@@ -75,7 +75,6 @@ export default function ProfilePage() {
     });
     const [driverLicenses, setDriverLicenses] = useState<DriverLicenseDto[]>([]);
     const [isLoadingLicenses, setIsLoadingLicenses] = useState(false);
-    const [deletingId, setDeletingId] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchDriverLicenses = async () => {
@@ -98,27 +97,7 @@ export default function ProfilePage() {
 
         fetchDriverLicenses();
     }, []);
-
-    const handleDeleteLicense = async (licenseId: string) => {
-        //if (!confirm('Are you sure you want to delete this license?')) return;
-
-        setDeletingId(licenseId);
-        try {
-            await fetch(`/api/users/licenses/${licenseId}`, {
-                method: 'DELETE',
-                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-            });
-
-            setDriverLicenses((prev) =>
-                prev.filter((license) => license.licenseId !== licenseId)
-            );
-        } catch (error) {
-            console.error('Error deleting license', error);
-        } finally {
-            setDeletingId(null);
-        }
-    };
-
+    
     useEffect(() => {
         if (loading) return;
 
@@ -622,18 +601,18 @@ export default function ProfilePage() {
                                                             ID: {license.licenseId}
                                                         </div>
                                                     </div>
-                                                    <Button
-                                                        variant="destructive"
-                                                        size="sm"
-                                                        onClick={() => handleDeleteLicense(license.licenseId)}
-                                                        disabled={deletingId === license.licenseId}
-                                                    >
-                                                        {deletingId === license.licenseId ? (
-                                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                                        ) : (
-                                                            'Delete'
-                                                        )}
-                                                    </Button>
+                                                    {/*<Button*/}
+                                                    {/*    variant="destructive"*/}
+                                                    {/*    size="sm"*/}
+                                                    {/*    onClick={() => handleDeleteLicense(license.licenseId)}*/}
+                                                    {/*    disabled={deletingId === license.licenseId}*/}
+                                                    {/*>*/}
+                                                    {/*    {deletingId === license.licenseId ? (*/}
+                                                    {/*        <Loader2 className="h-4 w-4 animate-spin" />*/}
+                                                    {/*    ) : (*/}
+                                                    {/*        'Delete'*/}
+                                                    {/*    )}*/}
+                                                    {/*</Button>*/}
                                                 </div>
                                             ))}
                                         </div>

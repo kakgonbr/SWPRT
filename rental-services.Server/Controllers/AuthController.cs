@@ -70,7 +70,11 @@ public class AuthController : ControllerBase
 
         if (!Utils.Validator.Password(request.Password))
         {
-            return BadRequest(new { Message = "Password must be between 8 to 32 characters, contain a lowercase character, an uppercase character, a number and a special character at least." });
+            return BadRequest(new
+            {
+                Message =
+                    "Password must be between 8 to 32 characters, contain a lowercase character, an uppercase character, a number and a special character at least."
+            });
         }
 
         string normalizedPhoneNumber = request.PhoneNumber.Replace(" ", "");
@@ -142,7 +146,9 @@ public class AuthController : ControllerBase
         // Check against hashed password
         var mappedUser = _mapper.Map<User>(existingUser);
         mappedUser.Sub = existingUser.Sub; // for editing, changed the dto to ignore sub, do this manually
-        mappedUser.PasswordHash = existingUser.PasswordHash; // for editing, changed the dto to ignore password, do this manually
+        mappedUser.PasswordHash =
+            existingUser.PasswordHash; // for editing, changed the dto to ignore password, do this manually
+        mappedUser.CreationDate = existingUser.CreationDate;
         var verifyHashedPassword =
             _hasher.VerifyHashedPassword(mappedUser, mappedUser.PasswordHash, request.Password);
         if (verifyHashedPassword == PasswordVerificationResult.Failed)
@@ -152,7 +158,9 @@ public class AuthController : ControllerBase
         }
 
         // Generate JWT token
-        var accessToken = GenerateJwtToken(mappedUser, out var expires) ?? throw new ArgumentNullException("GenerateJwtToken(_mapper.Map<User>(mappedUser), out var expires)");
+        var accessToken = GenerateJwtToken(mappedUser, out var expires) ??
+                          throw new ArgumentNullException(
+                              "GenerateJwtToken(_mapper.Map<User>(mappedUser), out var expires)");
         var userDto = new UserDto(
             mappedUser.UserId,
             mappedUser.Email,
@@ -171,12 +179,11 @@ public class AuthController : ControllerBase
                 dl.HolderName,
                 dl.DateOfIssue,
                 null
-            //dl.ImageLicenseUrl
+                //dl.ImageLicenseUrl
             ))
         );
         return Ok(new LoginResponse(accessToken, null, expires, userDto));
     }
-
     
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] Models.DTOs.ForgotPasswordRequest request)
@@ -191,7 +198,7 @@ public class AuthController : ControllerBase
             return BadRequest(new { Message = "Invalid email format." });
         }
 
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        var user = await _userService.GetUser(request.Email); // UserDto
         if (user == null)
         {
             return BadRequest(new { Message = "Email not found." });
@@ -201,14 +208,15 @@ public class AuthController : ControllerBase
         var otp = new Random().Next(100000, 999999).ToString();
         var expiry = DateTime.UtcNow.AddMinutes(10); // OTP expires in 10 minutes
 
-        // Store OTP in memory (consider using a database or Redis in production)
+        // Store OTP in memory
         _otpStore[user.Email] = (otp, expiry);
 
         // Send OTP via email
         try
         {
             var subject = "Password Reset OTP";
-            var content = $"Hello {user.FullName},\n\nYour OTP for password reset is: {otp}\n\nThis OTP is valid for 10 minutes.";
+            var content =
+                $"Hello {user.FullName},\n\nYour OTP for password reset is: {otp}\n\nThis OTP is valid for 10 minutes.";
             EmailService.SendEmail(user.Email, subject, content);
         }
         catch (Exception e)
@@ -251,14 +259,19 @@ public class AuthController : ControllerBase
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] Models.DTOs.ResetPasswordRequest request)
     {
-        if (request == null || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Otp) || string.IsNullOrWhiteSpace(request.NewPassword))
+        if (request == null || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Otp) ||
+            string.IsNullOrWhiteSpace(request.NewPassword))
         {
             return BadRequest(new { Message = "Email, OTP, and new password are required." });
         }
 
         if (!Utils.Validator.Password(request.NewPassword))
         {
-            return BadRequest(new { Message = "Password must be between 8 to 32 characters, contain a lowercase character, an uppercase character, a number and a special character at least." });
+            return BadRequest(new
+            {
+                Message =
+                    "Password must be between 8 to 32 characters, contain a lowercase character, an uppercase character, a number and a special character at least."
+            });
         }
 
         if (!_otpStore.TryGetValue(request.Email, out var otpData))
@@ -277,19 +290,20 @@ public class AuthController : ControllerBase
             return BadRequest(new { Message = "Invalid OTP." });
         }
 
-        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
-        if (user == null)
+        var user = await _userService.GetUser(request.Email); // UserDto
+        var mappedUser = _mapper.Map<User>(user); // User
+        if (mappedUser == null)
         {
             return BadRequest(new { Message = "Email not found." });
         }
 
         // Update password
-        user.PasswordHash = _hasher.HashPassword(user, request.NewPassword);
+        mappedUser.PasswordHash = _hasher.HashPassword(mappedUser, request.NewPassword);
+        var updatedUser = user with { PasswordHash = mappedUser.PasswordHash };
 
         try
         {
-            _db.Users.Update(user);
-            await _db.SaveChangesAsync();
+            await _userService.UpdateUser(updatedUser);
             _otpStore.TryRemove(request.Email, out _); // Clear OTP after successful reset
         }
         catch (Exception e)
@@ -312,35 +326,41 @@ public class AuthController : ControllerBase
         catch (Exception ex)
         {
             Console.WriteLine($"AuthController: Error generating Google OAuth URL: {ex.Message}");
-            var errorUrl = $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=google_config_error";
+            var errorUrl =
+                $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=google_config_error";
             return Redirect(errorUrl);
         }
     }
-    
+
     [HttpGet("google/callback")]
-    public async Task<IActionResult> GoogleCallback([FromQuery] string code, [FromQuery] string state, [FromQuery] string? error)
+    public async Task<IActionResult> GoogleCallback([FromQuery] string code, [FromQuery] string state,
+        [FromQuery] string? error)
     {
         try
         {
-            Console.WriteLine($"AuthController: Google callback received - Code: {!string.IsNullOrEmpty(code)}, State: {state}, Error: {error}");
+            Console.WriteLine(
+                $"AuthController: Google callback received - Code: {!string.IsNullOrEmpty(code)}, State: {state}, Error: {error}");
 
             if (!string.IsNullOrEmpty(error))
             {
                 Console.WriteLine($"AuthController: Google OAuth error: {error}");
-                var errorUrl = $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=google_oauth_error";
+                var errorUrl =
+                    $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=google_oauth_error";
                 return Redirect(errorUrl);
             }
 
             if (string.IsNullOrEmpty(code))
             {
                 Console.WriteLine("AuthController: No authorization code received");
-                var errorUrl = $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=missing_code";
+                var errorUrl =
+                    $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=missing_code";
                 return Redirect(errorUrl);
             }
 
             // Get user info from Google
             var googleUserInfo = await _googleService.GetUserInfoFromCodeAsync(code);
-            Console.WriteLine($"AuthController: Google user info received - Email: {googleUserInfo.Email}, Name: {googleUserInfo.Name}");
+            Console.WriteLine(
+                $"AuthController: Google user info received - Email: {googleUserInfo.Email}, Name: {googleUserInfo.Name}");
 
             // Check if user exists or create new user
             var existingUserDto = await _userService.GetUser(googleUserInfo.Email);
@@ -377,7 +397,8 @@ public class AuthController : ControllerBase
                 catch (Exception e)
                 {
                     Console.WriteLine("AuthController: Error creating Google user: " + e.Message);
-                    var errorUrl = $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=user_creation_failed";
+                    var errorUrl =
+                        $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=user_creation_failed";
                     return Redirect(errorUrl);
                 }
             }
@@ -387,7 +408,8 @@ public class AuthController : ControllerBase
             var accessToken = GenerateJwtToken(user, out var expires);
             Console.WriteLine($"AuthController: JWT token generated, length: {accessToken.Length}");
 
-            var redirectUrl = $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login/google/callback?token={accessToken}";
+            var redirectUrl =
+                $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login/google/callback?token={accessToken}";
             Console.WriteLine($"AuthController: Redirecting to: {redirectUrl}");
             return Redirect(redirectUrl);
         }
@@ -395,7 +417,8 @@ public class AuthController : ControllerBase
         {
             Console.WriteLine("AuthController: Exception in GoogleCallback: " + ex.Message);
             Console.WriteLine("AuthController: Stack trace: " + ex.StackTrace);
-            var errorUrl = $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=server_error";
+            var errorUrl =
+                $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=server_error";
             return Redirect(errorUrl);
         }
     }
@@ -409,34 +432,31 @@ public class AuthController : ControllerBase
     /// Returns <see cref="OkObjectResult"/> with a message indicating the refresh token has been revoked successfully.
     /// </returns>
     [HttpPost("logout")]
-        public async Task<IActionResult> Logout([FromBody] string refreshToken)
-        {
-            return Ok(new { Message = "Refresh token revoked successfully." });
-        }
+    public async Task<IActionResult> Logout([FromBody] string refreshToken)
+    {
+        return Ok(new { Message = "Refresh token revoked successfully." });
+    }
 
-        /// <summary>
-        /// A
-        /// </summary>
-       
-        /// <summary>
-        /// Retrieves the authenticated user's information based on the access token provided in the request.
-        /// This endpoint is useful for refreshing user data on the client side without requiring the user to re-authenticate.
-        /// Typical use cases include updating user profile information or refreshing session data after login.
-        /// </summary>
-        /// <remarks>
-        /// Requires a valid JWT access token in the Authorization header.
-        /// </remarks>
-        /// <returns>
-        /// Returns <see cref="OkObjectResult"/> with a <see cref="UserDto"/> containing the user's details if the user is found.
-        /// Returns <see cref="NotFoundObjectResult"/> with an error message if the user does not exist.
-        /// </returns>
-        [Authorize]
-        [HttpGet("me")]
-        public async Task<IActionResult> Me()
-        {
-            var userSub = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub") ?? User.FindFirst(JwtRegisteredClaimNames.Sub);
-            var user = await _userService.GetUserBySubAsync(userSub.Value);
-            if (user == null) return NotFound(new { Message = "User not found" });
+    /// <summary>
+    /// Retrieves the authenticated user's information based on the access token provided in the request.
+    /// This endpoint is useful for refreshing user data on the client side without requiring the user to re-authenticate.
+    /// Typical use cases include updating user profile information or refreshing session data after login.
+    /// </summary>
+    /// <remarks>
+    /// Requires a valid JWT access token in the Authorization header.
+    /// </remarks>
+    /// <returns>
+    /// Returns <see cref="OkObjectResult"/> with a <see cref="UserDto"/> containing the user's details if the user is found.
+    /// Returns <see cref="NotFoundObjectResult"/> with an error message if the user does not exist.
+    /// </returns>
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<IActionResult> Me()
+    {
+        var userSub = User.FindFirst(ClaimTypes.NameIdentifier) ??
+                      User.FindFirst("sub") ?? User.FindFirst(JwtRegisteredClaimNames.Sub);
+        var user = await _userService.GetUserBySubAsync(userSub.Value);
+        if (user == null) return NotFound(new { Message = "User not found" });
         return Ok(new UserDto(
             user.UserId,
             user.Email,
@@ -456,7 +476,7 @@ public class AuthController : ControllerBase
                 dl.DateOfIssue,
                 null
             ))));
-        }
+    }
 
     /// <summary>
     /// Generates a JWT access token for the specified user, embedding user claims such as subject, email, and role.
@@ -520,5 +540,4 @@ public class AuthController : ControllerBase
 
         return new string(password);
     }
-
 }
