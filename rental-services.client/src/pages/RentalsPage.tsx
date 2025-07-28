@@ -246,12 +246,12 @@ export default function RentalsPage() {
 
             const hoursUntilStart = differenceInHours(rentalToCancel.startDate, new Date())
             const refundPercentage = hoursUntilStart >= 24 ? 100 : hoursUntilStart >= 12 ? 50 : 0
-            const refundAmount = (rentalToCancel.totalPrice! * refundPercentage) / 100
+            //const refundAmount = (rentalToCancel.totalPrice! * refundPercentage) / 100
 
             toast({
                 title: "Rental Cancelled Successfully",
                 description: refundPercentage > 0
-                    ? `Your rental has been cancelled. You will receive a ${refundPercentage}% refund of $${refundAmount.toFixed(2)}.`
+                    ? `Your rental has been cancelled. You will receive a ${refundPercentage}% refund.`
                     : "Your rental has been cancelled. No refund is available for cancellations less than 12 hours before the start date.",
             })
 
@@ -534,13 +534,13 @@ export default function RentalsPage() {
                                         <div className="text-sm text-blue-700">
                                             {(() => {
                                                 const policy = getCancellationPolicy(rentalToCancel)
-                                                const refundAmount = (rentalToCancel.totalPrice! * policy.refundPercentage) / 100
+                                                //const refundAmount = (rentalToCancel.totalPrice! * policy.refundPercentage) / 100
 
                                                 return (
                                                     <>
                                                         <p><strong>{policy.message}</strong></p>
                                                         {policy.refundPercentage > 0 && (
-                                                            <p>You will receive: ${refundAmount.toFixed(2)}</p>
+                                                            <p>You will receive:</p>
                                                         )}
                                                         <p className="mt-2 text-xs">
                                                             • 24+ hours before: 100% refund<br />
