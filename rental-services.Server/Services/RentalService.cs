@@ -387,7 +387,7 @@ namespace rental_services.Server.Services
         /// <param name="userId"></param>
         /// <param name="amount"></param>
         /// <returns>false if the payment should be refunded, true if otherwise</returns>
-        public async Task<bool> InformPaymentSuccessAsync(int bookingId, long amount)
+        public async Task<bool> InformPaymentSuccessAsync(int bookingId, long amount, bool finalPayment)
         {
             RentalTracker? existing;
             rentalTrackers.TryGetValue(new() { BookingId = bookingId }, out existing);
@@ -413,10 +413,12 @@ namespace rental_services.Server.Services
             {
                 return false;
             }
+            if (!finalPayment)
+            {
+                dbBooking.Status = Utils.Config.BookingStatus.Upcoming;
 
-            dbBooking.Status = Utils.Config.BookingStatus.Upcoming;
-
-            await _bookingRepository.SaveAsync();
+                await _bookingRepository.SaveAsync();
+            }
 
             DateTime paymentDate;
             if (existing.LastRef is null || !DateTime.TryParseExact(existing.LastRef.Split("_").Last(), "yyyyMMddHHmmss",
@@ -432,6 +434,13 @@ namespace rental_services.Server.Services
             try
             {
                 await _paymentRepository.AddAsync(newPayment);
+
+                if (finalPayment)
+                {
+                    dbBooking.Status = Utils.Config.BookingStatus.Completed;
+                }
+
+                await _bookingRepository.SaveAsync();
             }
             catch (Exception e) // TODO: figure out the possible exceptions
             {
