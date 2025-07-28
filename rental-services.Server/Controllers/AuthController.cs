@@ -248,7 +248,6 @@ public class AuthController : ControllerBase
                 try
                 {
                     _userService.CreateUser(user);
-                    await _db.SaveChangesAsync();
                     Console.WriteLine($"AuthController: New user created - ID: {user.UserId}");
                 }
                 catch (Exception e)
