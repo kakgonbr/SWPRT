@@ -68,7 +68,7 @@ public record LoginResponse(
     UserDto User
 );
 
-public record ForgotPasswordRequest(
+public record ForgotPasswordRequests(
     string Email,
     string newPassword
 );

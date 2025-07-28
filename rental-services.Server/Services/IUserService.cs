@@ -14,4 +14,5 @@ public interface IUserService
     Task<ChangePasswordResponse> ChangePasswordAsync(string sub, string currentPassword, string newPassword);
     Task<User?> GetUserBySubAsync(string sub);
     Task<List<UserDto>> GetAll();
+
 }
