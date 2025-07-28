@@ -80,7 +80,7 @@ namespace rental_services.Server.Services
                 {
                     UserId = rental.UserId,
                     BookingId = rental.BookingId,
-                    Amount = CalculateAmount(rental.Vehicle.Model, rental.EndDate.Day - rental.StartDate.Day)
+                    Amount = CalculateAmount(rental.Vehicle.Model, rental.EndDate.DayNumber - rental.StartDate.DayNumber)
                 });
             }
         }
@@ -233,6 +233,7 @@ namespace rental_services.Server.Services
 
         private static long CalculateAmount(Models.VehicleModel model, int days = 1)
         {
+            Console.WriteLine(days);
             return (long)(model.RatePerDay * days * ((double)model.UpFrontPercentage / 100));
         }
 
@@ -255,6 +256,8 @@ namespace rental_services.Server.Services
         /// <returns></returns>
         public async Task<CreateRentalResult> CreateRentalAsync(int userId, int modelId, BookingDTO booking, string? pickupLocation)
         {
+            _logger.LogInformation("Rental creation request for UID: {userId}, MDLID: {modelId}, STRT: {startDate}, END: {endDate}", userId, modelId, booking.StartDate, booking.EndDate);
+
             int vehicleId = await _bikeService.AssignAvailableVehicleAsync(modelId, booking.StartDate, booking.EndDate, pickupLocation) ?? 0;
             //(await _vehicleModelRepository.GetByIdAsync(modelId))?.Vehicles?.FirstOrDefault()?.ModelId ?? 0;
 
@@ -275,7 +278,7 @@ namespace rental_services.Server.Services
             }
 
             // round down? idk
-            long amount = CalculateAmount(model, booking.EndDate.Day - booking.StartDate.Day);
+            long amount = CalculateAmount(model, booking.EndDate.DayNumber - booking.StartDate.DayNumber);
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
