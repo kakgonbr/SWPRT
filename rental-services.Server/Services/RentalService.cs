@@ -271,8 +271,22 @@ namespace rental_services.Server.Services
                 return CreateRentalResult.CREATE_FAILURE;
             }
 
+            long peripheralAmount = 0;
+            if (booking.Peripherals != null)
+            {
+                int totalDays = booking.EndDate.DayNumber - booking.StartDate.DayNumber;
+                foreach (var peri in booking.Peripherals)
+                {
+                    var peripheral = await _peripheralRepository.GetByIdAsync(peri.PeripheralId);
+                    if (peripheral != null)
+                    {
+                        peripheralAmount += peripheral.RatePerDay * totalDays;
+                    }
+                }
+            }
+
             // round down? idk
-            long amount = CalculateAmount(model, booking.EndDate.Day - booking.StartDate.Day);
+            long amount = CalculateAmount(model, booking.EndDate.Day - booking.StartDate.Day) + peripheralAmount;
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 

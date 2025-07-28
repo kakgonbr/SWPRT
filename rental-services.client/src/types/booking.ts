@@ -24,6 +24,7 @@ export interface Booking {
     pickupLocation?: string;
     returnLocation?: string;
     paymentMethod?: string;
+    peripherals?: Peripherals[];
     notes?: string;
     deposit?: number;
     tax?: number;
@@ -33,4 +34,11 @@ export interface Booking {
 export interface RentalStatus {
     id?: number;
     status: BookingStatus;
+}
+
+export interface Peripherals {
+    peripheralId: number;
+    name?: string;
+    ratePerDay?: number;
+    isSelected?: boolean;
 }
