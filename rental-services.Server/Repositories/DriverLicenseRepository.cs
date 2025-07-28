@@ -31,7 +31,7 @@ public class DriverLicenseRepository : IDriverLicenseRepository
 
     public async Task<int> DeleteLicense(int userId, string licenseId)
     {
-        var dbLicense = await _context.DriverLicenses.SingleOrDefaultAsync(dl => dl.LicenseId == licenseId);
+        var dbLicense = await _context.DriverLicenses.SingleOrDefaultAsync(dl => dl.LicenseId == licenseId && dl.UserId == userId);
 
         if (dbLicense is null || dbLicense.UserId != userId)
         {

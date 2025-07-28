@@ -50,15 +50,31 @@ export default function BikesPage() {
                     }
                 });
                 if (!licenseResponse.ok) {
-                    throw new Error('Failed to fetch driver licenses');
+                    const data = await bikeApi.getAvailableBike(
+                        String(startDate),
+                        String(endDate),
+                        location || undefined,
+                        searchTerm || undefined,
+                        false
+                    );
+                    setBikes(data);
                 }
 
                 const licenses: DriverLicenseDto[] = await licenseResponse.json();
 
                 if (licenses.length === 0) {
                     setDriverLicenses([]);
-                    setLoading(false);
                     setIsShowingAll(true);
+
+                    const data = await bikeApi.getAvailableBike(
+                        String(startDate),
+                        String(endDate),
+                        location || undefined,
+                        searchTerm || undefined,
+                        false
+                    );
+                    setBikes(data);
+
                     return;
                 }
 
@@ -277,7 +293,7 @@ export default function BikesPage() {
                 ) : (
                     <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 px-4 py-3 rounded mt-4" role="alert">
                         <p className="font-semibold">License-based filtering active.</p>
-                        <p>We are showing bikes suitable for license types: <strong>{driverLicenses.map(l => l.licenseTypeStr).filter(Boolean).join(', ')}</strong></p>
+                        <p>We are showing bikes suitable for license types: <strong>{driverLicenses?.map(l => l.licenseTypeStr).filter(Boolean).join(', ')}</strong></p>
                         <Button
                             variant="outline"
                             className="mt-2"

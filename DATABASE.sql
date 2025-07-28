@@ -174,7 +174,7 @@ CREATE TABLE BookingPeripherals
 
     CONSTRAINT pk_bookperi PRIMARY KEY (PeripheralId, BookingId),
     CONSTRAINT fk_bookperi_peri FOREIGN KEY (PeripheralId) REFERENCES Peripherals,
-    CONSTRAINT fk_bookperi_book FOREIGN KEY (BookingId) REFERENCES Bookings
+    CONSTRAINT fk_bookperi_book FOREIGN KEY (BookingId) REFERENCES Bookings ON DELETE CASCADE
 )
 
 CREATE TABLE Chats

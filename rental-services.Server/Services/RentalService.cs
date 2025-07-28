@@ -233,7 +233,6 @@ namespace rental_services.Server.Services
 
         private static long CalculateAmount(Models.VehicleModel model, int days = 1)
         {
-            Console.WriteLine(days);
             return (long)(model.RatePerDay * days * ((double)model.UpFrontPercentage / 100));
         }
 
@@ -564,7 +563,7 @@ namespace rental_services.Server.Services
 
             long totalAmount = totalDays * booking.Vehicle.Model.RatePerDay + peripheralTotal - payment.AmountPaid;
 
-            return VNPayService.GetLink(userIp, null, totalAmount * 100, null, bookingId.ToString());
+            return VNPayService.GetLink(userIp, null, totalAmount * 100, null, string.Join("_", "f", bookingId, VNPayService.GetGmtPlus7Now().ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture)));
         }
     }
 }
