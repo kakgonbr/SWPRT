@@ -165,7 +165,8 @@ public class AuthController : ControllerBase
             mappedUser.DriverLicenses.Select(dl => new DriverLicenseDto(
                 dl.LicenseId,
                 dl.HolderName,
-                dl.DateOfIssue
+                dl.DateOfIssue,
+                null
             //dl.ImageLicenseUrl
             ))
         );
@@ -251,7 +252,8 @@ public class AuthController : ControllerBase
                 user.DriverLicenses?.Select(dl => new DriverLicenseDto(
                     dl.LicenseId,
                     dl.HolderName,
-                    dl.DateOfIssue
+                    dl.DateOfIssue,
+                    null
                 ))
             );
 
@@ -308,24 +310,25 @@ public class AuthController : ControllerBase
             var userSub = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub") ?? User.FindFirst(JwtRegisteredClaimNames.Sub);
             var user = await _userService.GetUserBySubAsync(userSub.Value);
             if (user == null) return NotFound(new { Message = "User not found" });
-            return Ok(new UserDto(
-                user.UserId,
-                user.Email,
-                user.PhoneNumber,
-                null,
-                user.Role,
-                user.FullName,
-                user.Address,
-                user.CreationDate,
-                user.EmailConfirmed,
-                user.DateOfBirth,
-                user.IsActive,
-                user.Sub,
-                user.DriverLicenses?.Select(dl => new DriverLicenseDto(
-                    dl.LicenseId,
-                    dl.HolderName,
-                    dl.DateOfIssue
-                ))));
+        return Ok(new UserDto(
+            user.UserId,
+            user.Email,
+            user.PhoneNumber,
+            null,
+            user.Role,
+            user.FullName,
+            user.Address,
+            user.CreationDate,
+            user.EmailConfirmed,
+            user.DateOfBirth,
+            user.IsActive,
+            user.Sub,
+            user.DriverLicenses?.Select(dl => new DriverLicenseDto(
+                dl.LicenseId,
+                dl.HolderName,
+                dl.DateOfIssue,
+                null
+            ))));
         }
 
     /// <summary>

@@ -9,7 +9,7 @@ namespace rental_services.Server.Services
         Task<bool> AddVehicleModel(VehicleDetailsDTO vehicleModel);
         Task<bool> DeletePhysicalAsync(int id);
         Task<bool> DeleteVehicleModel(int modelId);
-        Task<List<VehicleModelDTO>> GetAvailableModelsAsync(DateOnly? startDate, DateOnly? endDate, string? address, string? searchTerm);
+        //Task<List<VehicleModelDTO>> GetAvailableModelsAsync(DateOnly? startDate, DateOnly? endDate, string? address, string? searchTerm);
         Task<List<VehicleDTO>> GetDTOOfModelAsync(int modelId);
         Task<List<VehicleDTO>> GetDTOOfModelAsync(VehicleModel model);
         Task<List<VehicleModelDTO>> GetModelListAsync();
@@ -28,5 +28,6 @@ namespace rental_services.Server.Services
         Task<List<PeripheralDTO>> GetAllPeripheralsAsync();
         Task<int?> AssignAvailableVehicleAsync(int modelId, DateOnly startDate, DateOnly endDate,
             string? shopLocation);
+        Task<List<VehicleModelDTO>> GetAvailableModelsAsync(int? userId, DateOnly? startDate, DateOnly? endDate, string? address, string? searchTerm);
     }
 }
