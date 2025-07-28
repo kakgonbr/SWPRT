@@ -405,9 +405,9 @@ VALUES
 -- Insert into Bookings (20 rows: 10 per shop)
 INSERT INTO Bookings (UserId, VehicleId, StartDate, EndDate, Status)
 VALUES
-    (3, 4, '2025-05-15', '2025-07-10', 'Active'),
-    (4, 7, '2025-06-01', '2025-06-02', 'Active'),
-    (5, 8, '2025-06-05', '2025-06-30', 'Upcoming')
+    (3, 4, '2025-05-15', '2025-07-10', 'Completed'),
+    (4, 7, '2025-06-01', '2025-06-02', 'Completed'),
+    (5, 8, '2025-06-05', '2025-06-30', 'Completed')
 
 -- Insert into Payments (20 rows: 1 per booking)
 INSERT INTO Payments (PaymentId, BookingId, AmountPaid, PaymentDate)
