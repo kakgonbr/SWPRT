@@ -25,7 +25,7 @@ export const useCustomerReport = (token: string) => {
                 return { success: false, message: 'Upload image failed.' };
             }
             const imageData = await imageRes.json();
-            const imagePath = imageData.url || '';
+            const imagePath = imageData.name || '';
             if (!imagePath) {
                 return { success: false, message: 'No image url returned.' };
             }

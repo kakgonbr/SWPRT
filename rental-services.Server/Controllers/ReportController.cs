@@ -15,11 +15,13 @@ namespace rental_services.Server.Controllers
     {
         private readonly IReportService _reportService;
         private readonly IHubContext<StaffStatisticsHub> _hubContext;
+        private readonly IImageService _imageService;
 
-        public ReportController(IReportService reportService, IHubContext<StaffStatisticsHub> hubContext)
+        public ReportController(IReportService reportService, IHubContext<StaffStatisticsHub> hubContext, IImageService imageService)
         {
             _reportService = reportService;
             _hubContext = hubContext;
+            _imageService = imageService;
         }
 
         [HttpGet]
@@ -66,6 +68,7 @@ namespace rental_services.Server.Controllers
                 await _hubContext.Clients.All.SendAsync("ReportCreated", reportDTO);
                 return Ok(reportDTO);
             }
+            _imageService.ConsumeImage(reportDTO.UserId);
             return BadRequest("Failed to create report.");
         }
 

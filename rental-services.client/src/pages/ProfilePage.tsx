@@ -44,10 +44,10 @@ interface ExtractedIdData {
   dateOfBirth: string;
   idNumber: string;
   address: string;
-  documentType: string;
+  // documentType?: string;
   licenseClass?: string;
   dateOfIssue?: string;
-  imageUrl?: string;
+  // imageUrl?: string;
   expiryDate?: string;
   placeOfBirth?: string;
   nationality?: string;
@@ -211,16 +211,13 @@ export default function ProfilePage() {
     }
 
     try {
-      const response = await fetch(
-        `${API}/api/ocr/upload-license`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          body: formData,
-        }
-      );
+      const response = await fetch(`${API}/api/ocr/upload-license`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: formData,
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -231,7 +228,7 @@ export default function ProfilePage() {
 
       const result = await response.json();
       const serverExtractedData = result.extractedData;
-      const imageUrl = result.imageUrl;
+      // const imageUrl = result.imageUrl;
 
       // Map dữ liệu từ backend sang frontend format
       const mappedData: ExtractedIdData = {
@@ -239,14 +236,14 @@ export default function ProfilePage() {
         dateOfBirth: serverExtractedData.dateOfBirth || "",
         idNumber: serverExtractedData.licenseNumber || "",
         address: serverExtractedData.address || "",
-        documentType: "Driver License",
+        // documentType: "Driver License",
         licenseClass: serverExtractedData.licenseClass || "",
         dateOfIssue: serverExtractedData.dateOfIssue || "",
-        imageUrl: imageUrl,
+        // imageUrl: imageUrl,
       };
 
       setExtractedIdData(mappedData);
-      setUploadedImageUrl(imageUrl);
+      // setUploadedImageUrl(imageUrl);
 
       toast({
         title: "ID Document Processed",
@@ -281,26 +278,23 @@ export default function ProfilePage() {
       }
 
       // Gọi API để confirm và lưu dữ liệu
-      const response = await fetch(
-        `${API}/api/ocr/confirm-license`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            fullName: editedData.fullName,
-            dateOfBirth: editedData.dateOfBirth,
-            licenseNumber: editedData.idNumber,
-            licenseClass: editedData.licenseClass,
-            address: editedData.address,
-            dateOfIssue: editedData.dateOfIssue,
-            imageUrl: editedData.imageUrl,
-          }),
-        }
-      );
-
+      const response = await fetch(`${API}/api/ocr/confirm-license`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          fullName: editedData.fullName,
+          dateOfBirth: editedData.dateOfBirth,
+          licenseNumber: editedData.idNumber,
+          licenseClass: editedData.licenseClass,
+          address: editedData.address,
+          dateOfIssue: editedData.dateOfIssue,
+          // imageUrl: editedData.imageUrl,
+        }),
+      });
+      //
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(
@@ -312,6 +306,19 @@ export default function ProfilePage() {
 
       if (result.success) {
         setIsVerified(true);
+      }
+
+      // Added fix: force a user refresh in localStorage to make sure it displays the latest data
+      const userResponse = await fetch(`${API}/api/auth/me`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (userResponse.ok) {
+        const updatedUser = await userResponse.json();
+        localStorage.setItem("user", JSON.stringify(updatedUser));
+        window.location.reload(); // Force reload to reflect changes
       }
 
       // Update form data with confirmed information
@@ -345,7 +352,7 @@ export default function ProfilePage() {
 
   const handleIdReject = () => {
     setExtractedIdData(null);
-    setUploadedImageUrl(null);
+    // setUploadedImageUrl(null);
     setIsIdReviewOpen(false);
 
     toast({
@@ -530,8 +537,9 @@ export default function ProfilePage() {
                     value={formData.licenseId}
                     onChange={handleInputChange}
                     disabled={!isEditing || isFieldLocked("licenseId")}
-                    className={`pl-10 ${isFieldLocked("licenseId") ? "bg-gray-50" : ""
-                      }`}
+                    className={`pl-10 ${
+                      isFieldLocked("licenseId") ? "bg-gray-50" : ""
+                    }`}
                   />
                 </div>
                 {isFieldLocked("licenseId") && (
@@ -584,12 +592,16 @@ export default function ProfilePage() {
                     <CheckCircle className="h-5 w-5 text-green-600" />
                   </div>
                   <div>
-                    <div className="font-medium text-green-700 text-lg">Verification Completed</div>
+                    <div className="font-medium text-green-700 text-lg">
+                      Verification Completed
+                    </div>
                     <div className="text-sm text-muted-foreground">
-                      Your ID document has been successfully verified and processed.
+                      Your ID document has been successfully verified and
+                      processed.
                     </div>
                     <div className="text-xs mt-1">
-                      <strong>Note:</strong> Information extracted from your ID document cannot be edited manually for security purposes.
+                      <strong>Note:</strong> Information extracted from your ID
+                      document cannot be edited manually for security purposes.
                     </div>
                     <div className="mt-2">
                       <Button

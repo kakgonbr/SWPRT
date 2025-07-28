@@ -30,10 +30,10 @@ interface ExtractedIdData {
   dateOfBirth: string;
   idNumber: string;
   address: string;
-  documentType: string;
+  // documentType: string;
   licenseClass?: string;
   dateOfIssue?: string;
-  imageUrl?: string;
+  // imageUrl?: string;
   expiryDate?: string;
   placeOfBirth?: string;
   nationality?: string;
@@ -49,59 +49,66 @@ interface IdReviewDialogProps {
 }
 
 // Validation function
-const validateRequiredFields = (data: ExtractedIdData): { isValid: boolean; errors: string[]; fieldErrors: Record<string, string> } => {
+const validateRequiredFields = (
+  data: ExtractedIdData
+): {
+  isValid: boolean;
+  errors: string[];
+  fieldErrors: Record<string, string>;
+} => {
   const errors: string[] = [];
   const fieldErrors: Record<string, string> = {};
-  
+
   // Required fields validation
   if (!data.fullName || data.fullName.trim().length < 2) {
     const errorMsg = "Full name must be at least 2 characters";
     errors.push(errorMsg);
     fieldErrors.fullName = errorMsg;
   }
-  
+
   if (!data.dateOfBirth || data.dateOfBirth.trim() === "") {
     const errorMsg = "Date of birth is required";
     errors.push(errorMsg);
     fieldErrors.dateOfBirth = errorMsg;
   }
-  
-  if (!data.idNumber || data.idNumber.trim() === "") {
-    const errorMsg = "License number is required";
-    errors.push(errorMsg);
-    fieldErrors.idNumber = errorMsg;
-  } else if (!/^\d{12}$/.test(data.idNumber.trim())) {
-    const errorMsg = "License number must be exactly 12 digits";
-    errors.push(errorMsg);
-    fieldErrors.idNumber = errorMsg;
-  }
-  
-  if (!data.licenseClass || data.licenseClass.trim() === "") {
-    const errorMsg = "License class is required";
-    errors.push(errorMsg);
-    fieldErrors.licenseClass = errorMsg;
-  } else if (!/^[A-F][0-9]?$/.test(data.licenseClass.trim().toUpperCase())) {
-    const errorMsg = "License class must be in format: A, A1, A2, B1, B2, C, D, E, F";
-    errors.push(errorMsg);
-    fieldErrors.licenseClass = errorMsg;
-  }
-  
+
+  // if (!data.idNumber || data.idNumber.trim() === "") {
+  //   const errorMsg = "License number is required";
+  //   errors.push(errorMsg);
+  //   fieldErrors.idNumber = errorMsg;
+  // } else if (!/^\d{12}$/.test(data.idNumber.trim())) {
+  //   const errorMsg = "License number must be exactly 12 digits";
+  //   errors.push(errorMsg);
+  //   fieldErrors.idNumber = errorMsg;
+  // }
+
+  // if (!data.licenseClass || data.licenseClass.trim() === "") {
+  //   const errorMsg = "License class is required";
+  //   errors.push(errorMsg);
+  //   fieldErrors.licenseClass = errorMsg;
+  // } else if (!/^[A-F][0-9]?$/.test(data.licenseClass.trim().toUpperCase())) {
+  //   const errorMsg =
+  //     "License class must be in format: A, A1, A2, B1, B2, C, D, E, F";
+  //   errors.push(errorMsg);
+  //   fieldErrors.licenseClass = errorMsg;
+  // }
+
   if (!data.dateOfIssue || data.dateOfIssue.trim() === "") {
     const errorMsg = "Date of issue is required";
     errors.push(errorMsg);
     fieldErrors.dateOfIssue = errorMsg;
   }
-  
+
   if (!data.address || data.address.trim().length < 5) {
     const errorMsg = "Address must be at least 5 characters";
     errors.push(errorMsg);
     fieldErrors.address = errorMsg;
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors,
-    fieldErrors
+    fieldErrors,
   };
 };
 
@@ -137,35 +144,35 @@ export default function IdReviewDialog({
     console.log("extractedData:", extractedData);
   }, [isOpen, extractedData]);
 
-  const formatDate = (dateString: string) => {
-    try {
-      if (!dateString)
-        return <span className="text-red-500 italic">No information available</span>;
-      const date = new Date(dateString);
-      return date.toLocaleDateString("en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
-    } catch {
-      return dateString;
-    }
-  };
+  //const formatDate = (dateString: string) => {
+  //  try {
+  //    if (!dateString)
+  //      return <span className="text-red-500 italic">No information available</span>;
+  //    const date = new Date(dateString);
+  //    return date.toLocaleDateString("en-US", {
+  //      year: "numeric",
+  //      month: "long",
+  //      day: "numeric",
+  //    });
+  //  } catch {
+  //    return dateString;
+  //  }
+  //};
 
-  const formatDateForInput = (dateString: string) => {
-    try {
-      const date = new Date(dateString);
-      return date.toISOString().split("T")[0];
-    } catch {
-      return dateString;
-    }
-  };
+  //const formatDateForInput = (dateString: string) => {
+  //  try {
+  //    const date = new Date(dateString);
+  //    return date.toISOString().split("T")[0];
+  //  } catch {
+  //    return dateString;
+  //  }
+  //};
 
   const handleInputChange = (field: keyof ExtractedIdData, value: string) => {
     if (editedData) {
       const updatedData = { ...editedData, [field]: value };
       setEditedData(updatedData);
-      
+
       // Re-validate after each change
       const validation = validateRequiredFields(updatedData);
       setValidationErrors(validation.errors);
@@ -215,28 +222,35 @@ export default function IdReviewDialog({
   // Calculate completion progress
   const calculateProgress = () => {
     if (!displayData) return 0;
-    
+
     const requiredFields = [
       displayData.fullName,
       displayData.dateOfBirth,
       displayData.idNumber,
       displayData.licenseClass,
       displayData.dateOfIssue,
-      displayData.address
+      displayData.address,
     ];
-    
-    const validFields = requiredFields.filter(field => {
+
+    const validFields = requiredFields.filter((field) => {
       if (!field || field.trim() === "") return false;
-      
+
       // Special validation for specific fields
-      if (field === displayData.idNumber && !/^\d{12}$/.test(field.trim())) return false;
-      if (field === displayData.licenseClass && !/^[A-F][0-9]?$/.test(field.trim().toUpperCase())) return false;
-      if (field === displayData.address && field.trim().length < 5) return false;
-      if (field === displayData.fullName && field.trim().length < 2) return false;
-      
+      if (field === displayData.idNumber && !/^\d{12}$/.test(field.trim()))
+        return false;
+      if (
+        field === displayData.licenseClass &&
+        !/^[A-F][0-9]?$/.test(field.trim().toUpperCase())
+      )
+        return false;
+      if (field === displayData.address && field.trim().length < 5)
+        return false;
+      if (field === displayData.fullName && field.trim().length < 2)
+        return false;
+
       return true;
     });
-    
+
     return Math.round((validFields.length / requiredFields.length) * 100);
   };
 
@@ -268,11 +282,15 @@ export default function IdReviewDialog({
               </span>
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
+              <div
                 className={`h-2 rounded-full transition-all duration-300 ${
-                  progress === 100 ? 'bg-green-500' : 
-                  progress >= 80 ? 'bg-yellow-500' : 
-                  progress >= 50 ? 'bg-orange-500' : 'bg-red-500'
+                  progress === 100
+                    ? "bg-green-500"
+                    : progress >= 80
+                    ? "bg-yellow-500"
+                    : progress >= 50
+                    ? "bg-orange-500"
+                    : "bg-red-500"
                 }`}
                 style={{ width: `${progress}%` }}
               ></div>
@@ -328,7 +346,8 @@ export default function IdReviewDialog({
                           Please verify your information carefully
                         </p>
                         <p className="text-blue-700">
-                          Once confirmed, this information will be saved to your profile.
+                          Once confirmed, this information will be saved to your
+                          profile.
                         </p>
                       </div>
                     </div>
@@ -343,7 +362,8 @@ export default function IdReviewDialog({
                           Found incorrect information?
                         </p>
                         <p className="text-amber-700">
-                          Click \"Edit Information\" to correct any details that don't match your ID document.
+                          Click \"Edit Information\" to correct any details that
+                          don't match your ID document.
                         </p>
                       </div>
                     </div>
@@ -391,9 +411,7 @@ export default function IdReviewDialog({
                         <span className="text-sm font-medium text-muted-foreground">
                           Document Type
                         </span>
-                        <Badge variant="outline">
-                          {displayData.documentType || "Driver License"}
-                        </Badge>
+                        <Badge variant="outline">Driver License</Badge>
                       </div>
 
                       {/* Full Name */}
@@ -413,7 +431,7 @@ export default function IdReviewDialog({
                               }
                               className={`text-lg font-semibold ${
                                 fieldErrors.fullName
-                                  ? "border-red-300 focus:border-red-500 focus:ring-red-200" 
+                                  ? "border-red-300 focus:border-red-500 focus:ring-red-200"
                                   : ""
                               }`}
                               placeholder="e.g. Nguyen Van A"
@@ -427,11 +445,13 @@ export default function IdReviewDialog({
                           </div>
                         ) : (
                           <div className="space-y-1">
-                            <p className={`text-lg font-semibold p-3 rounded border min-h-[44px] ${
-                              fieldErrors.fullName
-                                ? "bg-red-50 border-red-200" 
-                                : "bg-gray-50"
-                            }`}>
+                            <p
+                              className={`text-lg font-semibold p-3 rounded border min-h-[44px] ${
+                                fieldErrors.fullName
+                                  ? "bg-red-50 border-red-200"
+                                  : "bg-gray-50"
+                              }`}
+                            >
                               {displayData.fullName || (
                                 <span className="text-red-500 italic">
                                   No information available
@@ -465,13 +485,11 @@ export default function IdReviewDialog({
                               }
                               className={`text-lg font-semibold font-mono ${
                                 fieldErrors.idNumber
-                                  ? "border-red-300 focus:border-red-500 focus:ring-red-200" 
+                                  ? "border-red-300 focus:border-red-500 focus:ring-red-200"
                                   : ""
                               }`}
                               placeholder="e.g. 012345678912"
-
                               disabled={isEditing}
-
                             />
                             {fieldErrors.idNumber && (
                               <p className="text-sm text-red-600 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200">
@@ -482,11 +500,13 @@ export default function IdReviewDialog({
                           </div>
                         ) : (
                           <div className="space-y-1">
-                            <p className={`text-lg font-semibold p-3 rounded border font-mono min-h-[44px] ${
-                              fieldErrors.idNumber
-                                ? "bg-red-50 border-red-200" 
-                                : "bg-gray-50"
-                            }`}>
+                            <p
+                              className={`text-lg font-semibold p-3 rounded border font-mono min-h-[44px] ${
+                                fieldErrors.idNumber
+                                  ? "bg-red-50 border-red-200"
+                                  : "bg-gray-50"
+                              }`}
+                            >
                               {displayData.idNumber || (
                                 <span className="text-red-500 italic">
                                   No information available
@@ -508,7 +528,8 @@ export default function IdReviewDialog({
                         <div className="flex items-center gap-2">
                           <CreditCard className="h-4 w-4 text-muted-foreground" />
                           <Label className="text-sm font-medium">
-                            License Class <span className="text-red-500">*</span>
+                            License Class{" "}
+                            <span className="text-red-500">*</span>
                           </Label>
                         </div>
                         {isEditing ? (
@@ -516,17 +537,18 @@ export default function IdReviewDialog({
                             <Input
                               value={displayData.licenseClass || ""}
                               onChange={(e) =>
-                                handleInputChange("licenseClass", e.target.value)
+                                handleInputChange(
+                                  "licenseClass",
+                                  e.target.value
+                                )
                               }
                               className={`text-lg font-semibold ${
                                 fieldErrors.licenseClass
-                                  ? "border-red-300 focus:border-red-500 focus:ring-red-200" 
+                                  ? "border-red-300 focus:border-red-500 focus:ring-red-200"
                                   : ""
                               }`}
                               placeholder="e.g. B1"
-
                               disabled={isEditing}
-
                             />
                             {fieldErrors.licenseClass && (
                               <p className="text-sm text-red-600 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200">
@@ -537,11 +559,13 @@ export default function IdReviewDialog({
                           </div>
                         ) : (
                           <div className="space-y-1">
-                            <p className={`text-lg font-semibold p-3 rounded border min-h-[44px] ${
-                              fieldErrors.licenseClass
-                                ? "bg-red-50 border-red-200" 
-                                : "bg-gray-50"
-                            }`}>
+                            <p
+                              className={`text-lg font-semibold p-3 rounded border min-h-[44px] ${
+                                fieldErrors.licenseClass
+                                  ? "bg-red-50 border-red-200"
+                                  : "bg-gray-50"
+                              }`}
+                            >
                               {displayData.licenseClass || (
                                 <span className="text-red-500 italic">
                                   No information available
@@ -563,22 +587,21 @@ export default function IdReviewDialog({
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <Label className="text-sm font-medium">
-                            Date of Birth <span className="text-red-500">*</span>
+                            Date of Birth{" "}
+                            <span className="text-red-500">*</span>
                           </Label>
                         </div>
                         {isEditing ? (
                           <div className="space-y-1">
                             <Input
                               type="date"
-                              value={formatDateForInput(
-                                displayData.dateOfBirth || ""
-                              )}
+                              value={displayData.dateOfBirth || ""}
                               onChange={(e) =>
                                 handleInputChange("dateOfBirth", e.target.value)
                               }
                               className={`text-lg font-semibold ${
                                 fieldErrors.dateOfBirth
-                                  ? "border-red-300 focus:border-red-500 focus:ring-red-200" 
+                                  ? "border-red-300 focus:border-red-500 focus:ring-red-200"
                                   : ""
                               }`}
                             />
@@ -591,12 +614,14 @@ export default function IdReviewDialog({
                           </div>
                         ) : (
                           <div className="space-y-1">
-                            <p className={`text-lg font-semibold p-3 rounded border min-h-[44px] ${
-                              fieldErrors.dateOfBirth
-                                ? "bg-red-50 border-red-200" 
-                                : "bg-gray-50"
-                            }`}>
-                              {formatDate(displayData.dateOfBirth || "")}
+                            <p
+                              className={`text-lg font-semibold p-3 rounded border min-h-[44px] ${
+                                fieldErrors.dateOfBirth
+                                  ? "bg-red-50 border-red-200"
+                                  : "bg-gray-50"
+                              }`}
+                            >
+                              {displayData.dateOfBirth || ""}
                             </p>
                             {fieldErrors.dateOfBirth && (
                               <p className="text-sm text-red-600 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200">
@@ -613,22 +638,21 @@ export default function IdReviewDialog({
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
                           <Label className="text-sm font-medium">
-                            Date of Issue <span className="text-red-500">*</span>
+                            Date of Issue{" "}
+                            <span className="text-red-500">*</span>
                           </Label>
                         </div>
                         {isEditing ? (
                           <div className="space-y-1">
                             <Input
                               type="date"
-                              value={formatDateForInput(
-                                displayData.dateOfIssue || ""
-                              )}
+                              value={displayData.dateOfIssue || ""}
                               onChange={(e) =>
                                 handleInputChange("dateOfIssue", e.target.value)
                               }
                               className={`text-lg font-semibold ${
                                 fieldErrors.dateOfIssue
-                                  ? "border-red-300 focus:border-red-500 focus:ring-red-200" 
+                                  ? "border-red-300 focus:border-red-500 focus:ring-red-200"
                                   : ""
                               }`}
                             />
@@ -641,12 +665,14 @@ export default function IdReviewDialog({
                           </div>
                         ) : (
                           <div className="space-y-1">
-                            <p className={`text-lg font-semibold p-3 rounded border min-h-[44px] ${
-                              fieldErrors.dateOfIssue
-                                ? "bg-red-50 border-red-200" 
-                                : "bg-gray-50"
-                            }`}>
-                              {formatDate(displayData.dateOfIssue || "")}
+                            <p
+                              className={`text-lg font-semibold p-3 rounded border min-h-[44px] ${
+                                fieldErrors.dateOfIssue
+                                  ? "bg-red-50 border-red-200"
+                                  : "bg-gray-50"
+                              }`}
+                            >
+                              {displayData.dateOfIssue || ""}
                             </p>
                             {fieldErrors.dateOfIssue && (
                               <p className="text-sm text-red-600 flex items-center gap-1 animate-in slide-in-from-top-1 duration-200">
@@ -675,7 +701,7 @@ export default function IdReviewDialog({
                               }
                               className={`text-lg font-semibold resize-none ${
                                 fieldErrors.address
-                                  ? "border-red-300 focus:border-red-500 focus:ring-red-200" 
+                                  ? "border-red-300 focus:border-red-500 focus:ring-red-200"
                                   : ""
                               }`}
                               rows={3}
@@ -690,11 +716,13 @@ export default function IdReviewDialog({
                           </div>
                         ) : (
                           <div className="space-y-1">
-                            <p className={`text-lg font-semibold p-3 rounded border min-h-[78px] ${
-                              fieldErrors.address
-                                ? "bg-red-50 border-red-200" 
-                                : "bg-gray-50"
-                            }`}>
+                            <p
+                              className={`text-lg font-semibold p-3 rounded border min-h-[78px] ${
+                                fieldErrors.address
+                                  ? "bg-red-50 border-red-200"
+                                  : "bg-gray-50"
+                              }`}
+                            >
                               {displayData.address || (
                                 <span className="text-red-500 italic">
                                   No information available
@@ -728,18 +756,20 @@ export default function IdReviewDialog({
             <div className="relative">
               <Button
                 onClick={handleConfirm}
-                disabled={isProcessing || !displayData || isEditing || !isDataValid}
+                disabled={
+                  isProcessing || !displayData || isEditing || !isDataValid
+                }
                 className={`${
                   isDataValid && !isProcessing && !isEditing
                     ? "bg-green-600 hover:bg-green-700"
                     : "bg-gray-400 cursor-not-allowed"
                 }`}
                 title={
-                  !isDataValid 
+                  !isDataValid
                     ? "Please complete all required fields before confirming"
-                    : isProcessing 
-                    ? "Processing..." 
-                    : isEditing 
+                    : isProcessing
+                    ? "Processing..."
+                    : isEditing
                     ? "Please save your changes first"
                     : "Confirm and save information"
                 }

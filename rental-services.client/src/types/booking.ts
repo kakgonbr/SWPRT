@@ -7,7 +7,7 @@ export type BookingStatus =
     | 'Completed'
     | 'Cancelled';
 export interface Booking {
-    id: string;
+    id?: number;
     customerId: number;
     startDate: string;
     endDate: string;
@@ -28,4 +28,9 @@ export interface Booking {
     deposit?: number;
     tax?: number;
     discount?: number;
+}
+
+export interface RentalStatus {
+    id?: number;
+    status: BookingStatus;
 }

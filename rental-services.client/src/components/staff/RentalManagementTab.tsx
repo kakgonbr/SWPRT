@@ -32,19 +32,16 @@ import RentalDetailsDialog from '../admin/RentalDetailsDialog';
 interface RentalManagementTabProps {
     rentals: Booking[]
     onOpenApproval: (rental: Booking) => void
-    onRejectRental: (rentalId: string) => void
+    onRejectRental: (rentalId: number) => void
 }
 
 export default function RentalManagementTab({
     rentals,
-    onOpenApproval,
-    onRejectRental
+    onOpenApproval
 }: RentalManagementTabProps) {
     const [rentalFilter, setRentalFilter] = useState<'all' | 'awaiting payment' | 'confirmed' | 'upcoming' | 'active' | 'completed' | 'cancelled'>('all')
-
     const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
     const [selectedRentalForDetails, setSelectedRentalForDetails] = useState<Booking | null>(null);
-
     // Currency formatting function for VND
     const formatVND = (amount: number): string => {
         return new Intl.NumberFormat('vi-VN', {
@@ -56,23 +53,17 @@ export default function RentalManagementTab({
     }
 
     const parseDate = (dateString: string | undefined | null): Date => {
-        console.log(`og date: ${rentals.map(r => r.startDate)}`);
-
         // Check if dateString is undefined, null, or empty
         if (!dateString || dateString.trim() === '') {
             console.warn('parseDate received invalid input:', dateString);
             return new Date(); // Return current date as fallback
         }
-
         //trying to parse the date to ISO format
         let date = parseISO(dateString);
-        console.log(`iso parsed date: ${date}`);
-
         if (!isValid(date)) {
             date = new Date(dateString);
             console.log(`new date: ${date}`);
         }
-
         if (!isValid(date)) {
             const parts = dateString.split('-');
             if (parts.length === 3) {
@@ -80,13 +71,11 @@ export default function RentalManagementTab({
             }
             console.log(`manual parse date: ${date}`);
         }
-
         // If all attempts fail, return current date as fallback
         if (!isValid(date)) {
             console.error('All date parsing attempts failed for:', dateString);
             return new Date();
         }
-
         return date;
     }
 
@@ -110,30 +99,42 @@ export default function RentalManagementTab({
             console.error(`error calculate days between start and end dates: ${error}`);
             return 1;
         }
-
     }
 
     const getStatusBadgeVariant = (status: BookingStatus) => {
         switch (status) {
-            case 'Awaiting Payment': return 'secondary'
-            case 'Confirmed': return 'default'
-            case 'Upcoming': return 'default'
-            case 'Active': return 'default'
-            case 'Completed': return 'outline'
-            case 'Cancelled': return 'destructive'
-            default: return 'outline'
+            case 'Awaiting Payment':
+                return 'secondary'
+            case 'Confirmed':
+                return 'default'
+            case 'Upcoming':
+                return 'default'
+            case 'Active':
+                return 'default'
+            case 'Completed':
+                return 'outline'
+            case 'Cancelled':
+                return 'destructive'
+            default:
+                return 'outline'
         }
     }
 
     const getRentalStatusIcon = (status: BookingStatus) => {
         switch (status) {
             //case 'Awaiting Payment': return <Calendar className="h-3 w-3" />
-            case 'Confirmed': return <CheckCircle2 className="h-3 w-3" />
-            case 'Upcoming': return <CalendarIcon className="h-3 w-3" />
-            case 'Active': return <CheckCircle2 className="h-3 w-3" />
-            case 'Completed': return <Check className="h-3 w-3" />
-            case 'Cancelled': return <X className="h-3 w-3" />
-            default: return null
+            case 'Confirmed':
+                return <CheckCircle2 className="h-3 w-3" />
+            case 'Upcoming':
+                return <CalendarIcon className="h-3 w-3" />
+            case 'Active':
+                return <CheckCircle2 className="h-3 w-3" />
+            case 'Completed':
+                return <Check className="h-3 w-3" />
+            case 'Cancelled':
+                return <X className="h-3 w-3" />
+            default:
+                return null
         }
     }
 
@@ -199,11 +200,20 @@ export default function RentalManagementTab({
                             >
                                 <option value="all">All Rentals</option>
                                 {/*<option value="awaiting payment">Awaiting Payment ({rentals.filter(r => r.status === 'Awaiting Payment').length})</option>*/}
-                                <option value="confirmed">Confirmed ({rentals.filter(r => r.status === 'Confirmed').length})</option>
-                                <option value="upcoming">Upcoming ({rentals.filter(r => r.status === 'Upcoming').length})</option>
-                                <option value="active">Active ({rentals.filter(r => r.status === 'Active').length})</option>
-                                <option value="completed">Completed ({rentals.filter(r => r.status === 'Completed').length})</option>
-                                <option value="cancelled">Cancelled ({rentals.filter(r => r.status === 'Cancelled').length})</option>
+                                <option value="confirmed">Confirmed
+                                    ({rentals.filter(r => r.status === 'Confirmed').length})
+                                </option>
+                                <option value="upcoming">Upcoming
+                                    ({rentals.filter(r => r.status === 'Upcoming').length})
+                                </option>
+                                <option value="active">Active ({rentals.filter(r => r.status === 'Active').length})
+                                </option>
+                                <option value="completed">Completed
+                                    ({rentals.filter(r => r.status === 'Completed').length})
+                                </option>
+                                <option value="cancelled">Cancelled
+                                    ({rentals.filter(r => r.status === 'Cancelled').length})
+                                </option>
                             </select>
                         </div>
                     </div>
@@ -240,7 +250,8 @@ export default function RentalManagementTab({
                                             <TableCell>
                                                 <div>
                                                     <div className="font-medium">{rental.customerName}</div>
-                                                    <div className="text-sm text-muted-foreground">{rental.customerEmail}</div>
+                                                    <div
+                                                        className="text-sm text-muted-foreground">{rental.customerEmail}</div>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="font-medium">{rental.bikeName}</TableCell>
@@ -262,7 +273,8 @@ export default function RentalManagementTab({
                                                 </div>
                                             </TableCell>
                                             <TableCell>
-                                                <Badge variant={getStatusBadgeVariant(rental.status)} className="flex items-center gap-1 w-fit">
+                                                <Badge variant={getStatusBadgeVariant(rental.status)}
+                                                    className="flex items-center gap-1 w-fit">
                                                     {getRentalStatusIcon(rental.status)}
                                                     {rental.status}
                                                 </Badge>
@@ -270,7 +282,7 @@ export default function RentalManagementTab({
                                             <TableCell className="font-medium">{formatVND(totalCost)}</TableCell>
                                             <TableCell className="text-center">
                                                 <div className="flex items-center justify-center gap-2">
-                                                    {rental.status === 'Confirmed' ? (
+                                                    {rental.status === 'Upcoming' ? (
                                                         <>
                                                             <Button
                                                                 size="sm"
@@ -283,7 +295,7 @@ export default function RentalManagementTab({
                                                             <Button
                                                                 size="sm"
                                                                 variant="destructive"
-                                                                onClick={() => onRejectRental(rental.id)}
+                                                                onClick={() => onOpenApproval(rental)}
                                                             >
                                                                 <X className="h-4 w-4 mr-1" />
                                                                 Reject
@@ -301,7 +313,6 @@ export default function RentalManagementTab({
                                                     )}
                                                 </div>
                                             </TableCell>
-
                                         </TableRow>
                                     )
                                 }
@@ -313,7 +324,8 @@ export default function RentalManagementTab({
             </Card>
 
             {selectedRentalForDetails && (
-                <RentalDetailsDialog isOpen={isDetailsDialogOpen} onClose={handleCloseViewDetails} rental={selectedRentalForDetails} />
+                <RentalDetailsDialog isOpen={isDetailsDialogOpen} onClose={handleCloseViewDetails}
+                    rental={selectedRentalForDetails} />
             )}
         </>
     )

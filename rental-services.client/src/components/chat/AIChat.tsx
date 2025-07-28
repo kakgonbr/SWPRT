@@ -3,66 +3,28 @@ import { Send, Bot, User } from 'lucide-react'
 import { Button } from '../ui/button'
 import { Input } from '../ui/input'
 import { useAuth } from '../../contexts/auth-context'
-import { format } from 'date-fns'
-
-interface ChatMessage {
-    id: string
-    content: string
-    sender: 'user' | 'bot'
-    timestamp: Date
-}
-
-const CHAT_RESPONSES = [
-    "Hello! I'm VroomBot, your virtual assistant. How can I help you today?",
-    "I can help you with bike rentals, location information, pricing, and general questions about our services.",
-    "For urgent matters, please call our 24/7 hotline: +84 123 456 789",
-    "Would you like me to help you find the perfect bike for your trip?",
-    "Our most popular bikes are the Honda Winner X and Yamaha Exciter. Both are great for city and highway riding.",
-    "We have locations in Ho Chi Minh City, Hanoi, Da Nang, Hoi An, and Nha Trang.",
-    "You can pick up and drop off bikes at any of our locations during business hours.",
-    "Our rental rates start from $15/day for scooters and $25/day for motorcycles.",
-    "All rentals include basic insurance. Additional coverage is available for $5/day.",
-    "Is there anything specific about our bikes or services you'd like to know?"
-]
+import { useAIChatMessages } from '../../hooks/useAIChatMessages'
 
 export default function AIChat({ onBack }: { onBack: () => void }) {
     const { user } = useAuth()
     const [message, setMessage] = useState('')
-    const [messages, setMessages] = useState<ChatMessage[]>([{
-        id: '1',
-        content: "Hello! I'm VroomBot, your virtual assistant. How can I help you today?",
-        sender: 'bot',
-        timestamp: new Date()
-    }])
-    const [isTyping, setIsTyping] = useState(false)
     const messagesEndRef = useRef<HTMLDivElement>(null)
+    const token = localStorage.getItem('token') || ''
+    const userId = user?.userId ?? null
+    const { messages, loading, sendMessage } = useAIChatMessages(token, userId)
+    const [sending, setSending] = useState(false)
 
+    // Scroll to bottom when messages change
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
     }, [messages])
 
     const handleSendMessage = async () => {
-        if (!message.trim()) return
-        const userMessage: ChatMessage = {
-            id: Date.now().toString(),
-            content: message.trim(),
-            sender: 'user',
-            timestamp: new Date()
-        }
-        setMessages(prev => [...prev, userMessage])
+        if (!message.trim() || !userId) return
+        setSending(true)
+        await sendMessage(message)
         setMessage('')
-        setIsTyping(true)
-        setTimeout(() => {
-            const randomResponse = CHAT_RESPONSES[Math.floor(Math.random() * CHAT_RESPONSES.length)]
-            const botMessage: ChatMessage = {
-                id: (Date.now() + 1).toString(),
-                content: randomResponse,
-                sender: 'bot',
-                timestamp: new Date()
-            }
-            setMessages(prev => [...prev, botMessage])
-            setIsTyping(false)
-        }, 1000 + Math.random() * 2000)
+        setSending(false)
     }
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -77,20 +39,23 @@ export default function AIChat({ onBack }: { onBack: () => void }) {
     return (
         <div className="flex flex-col h-full">
             <div className="flex-1 overflow-y-auto p-3 space-y-3">
+                {loading ? (
+                    <div className="text-center text-muted-foreground py-4">Loading conversation...</div>
+                ) : null}
                 {messages.map((msg) => (
                     <div
-                        key={msg.id}
-                        className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                        key={msg.aiChatMessageId}
+                        className={`flex ${msg.isHuman ? 'justify-end' : 'justify-start'}`}
                     >
                         <div className="flex items-start space-x-2 max-w-[85%]">
-                            {msg.sender === 'bot' && (
+                            {!msg.isHuman && (
                                 <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
                                     <Bot className="w-3 h-3 text-primary-foreground" />
                                 </div>
                             )}
                             <div>
                                 <div
-                                    className={`p-2 rounded-lg text-sm ${msg.sender === 'user'
+                                    className={`p-2 rounded-lg text-sm ${msg.isHuman
                                         ? 'bg-primary text-primary-foreground'
                                         : 'bg-muted'
                                         }`}
@@ -98,10 +63,10 @@ export default function AIChat({ onBack }: { onBack: () => void }) {
                                     {msg.content}
                                 </div>
                                 <p className="text-xs text-muted-foreground mt-1">
-                                    {format(msg.timestamp, 'HH:mm')}
+                                    {/* No timestamp in AIChatMessageDTO, so we could use aiChatMessageId as a fallback */}
                                 </p>
                             </div>
-                            {msg.sender === 'user' && (
+                            {msg.isHuman && (
                                 <div className="w-6 h-6 bg-secondary rounded-full flex items-center justify-center flex-shrink-0">
                                     <User className="w-3 h-3" />
                                 </div>
@@ -109,7 +74,7 @@ export default function AIChat({ onBack }: { onBack: () => void }) {
                         </div>
                     </div>
                 ))}
-                {isTyping && (
+                {sending && (
                     <div className="flex justify-start">
                         <div className="flex items-start space-x-2">
                             <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
@@ -135,8 +100,9 @@ export default function AIChat({ onBack }: { onBack: () => void }) {
                         onKeyPress={handleKeyPress}
                         placeholder={chatPlaceholder}
                         className="flex-1"
+                        disabled={loading || sending}
                     />
-                    <Button onClick={handleSendMessage} disabled={!message.trim()}>
+                    <Button onClick={handleSendMessage} disabled={!message.trim() || loading || sending}>
                         <Send className="h-4 w-4" />
                     </Button>
                 </div>

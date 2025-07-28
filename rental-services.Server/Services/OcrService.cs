@@ -23,7 +23,7 @@ namespace rental_services.Server.Services
 
             if (user == null)
             {
-                throw new BadHttpRequestException("Không tìm thấy người dùng từ thông tin xác thực.");
+                throw new BadHttpRequestException("User not found with the provided credentials.");
             }
 
             // Cập nhật thông tin người dùng
@@ -37,10 +37,12 @@ namespace rental_services.Server.Services
             // Cập nhật/Thêm bằng lái
             var licenseType = await _driverLicenseRepository.GetLicenseTypeByCodeAsync(gplxData.LicenseClass);
 
+
             if (licenseType == null)
             {
-                throw new BadHttpRequestException($"Hạng bằng lái '{gplxData.LicenseClass}' không được hỗ trợ hoặc không nhận dạng được.");
+                throw new BadHttpRequestException($"Driver's license class '{gplxData.LicenseClass}' is not supported or could not be recognized.");
             }
+
 
             var existingLicense = await _driverLicenseRepository.GetByUserAndTypeAsync(user.UserId, licenseType.LicenseTypeId);
 

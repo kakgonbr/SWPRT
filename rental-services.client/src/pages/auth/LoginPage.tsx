@@ -49,7 +49,7 @@ export default function LoginPage() {
             } else {
                 toast({
                     title: "Login Failed",
-                    description: "Invalid email or password. Please try again.",
+                    description: "Invalid credentials. Please try again.",
                     variant: "destructive",
                 });
             }
@@ -57,7 +57,7 @@ export default function LoginPage() {
             console.error('Login error:', error);
             toast({
                 title: "Error",
-                description: "An error occurred during login. Please try again.",
+                description: "Invalid credentials. Please try again.",
                 variant: "destructive",
             });
         } finally {
@@ -68,7 +68,7 @@ export default function LoginPage() {
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
         try {
-            window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login/google`
+            window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login/google`;
         } catch (error) {
             console.error('Google login error:', error)
             toast({

@@ -2,7 +2,7 @@
 {
     public record BookingDTO
     {
-        public string Id { get; set; } = null!;
+        public int Id { get; set; }
         public int CustomerId { get; set; }
         public int VehicleModelId { get; set; }
         public string BikeName { get; set; } = null!;

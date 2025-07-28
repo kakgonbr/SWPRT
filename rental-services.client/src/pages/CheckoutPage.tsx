@@ -8,7 +8,6 @@ import {
     Shield
 } from 'lucide-react'
 import { Button } from '../components/ui/button'
-import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Checkbox } from '../components/ui/checkbox'
@@ -151,9 +150,6 @@ export default function CheckoutPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-
-        //TODO: update the terms tick and payment information when done
-
         if (!termsTick) {
             console.log("Terms not checked, showing toast") // Debug log
             console.log("Current termsTick value: ", termsTick);
@@ -179,7 +175,6 @@ export default function CheckoutPage() {
 
         try {
             const booking: Booking = {
-                id: '',
                 customerId: user.userId,
                 customerName: user.fullName,
                 customerEmail: user.email,
@@ -277,8 +272,17 @@ export default function CheckoutPage() {
         return null // Will redirect
     }
 
+    const formatVND = (amount: number): string => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    }
+
     const days = startDate && endDate ? differenceInDays(endDate, startDate) : 0
-    const total = calculateTotal()
+    const total = formatVND(calculateTotal());
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -431,59 +435,11 @@ export default function CheckoutPage() {
                                                     {option.name}
                                                 </Label>
                                                 <span className="text-sm font-medium">
-                                                    ${option.price}/day
+                                                    {formatVND(option.price)}/day
                                                 </span>
                                             </div>
                                         </div>
                                     ))}
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    {/* Payment Information */}
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Payment Information</CardTitle>
-                            <CardDescription>
-                                Enter your payment details
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="cardNumber">Card Number</Label>
-                                    <Input
-                                        id="cardNumber"
-                                        placeholder="1234 5678 9012 3456"
-                                        type="text"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="expiryDate">Expiry Date</Label>
-                                    <Input
-                                        id="expiryDate"
-                                        placeholder="MM/YY"
-                                        type="text"
-                                    />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="cvv">CVV</Label>
-                                    <Input
-                                        id="cvv"
-                                        placeholder="123"
-                                        type="text"
-                                    />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="cardName">Cardholder Name</Label>
-                                    <Input
-                                        id="cardName"
-                                        placeholder="John Doe"
-                                        type="text"
-                                    />
                                 </div>
                             </div>
                         </CardContent>
@@ -520,7 +476,7 @@ export default function CheckoutPage() {
                             <div className="space-y-2">
                                 <div className="flex justify-between text-sm">
                                     <span>Bike rental ({days} {days === 1 ? 'day' : 'days'})</span>
-                                    <span>${(bike.ratePerDay * days).toFixed(2)}</span>
+                                    <span>{formatVND(bike.ratePerDay * days)}</span>
                                 </div>
 
                                 {selectedOptions
@@ -528,15 +484,14 @@ export default function CheckoutPage() {
                                     .map(option => (
                                         <div key={option.id} className="flex justify-between text-sm">
                                             <span>{option.name} ({days} {days === 1 ? 'day' : 'days'})</span>
-                                            <span>${(option.price * days).toFixed(2)}</span>
+                                            <span>{formatVND(option.price * days)}</span>
                                         </div>
                                     ))}
-
                                 <Separator />
 
                                 <div className="flex justify-between font-semibold">
                                     <span>Total</span>
-                                    <span>${total.toFixed(2)}</span>
+                                    <span>{total}</span>
                                 </div>
                             </div>
 
@@ -577,7 +532,7 @@ export default function CheckoutPage() {
                                 ) : (
                                     <>
                                         <CreditCard className="w-4 h-4 mr-2" />
-                                        Confirm Booking - ${total.toFixed(2)}
+                                        Confirm Booking - {total}
                                     </>
                                 )}
                             </Button>

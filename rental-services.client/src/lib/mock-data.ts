@@ -268,10 +268,10 @@ export const MOCK_RENTALS: Rental[] = [
 ];
 
 export const RENTAL_OPTIONS = [
-    { id: 'helmet', name: 'Helmet', price: 5, selected: false },
-    { id: 'insurance', name: 'Full Coverage Insurance', price: 15, selected: false },
-    { id: 'gps', name: 'GPS Navigation', price: 10, selected: false },
-    { id: 'luggage', name: 'Side Luggage Panniers', price: 12, selected: false },
+    { id: 'helmet', name: 'Helmet', price: 50000, selected: false },
+    { id: 'insurance', name: 'Full Coverage Insurance', price: 150000, selected: false },
+    { id: 'gps', name: 'GPS Navigation', price: 100000, selected: false },
+    { id: 'luggage', name: 'Side Luggage Panniers', price: 120000, selected: false },
 ];
 
 export const MOCK_ADMIN_SUPPORT_MESSAGES: AdminSupportMessage[] = [
