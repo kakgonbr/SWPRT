@@ -15,4 +15,7 @@ public interface IUserService
     Task<User?> GetUserBySubAsync(string sub);
     Task<List<UserDto>> GetAll();
 
+    Task<List<DriverLicenseDto>> GetOwnLicenses(int userId);
+    Task<bool> DeleteLicense(int userId, string licenseId);
+
 }

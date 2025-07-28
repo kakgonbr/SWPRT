@@ -22,7 +22,7 @@ export const bikeApi = {
         return response.data;
     },
 
-    getAvailableBike: async (startDate: string, endDate: string, address?: string, searchTerm?: string): Promise<VehicleModelDTO[]> => {
+    getAvailableBike: async (startDate: string, endDate: string, address?: string, searchTerm?: string, auth?: boolean): Promise<VehicleModelDTO[]> => {
         const params: Record<string, string> = {
             startDate,
             endDate,
@@ -33,7 +33,13 @@ export const bikeApi = {
         if (searchTerm !== undefined) {
             params.searchTerm = searchTerm;
         }
-        const response = await axios.get(`${BASE_API_URL}/bikes/available`, { params: params });
+
+        if (auth == null || !auth) {
+            const response = await axios.get(`${BASE_API_URL}/bikes/available`, { params: params, method: 'GET'});
+            return response.data;
+        }
+
+        const response = await axios.get(`${BASE_API_URL}/bikes/available`, { params: params, method: 'GET', headers: {Authorization: `Bearer ${localStorage.getItem("token")}`} });
         return response.data;
     }
 };
