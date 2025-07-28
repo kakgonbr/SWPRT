@@ -58,6 +58,8 @@ export default function BikesPage() {
                         false
                     );
                     setBikes(data);
+
+                    return;
                 }
 
                 const licenses: DriverLicenseDto[] = await licenseResponse.json();
