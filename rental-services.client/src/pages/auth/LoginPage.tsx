@@ -81,18 +81,6 @@ export default function LoginPage() {
         }
     }
 
-    // Demo credentials helper
-    // In auth0, it is renter@motorent.com - demo123456!
-    const fillDemoCredentials = (userType: 'renter' | 'admin' | 'staff') => {
-        const demoUsers = {
-            renter: { email: 'renter@motorent.com', password: 'demo123' },
-            admin: { email: 'admin@vroomvroom.vn', password: 'Abc@12345' },
-            staff: { email: 'staff@motorent.com', password: 'demo123' }
-        }
-
-        setFormData(demoUsers[userType])
-    }
-
     return (
         <div className="min-h-screen flex items-center justify-center bg-muted/30 px-4">
             <div className="w-full max-w-md space-y-6">
@@ -220,39 +208,6 @@ export default function LoginPage() {
                                 )}
                             </Button>
                         </form>
-
-                        {/* Demo Credentials */}
-                        <div className="mt-6 pt-6 border-t">
-                            <p className="text-sm text-muted-foreground text-center mb-3">
-                                Demo Credentials:
-                            </p>
-                            <div className="grid grid-cols-3 gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => fillDemoCredentials('renter')}
-                                    disabled={isLoading || isGoogleLoading}
-                                >
-                                    Renter
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => fillDemoCredentials('admin')}
-                                    disabled={isLoading || isGoogleLoading}
-                                >
-                                    Admin
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => fillDemoCredentials('staff')}
-                                    disabled={isLoading || isGoogleLoading}
-                                >
-                                    Staff
-                                </Button>
-                            </div>
-                        </div>
 
                         <div className="mt-6 text-center">
                             <p className="text-sm text-muted-foreground">

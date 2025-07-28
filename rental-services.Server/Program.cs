@@ -197,7 +197,17 @@ namespace rental_services.Server
             app.MapFallbackToFile("index.html");
             //app.UseHttpsRedirection(); // nginx handles https
             app.MapControllers();
-            
+
+            app.UseCookiePolicy(new CookiePolicyOptions()
+            {
+                MinimumSameSitePolicy = SameSiteMode.None
+            });
+
+            services.Configure<CookiePolicyOptions>(options =>
+            {
+                options.Secure = CookieSecurePolicy.Always;
+            });
+
             // Add SignalR endpoint
             app.MapHub<Controllers.Realtime.ChatHub>("/hubs/chat");
             app.MapHub<Controllers.Realtime.StaffStatisticsHub>("/hubs/staff");

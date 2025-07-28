@@ -151,7 +151,7 @@ namespace rental_services.Server.Controllers
             }
 
             if (await _rentalService.CreateRentalAsync(dbUser.UserId, bookingDTO.VehicleModelId,
-                        bookingDTO.StartDate, bookingDTO.EndDate, bookingDTO.PickupLocation) == RentalService.CreateRentalResult.CREATE_FAILURE)
+                        bookingDTO, bookingDTO.PickupLocation) == RentalService.CreateRentalResult.CREATE_FAILURE)
             {
                 return BadRequest("Rental creation failed.");
             }
