@@ -21,6 +21,7 @@ using rental_services.Server.Models.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.DataProtection;
+using System.Threading.Tasks;
 
 namespace rental_services.Server
 {
@@ -31,7 +32,7 @@ namespace rental_services.Server
             return true;
         }
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
             builder.Logging.ClearProviders();
@@ -56,20 +57,6 @@ namespace rental_services.Server
             string jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? throw new InvalidOperationException("Environment Variable 'JWT_AUDIENCE' not found.");
             string googleClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? throw new InvalidOperationException("Environment Variable 'GOOGLE_CLIENT_ID' not found.");
             string googleClientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? throw new InvalidOperationException("Environment Variable 'GOOGLE_CLIENT_SECRET' not found.");
-            
-            // Data protection
-            builder.Services.AddDataProtection()
-                .PersistKeysToFileSystem(new DirectoryInfo(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\keys" : "/var/www/keys"))
-                .SetApplicationName("rental-services")
-                .SetDefaultKeyLifetime(TimeSpan.FromDays(90)); // Set key lifetime to 90 days
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Directory.Exists(@"C:\keys"))
-            {
-                Directory.CreateDirectory(@"C:\keys");
-            }
-            else if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Directory.Exists("/var/www/keys"))
-            {
-                Directory.CreateDirectory("/var/www/keys");
-            }
 
             // Add JWT + Google Authentication
             builder.Services
@@ -248,12 +235,8 @@ namespace rental_services.Server
 
             app.UseCookiePolicy(new CookiePolicyOptions()
             {
-                MinimumSameSitePolicy = SameSiteMode.None
-            });
-
-            services.Configure<CookiePolicyOptions>(options =>
-            {
-                options.Secure = CookieSecurePolicy.Always;
+                MinimumSameSitePolicy = SameSiteMode.None,
+                Secure = CookieSecurePolicy.Always
             });
 
             // Add SignalR endpoint
