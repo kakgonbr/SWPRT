@@ -159,14 +159,6 @@ export default function CheckoutPage() {
         )
     }
 
-    // Calculate deposit amount instead of full rental price
-    const calculateDepositAmount = () => {
-        if (!startDate || !endDate || !bike) return 0
-        const days = differenceInDays(endDate, startDate)
-        const fullRentalPrice = bike.ratePerDay * days
-        const depositAmount = fullRentalPrice * (bike.upFrontPercentage / 100)
-        return depositAmount
-    }
 
     // Calculate full rental price for reference
     const calculateFullRentalPrice = () => {
@@ -317,8 +309,16 @@ export default function CheckoutPage() {
     }
 
     const days = startDate && endDate ? differenceInDays(endDate, startDate) : 0
-    const depositAmount = formatVND(calculateDepositAmount());
     const fullRentalPrice = calculateFullRentalPrice();
+
+    // Calculate deposit amount instead of full rental price
+    const calculateDepositAmount = () => {
+        if (!startDate || !endDate || !bike) return 0
+        const depositAmount = fullRentalPrice * (bike.upFrontPercentage / 100)
+        return depositAmount
+    }
+
+    const depositAmount = formatVND(calculateDepositAmount());
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">

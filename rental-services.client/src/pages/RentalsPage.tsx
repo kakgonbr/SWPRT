@@ -331,7 +331,7 @@ export default function RentalsPage() {
                     </p>
                     <p className="text-sm text-foreground/80 mb-2">
                         <DollarSign className="inline w-4 h-4 mr-1.5 text-muted-foreground" />
-                        Total: ${rental.totalPrice!.toFixed(2)}
+                        {/*Total: ${rental.totalPrice!.toFixed(2)}*/}
                         Total: {formatVND(rental.totalPrice || 0)}
                     </p>
                     {rental.peripherals.length > 0 && (
