@@ -20,6 +20,7 @@ using System.Net;
 using rental_services.Server.Models.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.DataProtection;
 
 namespace rental_services.Server
 {
@@ -41,13 +42,6 @@ namespace rental_services.Server
             
             // Schedulers
             //builder.Services.AddHostedService<Utils.FileCleanupService>();
-            
-            // Cookie policy to allow cross-site cookies
-            builder.Services.AddCookiePolicy(options =>
-            {
-                options.MinimumSameSitePolicy = SameSiteMode.None;
-                options.Secure = CookieSecurePolicy.Always;
-            });
 
             // Configure forwarded headers for NGINX
             builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -63,6 +57,20 @@ namespace rental_services.Server
             string googleClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? throw new InvalidOperationException("Environment Variable 'GOOGLE_CLIENT_ID' not found.");
             string googleClientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? throw new InvalidOperationException("Environment Variable 'GOOGLE_CLIENT_SECRET' not found.");
             
+            // Data protection
+            builder.Services.AddDataProtection()
+                .PersistKeysToFileSystem(new DirectoryInfo(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\keys" : "/var/www/keys"))
+                .SetApplicationName("rental-services")
+                .SetDefaultKeyLifetime(TimeSpan.FromDays(90)); // Set key lifetime to 90 days
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Directory.Exists(@"C:\keys"))
+            {
+                Directory.CreateDirectory(@"C:\keys");
+            }
+            else if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Directory.Exists("/var/www/keys"))
+            {
+                Directory.CreateDirectory("/var/www/keys");
+            }
+
             // Add JWT + Google Authentication
             builder.Services
                 .AddAuthentication(options =>
@@ -77,8 +85,11 @@ namespace rental_services.Server
                 .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
                 {
                     options.Cookie.Name           = "ExternalAuth";
-                    options.Cookie.SameSite       = SameSiteMode.None;
-                    options.Cookie.SecurePolicy   = CookieSecurePolicy.Always;
+                    options.Cookie.SameSite       = SameSiteMode.Lax;
+                    options.Cookie.SecurePolicy   = CookieSecurePolicy.SameAsRequest;
+                    options.Cookie.HttpOnly = true;
+                    options.ExpireTimeSpan = TimeSpan.FromMinutes(60); // Set cookie expiration to 60 minutes
+                    options.SlidingExpiration = true;
                 })
                 .AddJwtBearer(options =>
                 {
@@ -118,10 +129,19 @@ namespace rental_services.Server
                     options.Scope.Add("openid"); // Request OpenID scope
                     options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
                     // OAuth correlation cookies
-                    options.CorrelationCookie.SameSite = SameSiteMode.None;
-                    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.Always;
+                    options.CorrelationCookie.Name = "GoogleCorrelation";
+                    options.CorrelationCookie.SameSite = SameSiteMode.Lax;
+                    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+                    options.CorrelationCookie.HttpOnly = true;
                 });
-            
+
+            // Add cookie policy
+            builder.Services.Configure<CookiePolicyOptions>(options =>
+            {
+                options.MinimumSameSitePolicy = SameSiteMode.Lax;
+                options.Secure = CookieSecurePolicy.SameAsRequest;
+            });
+
             // Policies for API authorization
             builder.Services.AddAuthorization(options =>
             {
