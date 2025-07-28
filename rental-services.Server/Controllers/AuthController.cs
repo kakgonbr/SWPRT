@@ -1,7 +1,4 @@
-﻿using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -185,6 +182,22 @@ public class AuthController : ControllerBase
         return Ok(new LoginResponse(accessToken, null, expires, userDto));
     }
     
+    /// <summary>
+    /// Initiates the forgot password process by sending an OTP (One-Time Password) to the user's email address.
+    /// </summary>
+    /// <param name="request">The <see cref="ForgotPasswordRequest"/> containing the user's email address.</param>
+    /// <returns>
+    /// Returns <see cref="OkObjectResult"/> with a success message if the OTP is sent successfully.
+    /// <br/>
+    /// Returns <see cref="BadRequestObjectResult"/> with an error message if the email is invalid or not found.
+    /// <br/>
+    /// Returns <see cref="StatusCodeResult"/> with status 500 if there's an error sending the email.
+    /// </returns>
+    /// <remarks>
+    /// The OTP is valid for 10 minutes and is stored in memory. The email must be valid and exist in the system.
+    /// <br/>
+    /// Route: POST /api/auth/forgot-password
+    /// </remarks>
     [HttpPost("forgot-password")]
     public async Task<IActionResult> ForgotPassword([FromBody] Models.DTOs.ForgotPasswordRequest request)
     {
@@ -227,7 +240,20 @@ public class AuthController : ControllerBase
         return Ok(new { Message = "An OTP has been sent to your email." });
     }
 
-
+    /// <summary>
+    /// Verifies the OTP (One-Time Password) provided by the user during the password reset process.
+    /// </summary>
+    /// <param name="request">The <see cref="VerifyOtpRequest"/> containing the user's email and OTP.</param>
+    /// <returns>
+    /// Returns <see cref="OkObjectResult"/> with a success message if the OTP is valid.
+    /// <br/>
+    /// Returns <see cref="BadRequestObjectResult"/> with an error message if the OTP is invalid, expired, or not found.
+    /// </returns>
+    /// <remarks>
+    /// This endpoint validates the OTP without consuming it. The OTP remains valid until it expires or is used in the reset password process.
+    /// <br/>
+    /// Route: POST /api/auth/verify-otp
+    /// </remarks>
     [HttpPost("verify-otp")]
     public IActionResult VerifyOtp([FromBody] VerifyOtpRequest request)
     {
@@ -255,7 +281,20 @@ public class AuthController : ControllerBase
         return Ok(new { Message = "OTP verified successfully." });
     }
 
-
+    /// <summary>
+    /// Verifies the OTP (One-Time Password) provided by the user during the password reset process.
+    /// </summary>
+    /// <param name="request">The <see cref="VerifyOtpRequest"/> containing the user's email and OTP.</param>
+    /// <returns>
+    /// Returns <see cref="OkObjectResult"/> with a success message if the OTP is valid.
+    /// <br/>
+    /// Returns <see cref="BadRequestObjectResult"/> with an error message if the OTP is invalid, expired, or not found.
+    /// </returns>
+    /// <remarks>
+    /// This endpoint validates the OTP without consuming it. The OTP remains valid until it expires or is used in the reset password process.
+    /// <br/>
+    /// Route: POST /api/auth/verify-otp
+    /// </remarks>
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword([FromBody] Models.DTOs.ResetPasswordRequest request)
     {
@@ -314,6 +353,19 @@ public class AuthController : ControllerBase
         return Ok(new { Message = "Password has been reset successfully." });
     }
 
+    /// <summary>
+    /// Initiates Google OAuth authentication by redirecting the user to Google's authorization server.
+    /// </summary>
+    /// <returns>
+    /// Returns <see cref="RedirectResult"/> to Google's OAuth authorization URL on success.
+    /// <br/>
+    /// Returns <see cref="RedirectResult"/> to the frontend with an error parameter if Google OAuth configuration fails.
+    /// </returns>
+    /// <remarks>
+    /// This endpoint generates the Google OAuth URL and redirects the user to Google for authentication.
+    /// <br/>
+    /// Route: GET /api/auth/google/login
+    /// </remarks>
     [HttpGet("google/login")]
     public IActionResult GoogleLogin()
     {
@@ -332,6 +384,24 @@ public class AuthController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Handles the callback from Google OAuth authentication and processes the authorization code to authenticate or create a user.
+    /// </summary>
+    /// <param name="code">The authorization code returned by Google OAuth.</param>
+    /// <param name="state">The state parameter for CSRF protection.</param>
+    /// <param name="error">Any error returned by Google OAuth.</param>
+    /// <returns>
+    /// Returns <see cref="RedirectResult"/> to the frontend with a JWT token on successful authentication.
+    /// <br/>
+    /// Returns <see cref="RedirectResult"/> to the frontend with an error parameter if authentication fails.
+    /// </returns>
+    /// <exception cref="Exception">Thrown if there's an error during user creation or token generation.</exception>
+    /// <remarks>
+    /// This endpoint exchanges the authorization code for user information, creates a new user if they don't exist,
+    /// and generates a JWT token for authentication. The user is then redirected to the frontend with the token.
+    /// <br/>
+    /// Route: GET /api/auth/google/callback
+    /// </remarks>
     [HttpGet("google/callback")]
     public async Task<IActionResult> GoogleCallback([FromQuery] string code, [FromQuery] string state,
         [FromQuery] string? error)
@@ -525,19 +595,5 @@ public class AuthController : ControllerBase
         );
 
         return new JwtSecurityTokenHandler().WriteToken(token);
-    }
-
-    private string GenerateRandomPassword(int length = 12)
-    {
-        const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()";
-        var random = new Random();
-        var password = new char[length];
-
-        for (int i = 0; i < length; i++)
-        {
-            password[i] = validChars[random.Next(validChars.Length)];
-        }
-
-        return new string(password);
     }
 }

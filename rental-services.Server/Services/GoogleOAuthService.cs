@@ -1,5 +1,4 @@
 ﻿using rental_services.Server.Models.DTOs;
-using System.Net;
 using System.Text.Json;
 
 namespace rental_services.Server.Services
@@ -55,6 +54,15 @@ namespace rental_services.Server.Services
             }
         }
 
+        /// <summary>
+        /// Exchanges the authorization code for an access token from Google's OAuth token endpoint.
+        /// </summary>
+        /// <param name="authorizationCode">The authorization code to exchange for an access token.</param>
+        /// <returns>A <see cref="GoogleTokenResponse"/> containing the access token and related information.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the token exchange request fails or the response cannot be deserialized.</exception>
+        /// <remarks>
+        /// Makes a POST request to Google's token endpoint with the authorization code, client credentials, and redirect URI.
+        /// </remarks>
         private async Task<GoogleTokenResponse> ExchangeCodeForTokenAsync(string authorizationCode)
         {
             var tokenEndpoint = "https://oauth2.googleapis.com/token";
@@ -88,6 +96,15 @@ namespace rental_services.Server.Services
             return tokenResponse ?? throw new InvalidOperationException("Failed to deserialize token response");
         }
 
+        /// <summary>
+        /// Retrieves user information from Google's userinfo endpoint using the provided access token.
+        /// </summary>
+        /// <param name="accessToken">The access token obtained from the token exchange.</param>
+        /// <returns>A <see cref="GoogleUserInfo"/> object containing the user's profile information.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the user info request fails or the response cannot be deserialized.</exception>
+        /// <remarks>
+        /// Uses the Authorization header with Bearer token authentication to request user information from Google's userinfo API v2 endpoint.
+        /// </remarks>
         private async Task<GoogleUserInfo> GetUserInfoFromTokenAsync(string accessToken)
         {
             // Use Authorization header instead of query parameter
