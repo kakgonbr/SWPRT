@@ -13,10 +13,11 @@ namespace rental_services.Server.Services
         //Task<bool> InformPaymentSuccessAsync(int userId, long amount);
         Task<bool> UpdateStatusAsync(int id, string status);
         Task<bool> AddBookingAsync(Models.DTOs.BookingDTO bookingDTO);
-        Task<RentalService.CreateRentalResult> CreateRentalAsync(int userId, int modelId, DateOnly start, DateOnly end, string? pickupLocation);
+        //Task<RentalService.CreateRentalResult> CreateRentalAsync(int userId, int modelId, DateOnly start, DateOnly end, string? pickupLocation);
         Task PopulateTrackers();
         Task<bool> HandleCancelAndRefundAsync(int userId, int bookingId);
         Task<string?> GetTotalPaymentLink(int userId, int bookingId, string userIp);
         Task<bool> InformPaymentSuccessAsync(int bookingId, long amount, bool finalPayment);
+        Task<RentalService.CreateRentalResult> CreateRentalAsync(int userId, int modelId, BookingDTO booking, string? pickupLocation);
     }
 }
