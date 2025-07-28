@@ -62,9 +62,26 @@ namespace rental_services.Server.Repositories
 
         public async Task<bool> CanBook(int userId, int vehicleId, DateOnly start, DateOnly end)
         {
-            return !await _rentalContext.Bookings.AnyAsync(b => (b.UserId == userId && (b.Status == "Awaiting Payment" || b.Status == "Active" || b.Status == "Upcoming"))
-                                                            ||
-                                                            (b.VehicleId == vehicleId && b.StartDate <= end && b.EndDate >= start));
+            bool hasConflict = await _rentalContext.Bookings.AnyAsync(b =>
+                (b.UserId == userId &&
+                 (b.Status == "Awaiting Payment" || b.Status == "Active" || b.Status == "Upcoming"))
+                ||
+                (b.VehicleId == vehicleId && b.StartDate <= end && b.EndDate >= start)
+            );
+
+            if (hasConflict)
+            {
+                return false;
+            }
+
+            return await _rentalContext.Vehicles
+                .Where(v => v.VehicleId == vehicleId)
+                .Select(v => v.Model)
+                .SelectMany(vm => vm.VehicleType.LicenseTypes)
+                .AnyAsync(requiredLicenseType =>
+                    _rentalContext.DriverLicenses
+                        .Any(dl => dl.UserId == userId && dl.LicenseTypeId == requiredLicenseType.LicenseTypeId)
+                );
         }
 
         public async Task<int> UpdateStatusAsync(int id, string status)
