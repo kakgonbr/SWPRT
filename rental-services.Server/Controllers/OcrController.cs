@@ -20,6 +20,7 @@ namespace rental_services.Server.Controllers
     {
         private readonly IOcrService _ocrService;
         private readonly ILogger<OcrController> _logger;
+        DriverLicenseRepository _driverLicenseRepository = new DriverLicenseRepository(new RentalContext());
 
         public OcrController(IOcrService ocrService, ILogger<OcrController> logger)
         {
@@ -34,7 +35,7 @@ namespace rental_services.Server.Controllers
             string extractedText;
             try
             {
-                // Đọc ảnh vào memory stream thay vì lưu file
+               
                 using (var memoryStream = new MemoryStream())
                 {
                     await image.CopyToAsync(memoryStream);
@@ -60,8 +61,16 @@ namespace rental_services.Server.Controllers
 
             var parser = new GplxParser(extractedText);
             var gplxData = parser.Parse();
-        
+           
 
+            var licenseType = await _driverLicenseRepository.GetLicenseTypeByCodeAsync(gplxData.LicenseClass);
+
+            if (licenseType == null)
+            {
+                return BadRequest(new { message = $"License class '{gplxData.LicenseClass}' is not supported." ,
+                    extractedText
+                });
+            }
 
             return Ok(new
             {
