@@ -23,12 +23,12 @@ namespace rental_services.Server.Services
 
             public RentalTracker()
             {
-                _createdAt = DateTime.Now;
+                _createdAt = Utils.CustomDateTime.CurrentTime;
             }
 
             public RentalTracker(Models.Booking booking)
             {
-                _createdAt = DateTime.Now;
+                _createdAt = Utils.CustomDateTime.CurrentTime;
 
                 BookingId = booking.BookingId;
                 UserId = booking.UserId;
@@ -38,7 +38,7 @@ namespace rental_services.Server.Services
             {
                 get
                 {
-                    return DateTime.Now - _createdAt >= TimeSpan.FromMinutes(Utils.Config.VnpConfig.PAYMENT_TIMEOUT_MIN);
+                    return Utils.CustomDateTime.CurrentTime - _createdAt >= TimeSpan.FromMinutes(Utils.Config.VnpConfig.PAYMENT_TIMEOUT_MIN);
                 }
             }
 
