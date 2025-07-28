@@ -1,7 +1,7 @@
 ﻿//using axios to fetch data from api
 import axios from 'axios';
 import type { VehicleModelDTO } from "./types.ts";
-import type { Booking } from '../types/booking.ts';
+import type { Booking, RentalStatus } from '../types/booking.ts';
 
 const BASE_API_URL = '/api'
 
@@ -71,6 +71,22 @@ export const rentalAPI = {
         } catch (error) {
             console.error(`Error fetching rental list: ${error}`);
             throw error;
-        }   
-    }
+        }
+    },
+
+    updateStatus: async (rentalStatus: RentalStatus): Promise<string> => {
+        try {
+            const response = await axios.post(`${BASE_API_URL}/rentals`, rentalStatus, {
+                headers: {
+                    'Content-type': 'application/json',
+                    ...getAuthHeaders()
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('error updating the status of the rental');
+            throw error;
+        }
+    },
+
 }

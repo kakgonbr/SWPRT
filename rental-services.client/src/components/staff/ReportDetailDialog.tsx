@@ -39,6 +39,7 @@ export default function ReportDetailDialog({
     useEffect(() => {
         if (isOpen && reportId) {
             setLoading(true);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             fetchReportById(reportId).then((res: any) => {
                 if (res.success) {
                     setReport(res.data);
