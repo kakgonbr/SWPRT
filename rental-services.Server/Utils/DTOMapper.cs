@@ -128,7 +128,10 @@ namespace rental_services.Server.Utils
                 .ForMember(dest => dest.CustomerEmail, opt => opt.MapFrom(src => src.User.Email
                 ));
 
-            CreateMap<DriverLicense, DriverLicenseDto>();
+            CreateMap<DriverLicense, DriverLicenseDto>()
+                .ForMember(dst => dst.LicenseTypeStr, opt => opt.MapFrom(
+                    src => src.LicenseType.LicenseTypeCode
+                ));
 
             CreateMap<User, UserDto>()
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToLower()

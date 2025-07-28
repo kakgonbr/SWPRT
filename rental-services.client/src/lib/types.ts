@@ -163,3 +163,10 @@ export interface AIChatMessageDTO {
     isHuman: boolean;
     content: string;
 }
+
+export interface DriverLicenseDto {
+    licenseId: string,
+    holderName?: string,
+    dateOfissue?: Date,
+    licenseTypeStr?: string
+}

@@ -245,11 +245,11 @@ public partial class RentalContext : DbContext
                     "BookingPeripheral",
                     r => r.HasOne<Booking>().WithMany()
                         .HasForeignKey("BookingId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("fk_bookperi_book"),
                     l => l.HasOne<Peripheral>().WithMany()
                         .HasForeignKey("PeripheralId")
-                        .OnDelete(DeleteBehavior.ClientSetNull)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .HasConstraintName("fk_bookperi_peri"),
                     j =>
                     {

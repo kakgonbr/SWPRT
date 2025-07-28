@@ -1,19 +1,22 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Microsoft.AspNetCore.Authentication;
+﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
+using rental_services.Server.Data;
 using rental_services.Server.Models;
 using rental_services.Server.Models.DTOs;
-using rental_services.Server.Data;
 using rental_services.Server.Services;
-using Microsoft.EntityFrameworkCore;
+using rental_services.Server.Utils;
+using System.Collections.Concurrent;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace rental_services.Server.Controllers;
 
@@ -26,7 +29,7 @@ public class AuthController : ControllerBase
     private readonly RentalContext _db;
     private readonly IUserService _userService;
     private AutoMapper.IMapper _mapper;
-
+    private static readonly ConcurrentDictionary<string, (string Otp, DateTime Expiry)> _otpStore = new();
     public AuthController(IOptions<JwtSettings> jwtSettings, IPasswordHasher<User> hasher, RentalContext db,
         IUserService userService, AutoMapper.IMapper mapper)
     {
@@ -125,7 +128,7 @@ public class AuthController : ControllerBase
     /// Route: POST /api/auth/login
     /// </remarks>
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginRequest request)
+    public async Task<IActionResult> Login([FromBody] Models.DTOs.LoginRequest request)
     {
         // Check if the user exists in the database
         var existingUser = await _userService.GetUser(request.Email);
@@ -165,13 +168,136 @@ public class AuthController : ControllerBase
             mappedUser.DriverLicenses.Select(dl => new DriverLicenseDto(
                 dl.LicenseId,
                 dl.HolderName,
-                dl.DateOfIssue
+                dl.DateOfIssue,
+                null
             //dl.ImageLicenseUrl
             ))
         );
         return Ok(new LoginResponse(accessToken, null, expires, userDto));
     }
 
+
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] Models.DTOs.ForgotPasswordRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.Email))
+        {
+            return BadRequest(new { Message = "Email is required." });
+        }
+
+        if (!Utils.Validator.Email(request.Email))
+        {
+            return BadRequest(new { Message = "Invalid email format." });
+        }
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        if (user == null)
+        {
+            return BadRequest(new { Message = "Email not found." });
+        }
+
+        // Generate OTP (6 digits)
+        var otp = new Random().Next(100000, 999999).ToString();
+        var expiry = DateTime.UtcNow.AddMinutes(10); // OTP expires in 10 minutes
+
+        // Store OTP in memory (consider using a database or Redis in production)
+        _otpStore[user.Email] = (otp, expiry);
+
+        // Send OTP via email
+        try
+        {
+            var subject = "Password Reset OTP";
+            var content = $"Hello {user.FullName},\n\nYour OTP for password reset is: {otp}\n\nThis OTP is valid for 10 minutes.";
+            EmailService.SendEmail(user.Email, subject, content);
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new { Message = "Error sending OTP email: " + e.Message });
+        }
+
+        return Ok(new { Message = "An OTP has been sent to your email." });
+    }
+
+
+    [HttpPost("verify-otp")]
+    public IActionResult VerifyOtp([FromBody] VerifyOtpRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Otp))
+        {
+            return BadRequest(new { Message = "Email and OTP are required." });
+        }
+
+        if (!_otpStore.TryGetValue(request.Email, out var otpData))
+        {
+            return BadRequest(new { Message = "No OTP found for this email." });
+        }
+
+        if (otpData.Expiry < DateTime.UtcNow)
+        {
+            _otpStore.TryRemove(request.Email, out _);
+            return BadRequest(new { Message = "OTP has expired." });
+        }
+
+        if (otpData.Otp != request.Otp)
+        {
+            return BadRequest(new { Message = "Invalid OTP." });
+        }
+
+        return Ok(new { Message = "OTP verified successfully." });
+    }
+
+
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] Models.DTOs.ResetPasswordRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Otp) || string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            return BadRequest(new { Message = "Email, OTP, and new password are required." });
+        }
+
+        if (!Utils.Validator.Password(request.NewPassword))
+        {
+            return BadRequest(new { Message = "Password must be between 8 to 32 characters, contain a lowercase character, an uppercase character, a number and a special character at least." });
+        }
+
+        if (!_otpStore.TryGetValue(request.Email, out var otpData))
+        {
+            return BadRequest(new { Message = "No OTP found for this email." });
+        }
+
+        if (otpData.Expiry < DateTime.UtcNow)
+        {
+            _otpStore.TryRemove(request.Email, out _);
+            return BadRequest(new { Message = "OTP has expired." });
+        }
+
+        if (otpData.Otp != request.Otp)
+        {
+            return BadRequest(new { Message = "Invalid OTP." });
+        }
+
+        var user = await _db.Users.FirstOrDefaultAsync(u => u.Email == request.Email);
+        if (user == null)
+        {
+            return BadRequest(new { Message = "Email not found." });
+        }
+
+        // Update password
+        user.PasswordHash = _hasher.HashPassword(user, request.NewPassword);
+
+        try
+        {
+            _db.Users.Update(user);
+            await _db.SaveChangesAsync();
+            _otpStore.TryRemove(request.Email, out _); // Clear OTP after successful reset
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new { Message = "Error updating password: " + e.Message });
+        }
+
+        return Ok(new { Message = "Password has been reset successfully." });
+    }
 
     [HttpGet("login/google")]
     public IActionResult GoogleLogin()
@@ -251,7 +377,8 @@ public class AuthController : ControllerBase
                 user.DriverLicenses?.Select(dl => new DriverLicenseDto(
                     dl.LicenseId,
                     dl.HolderName,
-                    dl.DateOfIssue
+                    dl.DateOfIssue,
+                    null
                 ))
             );
 
@@ -282,13 +409,7 @@ public class AuthController : ControllerBase
         /// <summary>
         /// A
         /// </summary>
-        [HttpPost("forgot-password")]
-        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
-        {
-            // This endpoint is not implemented yet
-            return Ok(new { Message = "Forgot password functionality is not implemented yet." });
-        }
-
+       
         /// <summary>
         /// Retrieves the authenticated user's information based on the access token provided in the request.
         /// This endpoint is useful for refreshing user data on the client side without requiring the user to re-authenticate.
@@ -308,24 +429,25 @@ public class AuthController : ControllerBase
             var userSub = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub") ?? User.FindFirst(JwtRegisteredClaimNames.Sub);
             var user = await _userService.GetUserBySubAsync(userSub.Value);
             if (user == null) return NotFound(new { Message = "User not found" });
-            return Ok(new UserDto(
-                user.UserId,
-                user.Email,
-                user.PhoneNumber,
-                null,
-                user.Role,
-                user.FullName,
-                user.Address,
-                user.CreationDate,
-                user.EmailConfirmed,
-                user.DateOfBirth,
-                user.IsActive,
-                user.Sub,
-                user.DriverLicenses?.Select(dl => new DriverLicenseDto(
-                    dl.LicenseId,
-                    dl.HolderName,
-                    dl.DateOfIssue
-                ))));
+        return Ok(new UserDto(
+            user.UserId,
+            user.Email,
+            user.PhoneNumber,
+            null,
+            user.Role,
+            user.FullName,
+            user.Address,
+            user.CreationDate,
+            user.EmailConfirmed,
+            user.DateOfBirth,
+            user.IsActive,
+            user.Sub,
+            user.DriverLicenses?.Select(dl => new DriverLicenseDto(
+                dl.LicenseId,
+                dl.HolderName,
+                dl.DateOfIssue,
+                null
+            ))));
         }
 
     /// <summary>
@@ -376,4 +498,19 @@ public class AuthController : ControllerBase
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
+    private string GenerateRandomPassword(int length = 12)
+    {
+        const string validChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()";
+        var random = new Random();
+        var password = new char[length];
+
+        for (int i = 0; i < length; i++)
+        {
+            password[i] = validChars[random.Next(validChars.Length)];
+        }
+
+        return new string(password);
+    }
+
 }
