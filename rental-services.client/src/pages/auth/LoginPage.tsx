@@ -68,7 +68,7 @@ export default function LoginPage() {
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
         try {
-            window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login/google`;
+            window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/google/login`;
         } catch (error) {
             console.error('Google login error:', error)
             toast({

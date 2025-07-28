@@ -39,9 +39,16 @@ namespace rental_services.Server
             
             // Auto Mapper
             builder.Services.AddAutoMapper(typeof(Utils.DTOMapper));
-            
+
             // Schedulers
             //builder.Services.AddHostedService<Utils.FileCleanupService>();
+
+            // Case-sensitive URLs
+            builder.Services.Configure<RouteOptions>(options =>
+            {
+                options.LowercaseUrls = true; // Make URLs lowercase
+                options.LowercaseQueryStrings = true; // Make query strings
+            });
 
             // Configure forwarded headers for NGINX
             builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -54,28 +61,13 @@ namespace rental_services.Server
             string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new InvalidOperationException("Environment Variable 'JWT_KEY' not found.");
             string jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? throw new InvalidOperationException("Environment Variable 'JWT_ISSUER' not found.");
             string jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? throw new InvalidOperationException("Environment Variable 'JWT_AUDIENCE' not found.");
-            string googleClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? throw new InvalidOperationException("Environment Variable 'GOOGLE_CLIENT_ID' not found.");
-            string googleClientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? throw new InvalidOperationException("Environment Variable 'GOOGLE_CLIENT_SECRET' not found.");
-
+            
             // Add JWT + Google Authentication
             builder.Services
                 .AddAuthentication(options =>
                 {
-                    // Use JWT for API authentication
                     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-                    // Use Google for external login challenge
-                    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
-                    // Use Cookie to persist OAuth state
-                    options.DefaultSignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                })
-                .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
-                {
-                    options.Cookie.Name           = "ExternalAuth";
-                    options.Cookie.SameSite       = SameSiteMode.Lax;
-                    options.Cookie.SecurePolicy   = CookieSecurePolicy.SameAsRequest;
-                    options.Cookie.HttpOnly = true;
-                    options.ExpireTimeSpan = TimeSpan.FromMinutes(60); // Set cookie expiration to 60 minutes
-                    options.SlidingExpiration = true;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
                 })
                 .AddJwtBearer(options =>
                 {
@@ -103,30 +95,7 @@ namespace rental_services.Server
                             return Task.CompletedTask;
                         }
                     };
-                })
-                .AddGoogle(options =>
-                {
-                    options.ClientId = googleClientId;
-                    options.ClientSecret = googleClientSecret;
-                    options.CallbackPath = "/api/auth/login/google/callback"; // Must match Google Cloud Console redirect URI
-                    options.SaveTokens = true; // Save Google tokens if needed
-                    options.Scope.Add("email"); // Request email scope
-                    options.Scope.Add("profile"); // Request profile scope
-                    options.Scope.Add("openid"); // Request OpenID scope
-                    options.SignInScheme = CookieAuthenticationDefaults.AuthenticationScheme;
-                    // OAuth correlation cookies
-                    options.CorrelationCookie.Name = "GoogleCorrelation";
-                    options.CorrelationCookie.SameSite = SameSiteMode.Lax;
-                    options.CorrelationCookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-                    options.CorrelationCookie.HttpOnly = true;
                 });
-
-            // Add cookie policy
-            builder.Services.Configure<CookiePolicyOptions>(options =>
-            {
-                options.MinimumSameSitePolicy = SameSiteMode.Lax;
-                options.Secure = CookieSecurePolicy.SameAsRequest;
-            });
 
             // Policies for API authorization
             builder.Services.AddAuthorization(options =>
@@ -168,11 +137,16 @@ namespace rental_services.Server
                 .AddScoped<IReportRepository, ReportRepository>()
                 .AddScoped<IReportService, ReportService>()
                 .AddScoped<IImageService, ImageService>()
+                .AddScoped<IGoogleOAuthService, GoogleOAuthService>()
                 .AddScoped<rental_services.Server.Repositories.IFeedbackRepository, rental_services.Server.Repositories.FeedbackRepository>()
                 .AddScoped<rental_services.Server.Services.IFeedbackService, rental_services.Server.Services.FeedbackService>();
           
             builder.Services.AddHostedService<Utils.CleanupService>();
 
+            // Add HttpClient for Google OAuth
+            builder.Services.AddHttpClient();
+
+            // Add controllers and CORS policy
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
             {
@@ -219,7 +193,6 @@ namespace rental_services.Server
             {
                 app.UseSwagger();
                 app.UseSwaggerUI();
-                // app.UseHttpsRedirection();
             }
             // Use authentication and authorization
             app.UseRouting();
@@ -229,7 +202,6 @@ namespace rental_services.Server
             app.UseMiddleware<MaintenanceMiddleware>();
 
             app.MapFallbackToFile("index.html");
-            //app.UseHttpsRedirection(); // nginx handles https
             app.MapControllers();
             
             // Add SignalR endpoint

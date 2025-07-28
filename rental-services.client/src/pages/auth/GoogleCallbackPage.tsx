@@ -14,6 +14,38 @@ export default function GoogleCallbackPage() {
     useEffect(() => {
         const query = new URLSearchParams(location.search);
         const token = query.get('token');
+        const error = query.get('error');
+
+        console.log('GoogleCallbackPage location:', location);
+        console.log('GoogleCallbackPage search param:', location);
+        console.log('GoogleCallbackPage token:', token);
+        console.log('GoogleCallbackPage error:', error);
+
+        if (error) {
+            let errorMessage = "Google login failed. Please try again.";
+            switch (error) {
+                case 'authentication_failed':
+                    errorMessage = "Google authentication failed. Please try again.";
+                    break;
+                case 'missing_user_info':
+                    errorMessage = "Unable to retrieve user information from Google.";
+                    break;
+                case 'user_creation_failed':
+                    errorMessage = "Failed to create user account. Please try again.";
+                    break;
+                case 'server_error':
+                    errorMessage = "Server error occurred. Please try again later.";
+                    break;
+            }
+
+            toast({
+                title: "Google Login Failed",
+                description: errorMessage,
+                variant: "destructive",
+            });
+            navigate('/auth/login', { replace: true });
+            return;
+        }
 
         if (token) {
             handleGoogleCallback(token)
@@ -33,9 +65,10 @@ export default function GoogleCallbackPage() {
                     navigate('/auth/login', { replace: true });
                 });
         } else {
+            console.error('GoogleCallbackPage: No token and no error in URL params');
             toast({
                 title: "Google Login Failed",
-                description: "No token received. Please try again.",
+                description: "No authentication token received. Please try again.",
                 variant: "destructive",
             });
             navigate('/auth/login', { replace: true });
@@ -50,7 +83,7 @@ export default function GoogleCallbackPage() {
                 </CardHeader>
                 <CardContent>
                     <p className="text-center text-muted-foreground">
-                        Please wait while we sign you in...
+                        Please wait while we sign you in....
                     </p>
                 </CardContent>
             </Card>

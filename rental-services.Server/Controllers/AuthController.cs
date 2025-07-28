@@ -26,15 +26,17 @@ public class AuthController : ControllerBase
     private readonly RentalContext _db;
     private readonly IUserService _userService;
     private AutoMapper.IMapper _mapper;
+    private readonly IGoogleOAuthService _googleService;
 
     public AuthController(IOptions<JwtSettings> jwtSettings, IPasswordHasher<User> hasher, RentalContext db,
-        IUserService userService, AutoMapper.IMapper mapper)
+        IUserService userService, AutoMapper.IMapper mapper, IGoogleOAuthService googleService)
     {
         _jwtSettings = jwtSettings.Value;
         _hasher = hasher;
         _db = db;
         _userService = userService;
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper), "Mapper cannot be null");
+        _googleService = googleService;
     }
 
     /// <summary>
@@ -173,95 +175,105 @@ public class AuthController : ControllerBase
     }
 
 
-    [HttpGet("login/google")]
+    [HttpGet("google/login")]
     public IActionResult GoogleLogin()
-    {
-        var redirectUri = Url.Action("GoogleCallback", "Auth", null, Request.Scheme);
-        var props = new AuthenticationProperties { RedirectUri = redirectUri };
-        return Challenge(props, GoogleDefaults.AuthenticationScheme);
-    }
-
-    [HttpGet("login/google/callback")]
-    public async Task<IActionResult> GoogleCallback()
     {
         try
         {
-            // Authenticate the user with Google
-            var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
-            if (!result.Succeeded)
+            var googleAuthUrl = _googleService.GenerateGoogleOAuthUrl();
+            Console.WriteLine($"AuthController: Redirecting to Google OAuth URL: {googleAuthUrl}");
+            return Redirect(googleAuthUrl);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"AuthController: Error generating Google OAuth URL: {ex.Message}");
+            var errorUrl = $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=google_config_error";
+            return Redirect(errorUrl);
+        }
+    }
+
+    [AllowAnonymous]
+    [HttpGet("google/callback")]
+    public async Task<IActionResult> GoogleCallback([FromQuery] string code, [FromQuery] string state, [FromQuery] string? error)
+    {
+        try
+        {
+            Console.WriteLine($"AuthController: Google callback received - Code: {!string.IsNullOrEmpty(code)}, State: {state}, Error: {error}");
+
+            if (!string.IsNullOrEmpty(error))
             {
-                Console.WriteLine("AuthController: Google authentication failed.");
-                return BadRequest(new { Message = "Google authentication failed." });
+                Console.WriteLine($"AuthController: Google OAuth error: {error}");
+                var errorUrl = $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=google_oauth_error";
+                return Redirect(errorUrl);
             }
 
-            // Extract user info from Google
-            var claims = result.Principal.Claims;
-            var email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
-            var name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-            var googleId = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-
-            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleId))
+            if (string.IsNullOrEmpty(code))
             {
-                Console.WriteLine("AuthController: Unable to retrieve user information from Google.");
-                return BadRequest(new { Message = "Unable to retrieve user information from Google." });
+                Console.WriteLine("AuthController: No authorization code received");
+                var errorUrl = $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=missing_code";
+                return Redirect(errorUrl);
             }
 
-            var user = _mapper.Map<User>(_userService.GetUser(email));
-            if (user == null)
+            // Get user info from Google
+            var googleUserInfo = await _googleService.GetUserInfoFromCodeAsync(code);
+            Console.WriteLine($"AuthController: Google user info received - Email: {googleUserInfo.Email}, Name: {googleUserInfo.Name}");
+
+            // Check if user exists or create new user
+            var existingUserDto = await _userService.GetUser(googleUserInfo.Email);
+            var user = existingUserDto != null ? _mapper.Map<User>(existingUserDto) : null;
+
+            if (user != null)
             {
+                // Manually map the fields that might be ignored by AutoMapper
+                user.Sub = existingUserDto.Sub;
+                user.PasswordHash = existingUserDto.PasswordHash;
+                Console.WriteLine($"AuthController: Existing user found - ID: {user.UserId}");
+            }
+            else
+            {
+                Console.WriteLine("AuthController: Creating new user");
                 user = new User
                 {
-                    Email = email,
-                    FullName = name,
-                    GoogleuserId = googleId,
-                    Role = "User", // Default role
+                    Email = googleUserInfo.Email,
+                    FullName = googleUserInfo.Name,
+                    GoogleuserId = googleUserInfo.GoogleId,
+                    Role = "Customer",
                     CreationDate = DateOnly.FromDateTime(DateTime.UtcNow),
-                    EmailConfirmed = true, // Google verifies email
+                    EmailConfirmed = googleUserInfo.EmailVerified,
                     Sub = Guid.NewGuid().ToString(),
-                    PhoneNumber = "", // Optional: Prompt user to add later
+                    PhoneNumber = string.Empty,
                     IsActive = true
                 };
+
                 try
                 {
                     _userService.CreateUser(user);
                     await _db.SaveChangesAsync();
+                    Console.WriteLine($"AuthController: New user created - ID: {user.UserId}");
                 }
                 catch (Exception e)
                 {
                     Console.WriteLine("AuthController: Error creating Google user: " + e.Message);
-                    return BadRequest(new { Message = "Failed to create user: " + e.Message });
+                    var errorUrl = $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=user_creation_failed";
+                    return Redirect(errorUrl);
                 }
             }
 
             // Generate JWT token
+            Console.WriteLine("AuthController: Generating JWT token");
             var accessToken = GenerateJwtToken(user, out var expires);
-            var userDto = new UserDto(
-                user.UserId,
-                user.Email,
-                user.PhoneNumber,
-                null,
-                user.Role,
-                user.FullName,
-                user.Address,
-                user.CreationDate,
-                user.EmailConfirmed,
-                user.DateOfBirth,
-                user.IsActive,
-                user.Sub,
-                user.DriverLicenses?.Select(dl => new DriverLicenseDto(
-                    dl.LicenseId,
-                    dl.HolderName,
-                    dl.DateOfIssue
-                ))
-            );
+            Console.WriteLine($"AuthController: JWT token generated, length: {accessToken.Length}");
 
-            var redirectUrl =
-                $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:3000"}/auth/login/google/callback?token={accessToken}";
+            var redirectUrl = $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login/google/callback?token={accessToken}";
+            Console.WriteLine($"AuthController: Redirecting to: {redirectUrl}");
             return Redirect(redirectUrl);
-        } catch (Exception ex)
+        }
+        catch (Exception ex)
         {
-            Console.WriteLine("AuthController: Error during Google callback: " + ex.Message);
-            return BadRequest(new { Message = "An error occurred during Google authentication." });
+            Console.WriteLine("AuthController: Exception in GoogleCallback: " + ex.Message);
+            Console.WriteLine("AuthController: Stack trace: " + ex.StackTrace);
+            var errorUrl = $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=server_error";
+            return Redirect(errorUrl);
         }
     }
 
