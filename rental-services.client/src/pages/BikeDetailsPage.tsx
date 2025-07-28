@@ -60,6 +60,15 @@ export default function BikeDetailsPage() {
         navigate(`/bikes?${rentalParamsFromState}`);
     };
 
+    const formatVND = (amount: number): string => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    }
+
     // Get reviews for this bike
     const bikeReviews = MOCK_BIKE_REVIEWS.filter(review => review.bikeId === id)
     const averageRating = bikeReviews.length > 0
@@ -177,7 +186,7 @@ export default function BikeDetailsPage() {
                     </div>
 
                     <div className="text-4xl font-bold text-primary">
-                        ${bike.ratePerDay}
+                        {formatVND(bike.ratePerDay)}
                         <span className="text-lg font-normal text-muted-foreground">/day</span>
                     </div>
 

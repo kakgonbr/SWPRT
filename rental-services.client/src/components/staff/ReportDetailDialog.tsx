@@ -39,6 +39,7 @@ export default function ReportDetailDialog({
     useEffect(() => {
         if (isOpen && reportId) {
             setLoading(true);
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             fetchReportById(reportId).then((res: any) => {
                 if (res.success) {
                     setReport(res.data);
@@ -126,7 +127,7 @@ export default function ReportDetailDialog({
                         {report.imagePath && (
                             <div>
                                 <Label>Image</Label>
-                                <img src={report.imagePath} alt="Report" className="max-h-60 rounded border mt-2" />
+                                <img src={"images/" + report.imagePath} alt="Report" className="max-h-60 rounded border mt-2" />
                             </div>
                         )}
                     </div>

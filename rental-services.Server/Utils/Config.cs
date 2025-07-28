@@ -149,5 +149,11 @@ namespace rental_services.Server.Utils
                 return sb.ToString();
             }
         }
+
+        public static class AIApi
+        {
+            public const string ApiUrl = "http://localhost:3000/chat";
+            
+        }
     }
 }

@@ -1,27 +1,32 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
+using rental_services.Server.Controllers.Realtime;
 using rental_services.Server.Models.DTOs;
 using rental_services.Server.Services;
 using System.Security.Claims;
-using rental_services.Server.Controllers.Realtime;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace rental_services.Server.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize]
+    //[Authorize]
     public class ChatsController : ControllerBase
     {
         private readonly IChatService _chatService;
         private readonly ILogger<ChatsController> _logger;
         private readonly IHubContext<ChatHub> _hubContext;
+        private readonly HttpClient _httpClient;
 
-        public ChatsController(IChatService chatService, ILogger<ChatsController> logger, IHubContext<ChatHub> hubContext)
+        public ChatsController(IChatService chatService, ILogger<ChatsController> logger, IHubContext<ChatHub> hubContext, HttpClient httpClient)
         {
             _chatService = chatService;
             _logger = logger;
             _hubContext = hubContext;
+            _httpClient = httpClient;
         }
 
         // GET: api/chats
@@ -158,11 +163,77 @@ namespace rental_services.Server.Controllers
             var chats = await _chatService.GetPendingChatsAsync(staffId);
             return Ok(chats);
         }
+
+        [HttpPost("aichat")]
+        public async Task<ActionResult<AIChatMessageDTO>> ChatWithAI(AIChatMessageDTO message)
+        {
+            var userIdClaim = User.FindFirstValue("VroomVroomUserId");
+            if (string.IsNullOrEmpty(userIdClaim))
+                return Forbid("lack claim id in the token");
+            var userId = int.Parse(userIdClaim);
+
+            var url = Utils.Config.AIApi.ApiUrl;
+            var humanMessage = new APIChatMessage
+            {
+                Message = message.Content,
+                ThreadId = userId
+            };
+
+            var json = JsonSerializer.Serialize(humanMessage);
+            var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.PostAsync(url, content);
+            var responseBody = await response.Content.ReadAsStringAsync();
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"Error: {(int)response.StatusCode}");
+                Console.WriteLine(responseBody);
+                return BadRequest(responseBody);
+            }
+
+            // Deserialize the response to get the AI's response
+            var aiResponse = JsonSerializer.Deserialize<AIResponse>(responseBody);
+
+            var aiMessage = new AIChatMessageDTO
+            {
+                AIChatMessageId = message.AIChatMessageId + 1,
+                UserId = userId,
+                Content = aiResponse?.Response ?? string.Empty
+            };
+
+            return Ok(aiMessage);
+        }
+
     }
 
     public class CreateChatRequest
     {
         public string? Subject { get; set; }
         public string? Priority { get; set; }
+    }
+
+    // This class is used to represent a human chat message sent to the AI service API
+    public class APIChatMessage
+    {
+        [JsonPropertyName("message")]
+        public string Message { get; set; } = string.Empty;
+
+        [JsonPropertyName("thread_id")]
+        public int ThreadId { get; set; } = 1;
+    }
+    public class AIResponse
+    {
+        [JsonPropertyName("response")]
+        public string Response { get; set; } = string.Empty;
+    }
+
+    public class AIChatMessageDTO
+    {
+        public int AIChatMessageId { get; set; } = 0;
+        //userId is threadId,which is unique, so it persists and acts as chatId -> allow multiple users on the same browser
+        public int UserId { get; set; } 
+        public bool IsHuman { get; set; } = false;
+        public string Content { get; set; } = string.Empty;
     }
 }
