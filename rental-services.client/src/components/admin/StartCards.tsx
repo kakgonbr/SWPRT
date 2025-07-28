@@ -12,6 +12,15 @@ interface StatsCardsProps {
     }
 }
 
+const formatVND = (amount: number): string => {
+    return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(amount);
+}
+
 export default function StatsCards({ stats }: StatsCardsProps) {
     return (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -60,7 +69,7 @@ export default function StatsCards({ stats }: StatsCardsProps) {
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">${stats.monthlyRevenue.toFixed(0)}</div>
+                    <div className="text-2xl font-bold">{formatVND(stats.monthlyRevenue)}</div>
                     <p className="text-xs text-muted-foreground">
                         This month
                     </p>

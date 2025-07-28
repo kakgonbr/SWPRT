@@ -18,16 +18,16 @@ namespace rental_services.Server.Controllers
         [Authorize(Roles = Utils.Config.Role.Admin)]
         public IActionResult Advance([FromQuery] int days = 1, [FromQuery] int hours = 0)
         {
-            CustomDateTime.Advance(days);
-            return Ok(new { message = $"Advanced by {days} day(s)", time = CustomDateTime.CurrentTime });
+            CustomDateTime.Advance(days, hours);
+            return Ok(new { message = $"Advanced by {days} day(s), {hours} hour(s)", time = CustomDateTime.CurrentTime });
         }
 
         [HttpPost("back")]
         [Authorize(Roles = Utils.Config.Role.Admin)]
         public IActionResult Back([FromQuery] int days = 1, [FromQuery] int hours = 0)
         {
-            CustomDateTime.Back(days);
-            return Ok(new { message = $"Went back by {days} day(s)", time = CustomDateTime.CurrentTime });
+            CustomDateTime.Back(days, hours);
+            return Ok(new { message = $"Went back by {days} day(s), {hours} hour(s)", time = CustomDateTime.CurrentTime });
         }
 
         [HttpPost("reset")]

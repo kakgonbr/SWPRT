@@ -122,6 +122,15 @@ export default function RentalsTab() {
     //    }
     //}
 
+    const formatVND = (amount: number): string => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    }
+
     return (
         <>
             <Card>
@@ -199,7 +208,7 @@ export default function RentalsTab() {
                                                 {format(rental.startDate, 'MMM d')} - {format(rental.endDate, 'MMM d, yyyy')}
                                             </p>
                                             <p className="text-sm font-medium text-green-600">
-                                                ${(rental.pricePerDay ?? 0 * (differenceInDays(rental.endDate, rental.startDate) + 1)).toFixed(2)}
+                                                {formatVND(rental.pricePerDay ?? 0 * (differenceInDays(rental.endDate, rental.startDate) + 1))}
                                             </p>
                                         </div>
                                     </div>

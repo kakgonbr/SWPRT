@@ -231,10 +231,9 @@ namespace rental_services.Server.Services
             return await _bookingRepository.UpdateStatusAsync(id, status) != 0;
         }
 
-        private static long CalculateAmount(Models.VehicleModel model, int days = 1)
+        private static long CalculateAmount(Models.VehicleModel model, long peripheralPerDay, int days = 1)
         {
-            Console.WriteLine(days);
-            return (long)(model.RatePerDay * days * ((double)model.UpFrontPercentage / 100));
+            return (long)((model.RatePerDay + peripheralPerDay) * days * ((double)model.UpFrontPercentage / 100));
         }
 
         public enum CreateRentalResult
@@ -277,8 +276,21 @@ namespace rental_services.Server.Services
                 return CreateRentalResult.CREATE_FAILURE;
             }
 
+            long peripheralPerDay = 0;
+            if (booking.Peripherals != null)
+            {
+                foreach (var peri in booking.Peripherals)
+                {
+                    var peripheral = await _peripheralRepository.GetByIdAsync(peri.PeripheralId);
+                    if (peripheral != null)
+                    {
+                        peripheralPerDay += peripheral.RatePerDay;
+                    }
+                }
+            }
+
             // round down? idk
-            long amount = CalculateAmount(model, booking.EndDate.DayNumber - booking.StartDate.DayNumber);
+            long amount = CalculateAmount(model, peripheralPerDay, booking.EndDate.DayNumber - booking.StartDate.DayNumber);
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
@@ -325,7 +337,7 @@ namespace rental_services.Server.Services
 
         public async Task<string?> GetPaymentLinkAsync(int userId, string userIp)
         {
-            //_logger.LogInformation("{Trackers}", rentalTrackers);
+            _logger.LogInformation("Getting payment link for : UID {userId}", userId);
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
@@ -564,7 +576,7 @@ namespace rental_services.Server.Services
 
             long totalAmount = totalDays * booking.Vehicle.Model.RatePerDay + peripheralTotal - payment.AmountPaid;
 
-            return VNPayService.GetLink(userIp, null, totalAmount * 100, null, bookingId.ToString());
+            return VNPayService.GetLink(userIp, null, totalAmount * 100, null, string.Join("_", "f", bookingId, VNPayService.GetGmtPlus7Now().ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture)));
         }
     }
 }

@@ -81,6 +81,7 @@ namespace rental_services.Server.Controllers
 
         [HttpGet("licenses")]
         [Authorize]
+        [AllowAnonymous]
         public async Task<ActionResult<List<DriverLicenseDto>>> GetOwnLicenses()
         {
             string? sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -88,7 +89,7 @@ namespace rental_services.Server.Controllers
 
             if (sub is null || (dbUser = await _userService.GetUserBySubAsync(sub)) is null)
             {
-                return Unauthorized();
+                return Ok(new List<DriverLicenseDto>());
             }
 
             return Ok(await _userService.GetOwnLicenses(dbUser.UserId));
