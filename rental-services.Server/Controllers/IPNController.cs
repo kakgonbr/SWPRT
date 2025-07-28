@@ -60,7 +60,7 @@ namespace rental_services.Server.Controllers
 
             string calculatedHash = VnpConfig.HashAllFields(fields);
 
-            bool finalPayment = !txnRef.StartsWith('f');
+            bool finalPayment = txnRef.StartsWith('f');
             int bookingId = finalPayment ? int.Parse(txnRef.Substring(1).Split("_")[0]) : int.Parse(txnRef.Split("_")[0]);
 
             bool success = false;
