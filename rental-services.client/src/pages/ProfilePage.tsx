@@ -1,25 +1,21 @@
 // src/pages/ProfilePage.tsx
-import {useState, useEffect, useRef} from "react";
-import {useNavigate} from "react-router-dom";
+import { useState, useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import {
     User,
     Mail,
     Calendar,
     MapPin,
-    CreditCard,
     Camera,
     Save,
     Edit,
     Key,
     Upload,
-    FileImage,
-    CheckCircle,
     Loader2,
-    Lock,
 } from "lucide-react";
-import {Button} from "../components/ui/button";
-import {Input} from "../components/ui/input";
-import {Label} from "../components/ui/label";
+import { Button } from "../components/ui/button";
+import { Input } from "../components/ui/input";
+import { Label } from "../components/ui/label";
 import {
     Card,
     CardContent,
@@ -27,14 +23,15 @@ import {
     CardHeader,
     CardTitle,
 } from "../components/ui/card";
-import {Avatar, AvatarFallback} from "../components/ui/avatar";
-import {Separator} from "../components/ui/separator";
-import {Badge} from "../components/ui/badge";
-import {useAuth} from "../contexts/auth-context";
-import {useToast} from "../contexts/toast-context";
-import {format} from "date-fns";
+import { Avatar, AvatarFallback } from "../components/ui/avatar";
+import { Separator } from "../components/ui/separator";
+import { Badge } from "../components/ui/badge";
+import { useAuth } from "../contexts/auth-context";
+import { useToast } from "../contexts/toast-context";
+import { format } from "date-fns";
 import ChangePasswordDialog from "../components/ChangePasswordDialog";
 import IdReviewDialog from "../components/IdReviewDialog";
+import type { DriverLicenseDto } from "../lib/types";
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -55,8 +52,8 @@ interface ExtractedIdData {
 
 export default function ProfilePage() {
     const navigate = useNavigate();
-    const {user, isAuthenticated, loading} = useAuth();
-    const {toast} = useToast();
+    const { user, isAuthenticated, loading } = useAuth();
+    const { toast } = useToast();
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [isEditing, setIsEditing] = useState(false);
@@ -67,7 +64,7 @@ export default function ProfilePage() {
     const [extractedIdData, setExtractedIdData] =
         useState<ExtractedIdData | null>(null);
     const [uploadedImageUrl, setUploadedImageUrl] = useState<string | null>(null);
-    const [isVerified, setIsVerified] = useState(false);
+    //const [isVerified, setIsVerified] = useState(false);
 
     const [formData, setFormData] = useState({
         name: "",
@@ -76,6 +73,51 @@ export default function ProfilePage() {
         address: "",
         licenseId: "",
     });
+    const [driverLicenses, setDriverLicenses] = useState<DriverLicenseDto[]>([]);
+    const [isLoadingLicenses, setIsLoadingLicenses] = useState(false);
+    const [deletingId, setDeletingId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const fetchDriverLicenses = async () => {
+            setIsLoadingLicenses(true);
+            try {
+                const response = await fetch(`${API}/api/users/licenses`,
+                    {
+                        method: 'GET',
+                        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+                    }
+                );
+                const data = await response.json();
+                setDriverLicenses(data);
+            } catch (error) {
+                console.error('Error fetching driver licenses', error);
+            } finally {
+                setIsLoadingLicenses(false);
+            }
+        };
+
+        fetchDriverLicenses();
+    }, []);
+
+    const handleDeleteLicense = async (licenseId: string) => {
+        //if (!confirm('Are you sure you want to delete this license?')) return;
+
+        setDeletingId(licenseId);
+        try {
+            await fetch(`/api/users/licenses/${licenseId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
+            });
+
+            setDriverLicenses((prev) =>
+                prev.filter((license) => license.licenseId !== licenseId)
+            );
+        } catch (error) {
+            console.error('Error deleting license', error);
+        } finally {
+            setDeletingId(null);
+        }
+    };
 
     useEffect(() => {
         if (loading) return;
@@ -128,7 +170,6 @@ export default function ProfilePage() {
         }));
     };
 
-    // TODO: FIX THIS NOW
     const handleSave = () => {
         // In real app, this would update user via API
         toast({
@@ -303,11 +344,11 @@ export default function ProfilePage() {
                 );
             }
 
-            const result = await response.json();
+            //const result = await response.json();
 
-            if (result.success) {
-                setIsVerified(true);
-            }
+            //if (result.success) {
+            //    setIsVerified(true);
+            //}
 
             // Added fix: force a user refresh in localStorage to make sure it displays the latest data
             const userResponse = await fetch(`${API}/api/auth/me`, {
@@ -368,11 +409,6 @@ export default function ProfilePage() {
         fileInputRef.current?.click();
     };
 
-    const isFieldLocked = (fieldName: string) => {
-        // Only lock the ID number field when ID document is verified
-        return fieldName === "licenseId";
-    };
-
     if (loading) {
         return (
             <div className="flex justify-center items-center h-64">
@@ -410,7 +446,7 @@ export default function ProfilePage() {
                                 variant="outline"
                                 className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full"
                             >
-                                <Camera className="h-4 w-4"/>
+                                <Camera className="h-4 w-4" />
                             </Button>
                         </div>
                         <CardTitle className="text-xl">{user.fullName}</CardTitle>
@@ -457,7 +493,7 @@ export default function ProfilePage() {
                             <div className="flex gap-2">
                                 {!isEditing ? (
                                     <Button onClick={() => setIsEditing(true)}>
-                                        <Edit className="h-4 w-4 mr-2"/>
+                                        <Edit className="h-4 w-4 mr-2" />
                                         Edit
                                     </Button>
                                 ) : (
@@ -466,7 +502,7 @@ export default function ProfilePage() {
                                             Cancel
                                         </Button>
                                         <Button onClick={handleSave}>
-                                            <Save className="h-4 w-4 mr-2"/>
+                                            <Save className="h-4 w-4 mr-2" />
                                             Save
                                         </Button>
                                     </>
@@ -479,8 +515,7 @@ export default function ProfilePage() {
                             <div className="space-y-2">
                                 <Label htmlFor="name">Full Name</Label>
                                 <div className="relative">
-                                    <User
-                                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4"/>
+                                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                     <Input
                                         id="name"
                                         name="name"
@@ -495,8 +530,7 @@ export default function ProfilePage() {
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email Address</Label>
                                 <div className="relative">
-                                    <Mail
-                                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4"/>
+                                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                     <Input
                                         id="email"
                                         name="email"
@@ -512,8 +546,7 @@ export default function ProfilePage() {
                             <div className="space-y-2">
                                 <Label htmlFor="dateOfBirth">Date of Birth</Label>
                                 <div className="relative">
-                                    <Calendar
-                                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4"/>
+                                    <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                     <Input
                                         id="dateOfBirth"
                                         name="dateOfBirth"
@@ -525,41 +558,12 @@ export default function ProfilePage() {
                                     />
                                 </div>
                             </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="licenseId" className="flex items-center gap-2">
-                                    ID Number
-                                    {isFieldLocked("licenseId") && (
-                                        <Lock className="h-3 w-3 text-muted-foreground"/>
-                                    )}
-                                </Label>
-                                <div className="relative">
-                                    <CreditCard
-                                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4"/>
-                                    <Input
-                                        id="licenseId"
-                                        name="licenseId"
-                                        value={formData.licenseId}
-                                        onChange={handleInputChange}
-                                        disabled={!isEditing || isFieldLocked("licenseId")}
-                                        className={`pl-10 ${
-                                            isFieldLocked("licenseId") ? "bg-gray-50" : ""
-                                        }`}
-                                    />
-                                </div>
-                                {isFieldLocked("licenseId") && (
-                                    <p className="text-xs text-muted-foreground">
-                                        Locked - Verified from ID document
-                                    </p>
-                                )}
-                            </div>
                         </div>
 
                         <div className="space-y-2">
                             <Label htmlFor="address">Address</Label>
                             <div className="relative">
-                                <MapPin
-                                    className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4"/>
+                                <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
                                 <Input
                                     id="address"
                                     name="address"
@@ -571,7 +575,7 @@ export default function ProfilePage() {
                             </div>
                         </div>
 
-                        <Separator/>
+                        <Separator />
 
                         <div className="space-y-4">
                             <h3 className="text-lg font-semibold">Account Security</h3>
@@ -580,42 +584,67 @@ export default function ProfilePage() {
                                 className="w-full md:w-auto"
                                 onClick={() => setIsChangePasswordOpen(true)}
                             >
-                                <Key className="h-4 w-4 mr-2"/>
+                                <Key className="h-4 w-4 mr-2" />
                                 Change Password
                             </Button>
                         </div>
 
-                        <Separator/>
+                        <Separator />
 
                         {/* Identity Verification Section */}
                         <div className="space-y-4">
                             <h3 className="text-lg font-semibold">Identity Verification</h3>
 
-                            {isVerified || user.driverLicenses?.at(0)?.licenseId ? (
-                                // Hiển thị block xác thực thành công
-                                <div className="border rounded-lg p-4 bg-green-50 flex items-center gap-4">
-                                    <div>
-                                        <CheckCircle className="h-5 w-5 text-green-600"/>
-                                    </div>
-                                    <div>
-                                        <div className="font-medium text-green-700 text-lg">
+                            {isLoadingLicenses ? (<div>Loading</div>) : driverLicenses.length > 0 ? (
+                                <div className="space-y-4">
+                                    <div className="border rounded-lg p-4 bg-green-50">
+                                        <div className="font-medium text-green-700 text-lg mb-2">
                                             Verification Completed
                                         </div>
-                                        <div className="text-sm text-muted-foreground">
-                                            Your ID document has been successfully verified and
-                                            processed.
+                                        <div className="text-sm text-muted-foreground mb-2">
+                                            Your ID document has been successfully verified and processed.
                                         </div>
-                                        <div className="text-xs mt-1">
-                                            <strong>Note:</strong> Information extracted from your ID
-                                            document cannot be edited manually for security purposes.
+                                        <div className="text-xs mb-4">
+                                            <strong>Note:</strong> Information extracted from your ID document cannot be edited manually for security purposes.
                                         </div>
-                                        <div className="mt-2">
+
+                                        <div className="space-y-2">
+                                            {driverLicenses.map((license) => (
+                                                <div
+                                                    key={license.licenseId}
+                                                    className="flex justify-between items-center border p-2 rounded bg-white"
+                                                >
+                                                    <div>
+                                                        <div className="font-medium">
+                                                            {license.licenseTypeStr || 'License'}
+                                                        </div>
+                                                        <div className="text-xs text-muted-foreground">
+                                                            ID: {license.licenseId}
+                                                        </div>
+                                                    </div>
+                                                    <Button
+                                                        variant="destructive"
+                                                        size="sm"
+                                                        onClick={() => handleDeleteLicense(license.licenseId)}
+                                                        disabled={deletingId === license.licenseId}
+                                                    >
+                                                        {deletingId === license.licenseId ? (
+                                                            <Loader2 className="h-4 w-4 animate-spin" />
+                                                        ) : (
+                                                            'Delete'
+                                                        )}
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+
+                                        <div className="mt-4">
                                             <Button
                                                 variant="outline"
                                                 onClick={triggerIdUpload}
                                                 disabled={isUploadingId}
                                             >
-                                                <Upload className="h-4 w-4 mr-2"/>
+                                                <Upload className="h-4 w-4 mr-2" />
                                                 Re-upload ID Document
                                             </Button>
                                         </div>
@@ -624,41 +653,27 @@ export default function ProfilePage() {
                             ) : (
                                 // Hiển thị upload
                                 <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label>ID Document Upload</Label>
-                                        <div
-                                            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                                            <FileImage className="h-12 w-12 mx-auto text-gray-400 mb-4"/>
-                                            <h4 className="text-lg font-medium mb-2">
-                                                Upload your ID Document
-                                            </h4>
-                                            <p className="text-sm text-muted-foreground mb-4">
-                                                Upload a clear photo of your government-issued ID. Our
-                                                system will automatically extract your information for
-                                                verification.
-                                            </p>
-                                            <Button
-                                                onClick={triggerIdUpload}
-                                                disabled={isUploadingId}
-                                                className="mb-2"
-                                            >
-                                                {isUploadingId ? (
-                                                    <>
-                                                        <Loader2 className="h-4 w-4 mr-2 animate-spin"/>
-                                                        Processing...
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <Upload className="h-4 w-4 mr-2"/>
-                                                        Choose File
-                                                    </>
-                                                )}
-                                            </Button>
-                                            <p className="text-xs text-muted-foreground">
-                                                Supported formats: JPG, PNG, GIF (Max 5MB)
-                                            </p>
-                                        </div>
-                                    </div>
+
+                                    <Button
+                                        onClick={triggerIdUpload}
+                                        disabled={isUploadingId}
+                                        className="mb-2"
+                                    >
+                                        {isUploadingId ? (
+                                            <>
+                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Upload className="h-4 w-4 mr-2" />
+                                                Choose File
+                                            </>
+                                        )}
+                                    </Button>
+                                    <p className="text-xs text-muted-foreground">
+                                        Supported formats: JPG, PNG, GIF (Max 5MB)
+                                    </p>
                                 </div>
                             )}
 

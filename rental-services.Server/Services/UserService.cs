@@ -11,14 +11,16 @@ namespace rental_services.Server.Services;
 public class UserService : IUserService
 {
     private readonly IUserRepository _userRepository;
+    private readonly IDriverLicenseRepository _licenseRepository;
     private readonly AutoMapper.IMapper _mapper;
     private readonly ILogger<UserService> _logger;
 
-    public UserService(IUserRepository userRepository, AutoMapper.IMapper mapper, ILogger<UserService> logger)
+    public UserService(IUserRepository userRepository, AutoMapper.IMapper mapper, ILogger<UserService> logger, IDriverLicenseRepository licenseRepository)
     {
         _userRepository = userRepository;
         _mapper = mapper;
         _logger = logger;
+        _licenseRepository = licenseRepository;
     }
 
     public async Task<UserDto> GetUser(int id)
@@ -130,5 +132,15 @@ public class UserService : IUserService
     public async Task<List<UserDto>> GetAll()
     {
         return _mapper.Map<List<UserDto>>(await _userRepository.GetAll());
+    }
+
+    public async Task<List<DriverLicenseDto>> GetOwnLicenses(int userId)
+    {
+        return _mapper.Map<List<DriverLicenseDto>>(await _licenseRepository.GetByUser(userId));
+    }
+
+    public async Task<bool> DeleteLicense(int userId, string licenseId)
+    {
+        return await _licenseRepository.DeleteLicense(userId, licenseId) != 0;
     }
 }

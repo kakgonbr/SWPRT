@@ -14,4 +14,8 @@ public interface IUserService
     Task<ChangePasswordResponse> ChangePasswordAsync(string sub, string currentPassword, string newPassword);
     Task<User?> GetUserBySubAsync(string sub);
     Task<List<UserDto>> GetAll();
+
+    Task<List<DriverLicenseDto>> GetOwnLicenses(int userId);
+    Task<bool> DeleteLicense(int userId, string licenseId);
+
 }

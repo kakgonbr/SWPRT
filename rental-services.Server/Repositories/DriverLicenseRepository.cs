@@ -24,6 +24,25 @@ public class DriverLicenseRepository : IDriverLicenseRepository
             .FirstOrDefaultAsync(dl => dl.UserId == userId && dl.LicenseTypeId == licenseTypeId);
     }
 
+    public async Task<List<DriverLicense>> GetByUser(int userId)
+    {
+        return await _context.DriverLicenses.Where(dl => dl.UserId == userId).Include(dl => dl.LicenseType).ToListAsync();
+    }
+
+    public async Task<int> DeleteLicense(int userId, string licenseId)
+    {
+        var dbLicense = await _context.DriverLicenses.SingleOrDefaultAsync(dl => dl.LicenseId == licenseId);
+
+        if (dbLicense is null || dbLicense.UserId != userId)
+        {
+            return 0;
+        }
+
+        _context.DriverLicenses.Remove(dbLicense);
+
+        return await _context.SaveChangesAsync();
+    }
+
     public async Task AddAsync(DriverLicense license)
     {
         await _context.DriverLicenses.AddAsync(license);
@@ -33,4 +52,4 @@ public class DriverLicenseRepository : IDriverLicenseRepository
     {
         await _context.SaveChangesAsync();
     }
-} 
+}
