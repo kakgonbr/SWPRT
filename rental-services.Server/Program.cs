@@ -56,20 +56,6 @@ namespace rental_services.Server
             string jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? throw new InvalidOperationException("Environment Variable 'JWT_AUDIENCE' not found.");
             string googleClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? throw new InvalidOperationException("Environment Variable 'GOOGLE_CLIENT_ID' not found.");
             string googleClientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? throw new InvalidOperationException("Environment Variable 'GOOGLE_CLIENT_SECRET' not found.");
-            
-            // Data protection
-            builder.Services.AddDataProtection()
-                .PersistKeysToFileSystem(new DirectoryInfo(RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? @"C:\keys" : "/var/www/keys"))
-                .SetApplicationName("rental-services")
-                .SetDefaultKeyLifetime(TimeSpan.FromDays(90)); // Set key lifetime to 90 days
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Directory.Exists(@"C:\keys"))
-            {
-                Directory.CreateDirectory(@"C:\keys");
-            }
-            else if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Directory.Exists("/var/www/keys"))
-            {
-                Directory.CreateDirectory("/var/www/keys");
-            }
 
             // Add JWT + Google Authentication
             builder.Services
