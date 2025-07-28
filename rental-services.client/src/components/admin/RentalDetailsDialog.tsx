@@ -107,7 +107,7 @@ export default function RentalDetailsDialog({
                             <div>
                                 <p className="text-lg font-medium">{rental.bikeName}</p>
                                 <p className="text-sm text-muted-foreground">
-                                    ${formatVND(pricePerDay)} per day
+                                    {formatVND(pricePerDay)} per day
                                 </p>
                             </div>
                         </div>
