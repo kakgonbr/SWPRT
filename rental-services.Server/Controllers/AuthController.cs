@@ -166,94 +166,103 @@ public class AuthController : ControllerBase
                 dl.LicenseId,
                 dl.HolderName,
                 dl.DateOfIssue
-                //dl.ImageLicenseUrl
+            //dl.ImageLicenseUrl
             ))
         );
         return Ok(new LoginResponse(accessToken, null, expires, userDto));
     }
-    
-    
+
+
     [HttpGet("login/google")]
     public IActionResult GoogleLogin()
     {
-        // Redirect to Google OAuth login
-        var props = new AuthenticationProperties { RedirectUri = Url.Action("GoogleCallback", "Auth") };
+        var redirectUri = Url.Action("GoogleCallback", "Auth", null, Request.Scheme);
+        var props = new AuthenticationProperties { RedirectUri = redirectUri };
         return Challenge(props, GoogleDefaults.AuthenticationScheme);
     }
-    
+
     [HttpGet("login/google/callback")]
     public async Task<IActionResult> GoogleCallback()
     {
-        // Authenticate the user with Google
-        var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
-        if (!result.Succeeded)
+        try
         {
-            Console.WriteLine("AuthController: Google authentication failed.");
-            return BadRequest(new { Message = "Google authentication failed." });
-        }
+            // Authenticate the user with Google
+            var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
+            if (!result.Succeeded)
+            {
+                Console.WriteLine("AuthController: Google authentication failed.");
+                return BadRequest(new { Message = "Google authentication failed." });
+            }
 
-        // Extract user info from Google
-        var claims = result.Principal.Claims;
-        var email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
-        var name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-        var googleId = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-        
-        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleId))
-        {
-            Console.WriteLine("AuthController: Unable to retrieve user information from Google.");
-            return BadRequest(new { Message = "Unable to retrieve user information from Google." });
-        }
-        
-        var user = _mapper.Map<User>(_userService.GetUser(email));
-        if (user == null)
-        {
-            user = new User
+            // Extract user info from Google
+            var claims = result.Principal.Claims;
+            var email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
+            var name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
+            var googleId = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+            if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleId))
             {
-                Email = email,
-                FullName = name,
-                GoogleuserId = googleId,
-                Role = "User", // Default role
-                CreationDate = DateOnly.FromDateTime(DateTime.UtcNow),
-                EmailConfirmed = true, // Google verifies email
-                Sub = Guid.NewGuid().ToString(),
-                PhoneNumber = "", // Optional: Prompt user to add later
-                IsActive = true
-            };
-            try
-            {
-                _userService.CreateUser(user);
-                await _db.SaveChangesAsync();
+                Console.WriteLine("AuthController: Unable to retrieve user information from Google.");
+                return BadRequest(new { Message = "Unable to retrieve user information from Google." });
             }
-            catch (Exception e)
+
+            var user = _mapper.Map<User>(_userService.GetUser(email));
+            if (user == null)
             {
-                Console.WriteLine("AuthController: Error creating Google user: " + e.Message);
-                return BadRequest(new { Message = "Failed to create user: " + e.Message });
+                user = new User
+                {
+                    Email = email,
+                    FullName = name,
+                    GoogleuserId = googleId,
+                    Role = "User", // Default role
+                    CreationDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                    EmailConfirmed = true, // Google verifies email
+                    Sub = Guid.NewGuid().ToString(),
+                    PhoneNumber = "", // Optional: Prompt user to add later
+                    IsActive = true
+                };
+                try
+                {
+                    _userService.CreateUser(user);
+                    await _db.SaveChangesAsync();
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("AuthController: Error creating Google user: " + e.Message);
+                    return BadRequest(new { Message = "Failed to create user: " + e.Message });
+                }
             }
+
+            // Generate JWT token
+            var accessToken = GenerateJwtToken(user, out var expires);
+            var userDto = new UserDto(
+                user.UserId,
+                user.Email,
+                user.PhoneNumber,
+                null,
+                user.Role,
+                user.FullName,
+                user.Address,
+                user.CreationDate,
+                user.EmailConfirmed,
+                user.DateOfBirth,
+                user.IsActive,
+                user.Sub,
+                user.DriverLicenses?.Select(dl => new DriverLicenseDto(
+                    dl.LicenseId,
+                    dl.HolderName,
+                    dl.DateOfIssue
+                ))
+            );
+
+            var redirectUrl =
+                $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:3000"}/auth/login/google/callback?token={accessToken}";
+            return Redirect(redirectUrl);
+        } catch (Exception ex)
+        {
+            Console.WriteLine("AuthController: Error during Google callback: " + ex.Message);
+            return BadRequest(new { Message = "An error occurred during Google authentication." });
         }
-        // Generate JWT token
-        var accessToken = GenerateJwtToken(user, out var expires);
-        var userDto = new UserDto(
-            user.UserId,
-            user.Email,
-            user.PhoneNumber,
-            null,
-            user.Role,
-            user.FullName,
-            user.Address,
-            user.CreationDate,
-            user.EmailConfirmed,
-            user.DateOfBirth,
-            user.IsActive,
-            user.Sub,
-            user.DriverLicenses?.Select(dl => new DriverLicenseDto(
-                dl.LicenseId,
-                dl.HolderName,
-                dl.DateOfIssue
-            ))
-        );
-        
-        var redirectUrl = $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:3000"}/auth/login/google/callback?token={accessToken}";
-        return Redirect(redirectUrl);
     }
 
     /// <summary>
@@ -265,59 +274,59 @@ public class AuthController : ControllerBase
     /// Returns <see cref="OkObjectResult"/> with a message indicating the refresh token has been revoked successfully.
     /// </returns>
     [HttpPost("logout")]
-    public async Task<IActionResult> Logout([FromBody] string refreshToken)
-    {
-        return Ok(new { Message = "Refresh token revoked successfully." });
-    }
-    
-    /// <summary>
-    /// A
-    /// </summary>
-    [HttpPost("forgot-password")]
-    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
-    {
-        // This endpoint is not implemented yet
-        return Ok(new { Message = "Forgot password functionality is not implemented yet." });
-    }
+        public async Task<IActionResult> Logout([FromBody] string refreshToken)
+        {
+            return Ok(new { Message = "Refresh token revoked successfully." });
+        }
 
-    /// <summary>
-    /// Retrieves the authenticated user's information based on the access token provided in the request.
-    /// This endpoint is useful for refreshing user data on the client side without requiring the user to re-authenticate.
-    /// Typical use cases include updating user profile information or refreshing session data after login.
-    /// </summary>
-    /// <remarks>
-    /// Requires a valid JWT access token in the Authorization header.
-    /// </remarks>
-    /// <returns>
-    /// Returns <see cref="OkObjectResult"/> with a <see cref="UserDto"/> containing the user's details if the user is found.
-    /// Returns <see cref="NotFoundObjectResult"/> with an error message if the user does not exist.
-    /// </returns>
-    [Authorize]
-    [HttpGet("me")]
-    public async Task<IActionResult> Me()
-    {
-        var userSub = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub") ?? User.FindFirst(JwtRegisteredClaimNames.Sub);
-        var user = await _userService.GetUserBySubAsync(userSub.Value);
-        if (user == null) return NotFound(new { Message = "User not found" });
-        return Ok(new UserDto(
-            user.UserId,
-            user.Email,
-            user.PhoneNumber,
-            null,
-            user.Role,
-            user.FullName,
-            user.Address,
-            user.CreationDate,
-            user.EmailConfirmed,
-            user.DateOfBirth,
-            user.IsActive,
-            user.Sub,
-            user.DriverLicenses?.Select(dl => new DriverLicenseDto(
-                dl.LicenseId,
-                dl.HolderName,
-                dl.DateOfIssue
-            ))));
-    }
+        /// <summary>
+        /// A
+        /// </summary>
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            // This endpoint is not implemented yet
+            return Ok(new { Message = "Forgot password functionality is not implemented yet." });
+        }
+
+        /// <summary>
+        /// Retrieves the authenticated user's information based on the access token provided in the request.
+        /// This endpoint is useful for refreshing user data on the client side without requiring the user to re-authenticate.
+        /// Typical use cases include updating user profile information or refreshing session data after login.
+        /// </summary>
+        /// <remarks>
+        /// Requires a valid JWT access token in the Authorization header.
+        /// </remarks>
+        /// <returns>
+        /// Returns <see cref="OkObjectResult"/> with a <see cref="UserDto"/> containing the user's details if the user is found.
+        /// Returns <see cref="NotFoundObjectResult"/> with an error message if the user does not exist.
+        /// </returns>
+        [Authorize]
+        [HttpGet("me")]
+        public async Task<IActionResult> Me()
+        {
+            var userSub = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub") ?? User.FindFirst(JwtRegisteredClaimNames.Sub);
+            var user = await _userService.GetUserBySubAsync(userSub.Value);
+            if (user == null) return NotFound(new { Message = "User not found" });
+            return Ok(new UserDto(
+                user.UserId,
+                user.Email,
+                user.PhoneNumber,
+                null,
+                user.Role,
+                user.FullName,
+                user.Address,
+                user.CreationDate,
+                user.EmailConfirmed,
+                user.DateOfBirth,
+                user.IsActive,
+                user.Sub,
+                user.DriverLicenses?.Select(dl => new DriverLicenseDto(
+                    dl.LicenseId,
+                    dl.HolderName,
+                    dl.DateOfIssue
+                ))));
+        }
 
     /// <summary>
     /// Generates a JWT access token for the specified user, embedding user claims such as subject, email, and role.
@@ -337,7 +346,7 @@ public class AuthController : ControllerBase
         var email = user.Email ?? throw new ArgumentNullException(nameof(user.Email), "User Email cannot be null");
         var role = user.Role ?? "Customer"; // Default role if null
         var userId = user.UserId.ToString();
-        
+
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, sub),
