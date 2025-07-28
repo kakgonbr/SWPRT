@@ -12,13 +12,15 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { useToast } from '../contexts/toast-context'
+import {useAuth} from "../contexts/auth-context.tsx";
 interface ChangePasswordDialogProps {
     isOpen: boolean
     onClose: () => void
 }
 
 export default function ChangePasswordDialog({ isOpen, onClose }: ChangePasswordDialogProps) {
-    const { toast } = useToast()
+    const { toast } = useToast();
+    const {user} = useAuth();
     const [formData, setFormData] = useState({
         currentPassword: '',
         newPassword: '',
@@ -69,8 +71,10 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
 
         // Validate current password
         if (!formData.currentPassword) {
-            newErrors.currentPassword = 'Current password is required'
-            isValid = false
+            if (user?.passwordHash != null) {
+                newErrors.currentPassword = 'Current password is required'
+                isValid = false
+            }
         }
 
         // Validate new password

@@ -191,8 +191,7 @@ public class AuthController : ControllerBase
             return Redirect(errorUrl);
         }
     }
-
-    [AllowAnonymous]
+    
     [HttpGet("google/callback")]
     public async Task<IActionResult> GoogleCallback([FromQuery] string code, [FromQuery] string state, [FromQuery] string? error)
     {
@@ -248,7 +247,6 @@ public class AuthController : ControllerBase
                 try
                 {
                     _userService.CreateUser(user);
-                    await _db.SaveChangesAsync();
                     Console.WriteLine($"AuthController: New user created - ID: {user.UserId}");
                 }
                 catch (Exception e)
