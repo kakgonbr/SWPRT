@@ -1,4 +1,5 @@
 ﻿using rental_services.Server.Models;
+using rental_services.Server.Models.DTOs;
 using System.Globalization;
 
 namespace rental_services.Server.Services
@@ -23,12 +24,12 @@ namespace rental_services.Server.Services
 
             public RentalTracker()
             {
-                _createdAt = DateTime.Now;
+                _createdAt = Utils.CustomDateTime.CurrentTime;
             }
 
             public RentalTracker(Models.Booking booking)
             {
-                _createdAt = DateTime.Now;
+                _createdAt = Utils.CustomDateTime.CurrentTime;
 
                 BookingId = booking.BookingId;
                 UserId = booking.UserId;
@@ -38,7 +39,7 @@ namespace rental_services.Server.Services
             {
                 get
                 {
-                    return DateTime.Now - _createdAt >= TimeSpan.FromMinutes(Utils.Config.VnpConfig.PAYMENT_TIMEOUT_MIN);
+                    return Utils.CustomDateTime.CurrentTime - _createdAt >= TimeSpan.FromMinutes(Utils.Config.VnpConfig.PAYMENT_TIMEOUT_MIN);
                 }
             }
 
@@ -79,7 +80,7 @@ namespace rental_services.Server.Services
                 {
                     UserId = rental.UserId,
                     BookingId = rental.BookingId,
-                    Amount = CalculateAmount(rental.Vehicle.Model)
+                    Amount = CalculateAmount(rental.Vehicle.Model, rental.EndDate.Day - rental.StartDate.Day)
                 });
             }
         }
@@ -230,9 +231,9 @@ namespace rental_services.Server.Services
             return await _bookingRepository.UpdateStatusAsync(id, status) != 0;
         }
 
-        private static long CalculateAmount(Models.VehicleModel model)
+        private static long CalculateAmount(Models.VehicleModel model, int days = 1)
         {
-            return (long)(model.RatePerDay * ((double)model.UpFrontPercentage / 100));
+            return (long)(model.RatePerDay * days * ((double)model.UpFrontPercentage / 100));
         }
 
         public enum CreateRentalResult
@@ -252,9 +253,9 @@ namespace rental_services.Server.Services
         /// <param name="end"></param>
         /// <param name="amount"></param>
         /// <returns></returns>
-        public async Task<CreateRentalResult> CreateRentalAsync(int userId, int modelId, DateOnly start, DateOnly end, string? pickupLocation)
+        public async Task<CreateRentalResult> CreateRentalAsync(int userId, int modelId, BookingDTO booking, string? pickupLocation)
         {
-            int vehicleId = await _bikeService.AssignAvailableVehicleAsync(modelId, start, end, pickupLocation) ?? 0;
+            int vehicleId = await _bikeService.AssignAvailableVehicleAsync(modelId, booking.StartDate, booking.EndDate, pickupLocation) ?? 0;
             //(await _vehicleModelRepository.GetByIdAsync(modelId))?.Vehicles?.FirstOrDefault()?.ModelId ?? 0;
 
             if (vehicleId == 0)
@@ -271,7 +272,7 @@ namespace rental_services.Server.Services
             }
 
             // round down? idk
-            long amount = CalculateAmount(model);
+            long amount = CalculateAmount(model, booking.EndDate.Day - booking.StartDate.Day);
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
@@ -280,16 +281,34 @@ namespace rental_services.Server.Services
                 return CreateRentalResult.ALREADY_EXIST;
             }
 
-            if (!await _bookingRepository.CanBook(userId, vehicleId, start, end))
+            if (!await _bookingRepository.CanBook(userId, vehicleId, booking.StartDate, booking.EndDate))
             {
                 return CreateRentalResult.CREATE_FAILURE;
             }
 
             Models.Booking newBooking = new Models.Booking()
-            { BookingId = 0, UserId = userId, VehicleId = vehicleId, StartDate = start, EndDate = end, Status = Utils.Config.BookingStatus.AwaitingPayment };
+            { BookingId = 0, UserId = userId, VehicleId = vehicleId, StartDate = booking.StartDate, EndDate = booking.EndDate, Status = Utils.Config.BookingStatus.AwaitingPayment };
 
             // would throw and end the request if database validations fail, a little rough but saves quite a bit of code, functionality wise, it is acceptable.
             await _bookingRepository.AddAsync(newBooking);
+
+            newBooking.Peripherals.Clear();
+
+            if (booking.Peripherals is not null)
+            {
+                foreach (var pDto in booking.Peripherals)
+                {
+                    var dbPeripheral = await _peripheralRepository.GetByIdAsync(pDto.PeripheralId);
+                    if (dbPeripheral is null)
+                    {
+                        continue;
+                    }
+
+                    newBooking.Peripherals.Add(dbPeripheral);
+                }
+            }
+
+            await _bookingRepository.SaveAsync();
 
             rentalTrackers.Add(new RentalTracker()
             { BookingId = newBooking.BookingId, UserId = userId, Amount = amount });
@@ -387,7 +406,7 @@ namespace rental_services.Server.Services
         /// <param name="userId"></param>
         /// <param name="amount"></param>
         /// <returns>false if the payment should be refunded, true if otherwise</returns>
-        public async Task<bool> InformPaymentSuccessAsync(int bookingId, long amount)
+        public async Task<bool> InformPaymentSuccessAsync(int bookingId, long amount, bool finalPayment)
         {
             RentalTracker? existing;
             rentalTrackers.TryGetValue(new() { BookingId = bookingId }, out existing);
@@ -413,10 +432,12 @@ namespace rental_services.Server.Services
             {
                 return false;
             }
+            if (!finalPayment)
+            {
+                dbBooking.Status = Utils.Config.BookingStatus.Upcoming;
 
-            dbBooking.Status = Utils.Config.BookingStatus.Upcoming;
-
-            await _bookingRepository.SaveAsync();
+                await _bookingRepository.SaveAsync();
+            }
 
             DateTime paymentDate;
             if (existing.LastRef is null || !DateTime.TryParseExact(existing.LastRef.Split("_").Last(), "yyyyMMddHHmmss",
@@ -432,6 +453,13 @@ namespace rental_services.Server.Services
             try
             {
                 await _paymentRepository.AddAsync(newPayment);
+
+                if (finalPayment)
+                {
+                    dbBooking.Status = Utils.Config.BookingStatus.Completed;
+                }
+
+                await _bookingRepository.SaveAsync();
             }
             catch (Exception e) // TODO: figure out the possible exceptions
             {

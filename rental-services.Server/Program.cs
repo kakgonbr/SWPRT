@@ -21,6 +21,7 @@ using rental_services.Server.Models.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication.Google;
 using Microsoft.AspNetCore.DataProtection;
+using System.Threading.Tasks;
 
 namespace rental_services.Server
 {
@@ -31,7 +32,7 @@ namespace rental_services.Server
             return true;
         }
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
             builder.Logging.ClearProviders();
@@ -203,7 +204,13 @@ namespace rental_services.Server
 
             app.MapFallbackToFile("index.html");
             app.MapControllers();
-            
+
+            app.UseCookiePolicy(new CookiePolicyOptions()
+            {
+                MinimumSameSitePolicy = SameSiteMode.None,
+                Secure = CookieSecurePolicy.Always
+            });
+
             // Add SignalR endpoint
             app.MapHub<Controllers.Realtime.ChatHub>("/hubs/chat");
             app.MapHub<Controllers.Realtime.StaffStatisticsHub>("/hubs/staff");

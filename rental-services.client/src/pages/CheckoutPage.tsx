@@ -150,9 +150,6 @@ export default function CheckoutPage() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-
-        //TODO: update the terms tick and payment information when done
-
         if (!termsTick) {
             console.log("Terms not checked, showing toast") // Debug log
             console.log("Current termsTick value: ", termsTick);
@@ -178,7 +175,6 @@ export default function CheckoutPage() {
 
         try {
             const booking: Booking = {
-                id: '',
                 customerId: user.userId,
                 customerName: user.fullName,
                 customerEmail: user.email,
@@ -448,54 +444,6 @@ export default function CheckoutPage() {
                             </div>
                         </CardContent>
                     </Card>
-
-                    {/* Payment Information */}
-                    {/*<Card>*/}
-                    {/*    <CardHeader>*/}
-                    {/*        <CardTitle>Payment Information</CardTitle>*/}
-                    {/*        <CardDescription>*/}
-                    {/*            Enter your payment details*/}
-                    {/*        </CardDescription>*/}
-                    {/*    </CardHeader>*/}
-                    {/*    <CardContent className="space-y-4">*/}
-                    {/*        <div className="grid grid-cols-2 gap-4">*/}
-                    {/*            <div className="space-y-2">*/}
-                    {/*                <Label htmlFor="cardNumber">Card Number</Label>*/}
-                    {/*                <Input*/}
-                    {/*                    id="cardNumber"*/}
-                    {/*                    placeholder="1234 5678 9012 3456"*/}
-                    {/*                    type="text"*/}
-                    {/*                />*/}
-                    {/*            </div>*/}
-                    {/*            <div className="space-y-2">*/}
-                    {/*                <Label htmlFor="expiryDate">Expiry Date</Label>*/}
-                    {/*                <Input*/}
-                    {/*                    id="expiryDate"*/}
-                    {/*                    placeholder="MM/YY"*/}
-                    {/*                    type="text"*/}
-                    {/*                />*/}
-                    {/*            </div>*/}
-                    {/*        </div>*/}
-                    {/*        <div className="grid grid-cols-2 gap-4">*/}
-                    {/*            <div className="space-y-2">*/}
-                    {/*                <Label htmlFor="cvv">CVV</Label>*/}
-                    {/*                <Input*/}
-                    {/*                    id="cvv"*/}
-                    {/*                    placeholder="123"*/}
-                    {/*                    type="text"*/}
-                    {/*                />*/}
-                    {/*            </div>*/}
-                    {/*            <div className="space-y-2">*/}
-                    {/*                <Label htmlFor="cardName">Cardholder Name</Label>*/}
-                    {/*                <Input*/}
-                    {/*                    id="cardName"*/}
-                    {/*                    placeholder="John Doe"*/}
-                    {/*                    type="text"*/}
-                    {/*                />*/}
-                    {/*            </div>*/}
-                    {/*        </div>*/}
-                    {/*    </CardContent>*/}
-                    {/*</Card>*/}
                 </div>
 
                 {/* Order Summary */}

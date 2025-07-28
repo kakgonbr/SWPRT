@@ -56,7 +56,7 @@ export default function FeedbackManagement() {
     const { toast } = useToast();
 
     useEffect(() => {
-        // Gọi API lấy dữ liệu thật
+        
         const fetchFeedback = async () => {
             try {
                 const res = await fetch('/api/feedback', {
