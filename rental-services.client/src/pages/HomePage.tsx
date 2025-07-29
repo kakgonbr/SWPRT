@@ -1,17 +1,26 @@
 // src/pages/HomePage.tsx
 import { Link, useNavigate } from 'react-router-dom'
-import { useState } from 'react'
-import { Search, MapPin, Shield, Clock, Calendar, ArrowRight} from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Search, MapPin, Shield, Clock, Calendar, ArrowRight, ChevronDown } from 'lucide-react'
 import { Button } from '../components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { useToast } from '../contexts/toast-context'
 
+interface Shop {
+    shopid: number
+    address: string
+    status: string
+}
+
 export default function HomePage() {
-    const [startDate, setStartDate] = useState('')
-    const [endDate, setEndDate] = useState('')
-    const [location, setLocation] = useState('')
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [location, setLocation] = useState('');
+    const [shops, setShops] = useState<Shop[]>([]);
+    const [isShopsLoading, setIsShopsLoading] = useState(false);
+    const [showShopDropdown, setShowShopDropdown] = useState(false);
     const navigate = useNavigate()
     const { toast } = useToast()
     //const [maintenanceMessage, setMaintenanceMessage] = useState<string>("");
@@ -26,12 +35,46 @@ export default function HomePage() {
     //        .catch(e => { })
     //}, []);
 
+    // Fetch shops from API
+    useEffect(() => {
+        const fetchShops = async () => {
+            setIsShopsLoading(true)
+            try {
+                const response = await fetch('/api/bikes/shops')
+                if (response.ok) {
+                    const shopsData = await response.json()
+                    // Filter out inactive shops if needed
+                    const activeShops = shopsData.filter((shop: Shop) => shop.status === 'Open')
+                    setShops(activeShops)
+                } else {
+                    console.error('Failed to fetch shops:', response.statusText)
+                }
+            } catch (error) {
+                console.error('Error fetching shops:', error)
+                toast({
+                    title: "Error loading shops",
+                    description: "Could not load pickup locations. Please try again later.",
+                    variant: "destructive"
+                })
+            } finally {
+                setIsShopsLoading(false)
+            }
+        }
+
+        fetchShops()
+    }, [toast])
+
     const calculateDays = () => {
         if (!startDate || !endDate) return 0
         const start = new Date(startDate)
         const end = new Date(endDate)
         const diffTime = Math.abs(end.getTime() - start.getTime())
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+    }
+
+    const handleShopSelect = (shopAddress: string) => {
+        setLocation(shopAddress)
+        setShowShopDropdown(false)
     }
 
     const handleSearchBikes = () => {
@@ -130,18 +173,59 @@ export default function HomePage() {
                                         className="h-12 text-base"
                                     />
                                 </div>
-                                <div className="space-y-2">
+                                <div className="space-y-2 relative">
                                     <Label htmlFor="location" className="text-sm font-semibold">
                                         Pickup Location (Optional)
                                     </Label>
-                                    <Input
-                                        id="location"
-                                        type="text"
-                                        placeholder="Ho Chi Minh City, Hanoi..."
-                                        value={location}
-                                        onChange={e => setLocation(e.target.value)}
-                                        className="h-12 text-base"
-                                    />
+                                    <div className="relative">
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            className="w-full h-12 text-base justify-between font-normal"
+                                            onClick={() => setShowShopDropdown(!showShopDropdown)}
+                                            disabled={isShopsLoading}
+                                        >
+                                            <span className={`truncate pr-2 ${location ? "text-foreground" : "text-muted-foreground"}`}>
+                                                {isShopsLoading
+                                                    ? "Loading locations..."
+                                                    : location || "Select pickup location..."
+                                                }
+                                            </span>
+                                            <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                                        </Button>
+
+                                        {showShopDropdown && shops.length > 0 && (
+                                            <div className="absolute top-full left-0 right-0 z-50 mt-1 bg-white border border-gray-200 rounded-md shadow-lg max-h-60 overflow-auto">
+                                                <div className="py-1">
+                                                    {location && (
+                                                        <button
+                                                            type="button"
+                                                            className="w-full px-3 py-2 text-left text-sm text-muted-foreground hover:bg-gray-100 border-b"
+                                                            onClick={() => handleShopSelect('')}
+                                                        >
+                                                            Clear selection
+                                                        </button>
+                                                    )}
+                                                    {shops.map((shop) => (
+                                                        <button
+                                                            key={shop.shopid}
+                                                            type="button"
+                                                            className="w-full px-3 py-2 text-left text-sm hover:bg-gray-100 focus:bg-gray-100 focus:outline-none"
+                                                            onClick={() => handleShopSelect(shop.address)}
+                                                            title={shop.address} // Show full address on hover
+                                                        >
+                                                            <div className="flex items-center min-w-0">
+                                                                <MapPin className="w-4 h-4 mr-2 text-muted-foreground flex-shrink-0" />
+                                                                <span className="truncate">
+                                                                    {shop.address}
+                                                                </span>
+                                                            </div>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
 
@@ -157,7 +241,9 @@ export default function HomePage() {
                                     {location && (
                                         <div className="flex items-center justify-between text-sm mt-1">
                                             <span className="text-muted-foreground">Location:</span>
-                                            <span className="font-medium">{location}</span>
+                                            <span className="font-medium truncate ml-2" title={location}>
+                                                {location}
+                                            </span>
                                         </div>
                                     )}
                                 </div>

@@ -145,6 +145,7 @@ public class BikesController : ControllerBase
     }
 
     [HttpGet("shops")]
+    [AllowAnonymous]
     [Authorize(Roles = Utils.Config.Role.Admin)]
     public async Task<ActionResult<List<ShopDTO>>> GetAllShopsAsync()
     {
