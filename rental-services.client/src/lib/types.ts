@@ -36,7 +36,7 @@ export interface VehicleModelDTO {
     peripherals?: ServerPeripheral[];
     rating: number;
     vehicleType: string;
-    shop: string;
+    shops: string[];
 }
 
 export interface ServerPeripheral {
