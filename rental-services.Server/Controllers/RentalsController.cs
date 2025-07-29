@@ -133,6 +133,7 @@ namespace rental_services.Server.Controllers
         [Authorize]
         public async Task<ActionResult<string?>> SubmitBookingInfo([FromBody] Models.DTOs.BookingDTO? bookingDTO)
         {
+
             string? sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
             Models.User? dbUser = null;
 
@@ -149,6 +150,7 @@ namespace rental_services.Server.Controllers
             {
                 return BadRequest("IP or body not found.");
             }
+            //_logger.LogInformation("Location: {location}", bookingDTO.PickupLocation);
 
             if (await _rentalService.CreateRentalAsync(dbUser.UserId, bookingDTO.VehicleModelId,
                         bookingDTO, bookingDTO.PickupLocation) == RentalService.CreateRentalResult.CREATE_FAILURE)
