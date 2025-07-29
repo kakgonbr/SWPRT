@@ -152,7 +152,7 @@ export default function BikesPage() {
     }, [bikes]);
 
     const locations = useMemo(() => {
-        return Array.from(new Set(bikes.map(bike => bike.shop)))
+        return Array.from(new Set(bikes.map(bike => bike.shops && bike.shops.length > 0 ? bike.shops[0] : 'Unknown')))
     }, [bikes]);
 
     const formatVND = (amount: number): string => {
@@ -173,7 +173,7 @@ export default function BikesPage() {
                 //const matchesSearch = bike.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 //bike.description?.toLowerCase().includes(searchTerm.toLowerCase())
                 const matchesType = selectedType === 'all' || bike.vehicleType === selectedType
-                const matchesLocation = selectedLocation === 'all' || bike.shop === selectedLocation
+                const matchesLocation = selectedLocation === 'all' || (bike.shops && bike.shops[0] === selectedLocation)
                 return matchesType && matchesLocation
             })
 
@@ -228,7 +228,7 @@ export default function BikesPage() {
             <CardContent>
                 <div className="flex items-center text-sm text-muted-foreground mb-3">
                     <MapPin className="w-4 h-4 mr-1" />
-                    {bikes.shop}
+                    {bikes.shops && bikes.shops.length > 0 ? bikes.shops.join(', ') : 'Unknown'}
                 </div>
                 <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
                     {bikes.description}

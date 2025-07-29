@@ -87,6 +87,7 @@ namespace rental_services.Server.Repositories
             return await _rentalContext.Vehicles
                 .Where(v => v.ModelId == modelId)
                 .Include(v => v.Bookings)
+                .Include(v => v.Shop)
                 .ToListAsync();
         }
 

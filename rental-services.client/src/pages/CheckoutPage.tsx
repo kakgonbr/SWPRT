@@ -35,7 +35,10 @@ export default function CheckoutPage() {
     const [loadingState, setLoadingState] = useState(true);
     const { id } = useParams<{ id: string }>();
     const [termsTick, setTermsTick] = useState<boolean>(false);
-    const [bike, setBike] = useState<VehicleModelDTO>();
+    // Mở rộng VehicleModelDTO để có thuộc tính vehicles
+    type VehicleModelWithVehicles = VehicleModelDTO & { vehicles?: any[] };
+    const [bike, setBike] = useState<VehicleModelWithVehicles>();
+    const [shopAddresses, setShopAddresses] = useState<string[]>([]);
     const location = useLocation();
     const [startDate, setStartDate] = useState<Date>();
     const [endDate, setEndDate] = useState<Date>();
@@ -81,8 +84,15 @@ export default function CheckoutPage() {
             const data = await bikeApi.getBikeById(bikeId);
             console.log('Bike data received:', data); // Debug log to see the actual structure
             setBike(data);
-            // Auto-select the bike's shop location when data is loaded
-            setSelectedLocation("bikeShop");
+            // Lấy danh sách địa chỉ shop duy nhất từ vehicles
+            if ((data as VehicleModelWithVehicles).vehicles && Array.isArray((data as VehicleModelWithVehicles).vehicles)) {
+                const addresses = Array.from(new Set(((data as VehicleModelWithVehicles).vehicles as any[]).map((v: any) => v.shop && v.shop.address).filter((addr: any) => typeof addr === 'string')));
+                setShopAddresses(addresses as string[]);
+                // Nếu chưa chọn thì auto chọn shop đầu tiên
+                if ((addresses as string[]).length > 0) setSelectedLocation((addresses as string[])[0]);
+            } else {
+                setShopAddresses([]);
+            }
         } catch (error) {
             console.error(`Error fetching bike details: `, error);
             setError("Failed to load bike details. Please try again later.");
@@ -223,8 +233,8 @@ export default function CheckoutPage() {
                 pricePerDay: bike.ratePerDay,
                 //TODO: change the up front percentage to fixed deposit price for each bike
                 deposit: bike.upFrontPercentage,
-                pickupLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
-                returnLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
+                pickupLocation: selectedLocation,
+                returnLocation: selectedLocation,
                 paymentMethod: 'Credit Card',
                 peripherals: selectedPeripherals
             };
@@ -436,21 +446,27 @@ export default function CheckoutPage() {
                             <div className="space-y-2 mt-4">
                                 <Label>Pickup Location</Label>
                                 <div className="space-y-3">
-                                    <div className="flex items-center space-x-3">
-                                        <Checkbox
-                                            id="bikeShop"
-                                            checked={selectedLocation === "bikeShop"}
-                                            onCheckedChange={() => setSelectedLocation("bikeShop")}
-                                        />
-                                        <div className="flex-1">
-                                            <Label htmlFor="bikeShop" className="cursor-pointer font-medium">
-                                                {bike.shop}
-                                            </Label>
-                                            <p className="text-xs text-muted-foreground">
-                                                {bike.vehicleType} pickup location
-                                            </p>
-                                        </div>
-                                    </div>
+                                    {shopAddresses.length > 0 ? (
+                                        shopAddresses.map((shop, idx) => (
+                                            <div key={shop + idx} className="flex items-center space-x-3">
+                                                <Checkbox
+                                                    id={shop}
+                                                    checked={selectedLocation === shop}
+                                                    onCheckedChange={() => setSelectedLocation(shop)}
+                                                />
+                                                <div className="flex-1">
+                                                    <Label htmlFor={shop} className="cursor-pointer font-medium">
+                                                        {shop}
+                                                    </Label>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {bike.vehicleType} pickup location
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">No pickup locations available</p>
+                                    )}
                                 </div>
                             </div>
 
@@ -512,7 +528,7 @@ export default function CheckoutPage() {
                                     <p className="text-sm text-muted-foreground">{bike.vehicleType}</p>
                                     <div className="flex items-center mt-1">
                                         <MapPin className="w-3 h-3 mr-1" />
-                                        <span className="text-xs text-muted-foreground">{bike.shop}</span>
+                                        <span className="text-xs text-muted-foreground">{selectedLocation}</span>
                                     </div>
                                 </div>
                             </div>
