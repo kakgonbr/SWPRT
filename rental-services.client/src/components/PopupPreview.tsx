@@ -20,6 +20,10 @@ const PopupPreview: React.FC<PopupPreviewProps> = ({ formData }) => {
                     <button
                         className="px-4 py-2 rounded border border-current hover:bg-white/10 transition-colors"
                         style={{ borderColor: formData.textColor }}
+                        onClick={() => {
+                            const targetUrl = `${window.location.protocol}//${window.location.host}${formData.buttonLink}`;
+                            window.location.href = targetUrl;
+                        }}
                     >
                         {formData.buttonText}
                     </button>
