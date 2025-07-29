@@ -16,7 +16,6 @@ import { Calendar as CalendarComponent } from '../components/ui/calendar'
 import { Popover, PopoverContent, PopoverTrigger } from '../components/ui/popover'
 import { useAuth } from '../contexts/auth-context'
 import { useToast } from '../contexts/toast-context.tsx'
-import { RENTAL_OPTIONS } from '../lib/mock-data'
 import { format, differenceInDays } from 'date-fns'
 import { cn } from '../lib/utils'
 import {
@@ -24,7 +23,7 @@ import {
     //rentalAPI
 } from "../lib/api.ts";
 import { type VehicleModelDTO } from '../lib/types'
-import type { Booking } from '../types/booking.ts'
+import type { Booking, Peripherals } from '../types/booking.ts'
 
 const API = import.meta.env.VITE_API_BASE_URL;
 
@@ -38,8 +37,9 @@ export default function CheckoutPage() {
     const [termsTick, setTermsTick] = useState<boolean>(false);
     const [bike, setBike] = useState<VehicleModelDTO>();
     const location = useLocation();
-    const [startDate, setStartDate] = useState<Date>()
-    const [endDate, setEndDate] = useState<Date>()
+    const [startDate, setStartDate] = useState<Date>();
+    const [endDate, setEndDate] = useState<Date>();
+    const [peripherals, setPeripherals] = useState<Peripherals[]>([]);
 
     const rentalParams = location.state?.rentalParams;
 
@@ -79,6 +79,7 @@ export default function CheckoutPage() {
                 return;
             }
             const data = await bikeApi.getBikeById(bikeId);
+            console.log('Bike data received:', data); // Debug log to see the actual structure
             setBike(data);
             // Auto-select the bike's shop location when data is loaded
             setSelectedLocation("bikeShop");
@@ -104,13 +105,34 @@ export default function CheckoutPage() {
         setTermsTick(checked);
     }
 
-
-    const [selectedOptions, setSelectedOptions] = useState(
-        RENTAL_OPTIONS.map(option => ({ ...option, selected: false }))
-    )
     const [isSubmitting, setIsSubmitting] = useState(false)
-
     const [selectedLocation, setSelectedLocation] = useState<string>('')
+
+    useEffect(() => {
+        if (bike?.peripherals && Array.isArray(bike.peripherals)) {
+            console.log('Raw peripherals from API:', bike.peripherals); // Debug log
+            
+            const initialOptions: Peripherals[] = bike.peripherals.map(peripheral => {
+                // Handle optional ratePerDay field - default to 0 if null/undefined
+                const ratePerDay = peripheral.ratePerDay != null ? Number(peripheral.ratePerDay) : 0;
+                
+                console.log(`Processing peripheral: ${peripheral.name}, ratePerDay: ${peripheral.ratePerDay} -> ${ratePerDay}`); // Debug log
+                
+                return {
+                    peripheralId: peripheral.peripheralId,
+                    name: peripheral.name || 'Unknown Peripheral',
+                    ratePerDay: ratePerDay,
+                    isSelected: false
+                };
+            });
+            
+            console.log('Processed peripherals:', initialOptions); // Debug log
+            setPeripherals(initialOptions);
+        } else {
+            console.log('No peripherals found or not an array:', bike?.peripherals);
+            setPeripherals([]);
+        }
+    }, [bike]);
 
     useEffect(() => {
         if (loading) return
@@ -127,32 +149,35 @@ export default function CheckoutPage() {
 
     }, [id, bike, isAuthenticated, loading, navigate])
 
-    const handleOptionToggle = (optionId: string) => {
-        setSelectedOptions(prev =>
+    const handleOptionToggle = (peripheralId: number) => {
+        setPeripherals(prev =>
             prev.map(option =>
-                option.id === optionId
-                    ? { ...option, selected: !option.selected }
+                option.peripheralId === peripheralId
+                    ? { ...option, isSelected: !option.isSelected }
                     : option
             )
         )
     }
 
-    const calculateTotal = () => {
+
+    // Calculate full rental price for reference
+    const calculateFullRentalPrice = () => {
         if (!startDate || !endDate || !bike) return 0
         const days = differenceInDays(endDate, startDate)
         const bikeTotal = bike.ratePerDay * days
-        const optionsTotal = selectedOptions
-            .filter(option => option.selected)
-            .reduce((sum, option) => sum + (option.price * days), 0)
+        const optionsTotal = peripherals
+            .filter(option => option.isSelected)
+            .reduce((sum, option) => {
+                // Handle the case where ratePerDay might be 0 or null
+                const rate = option.ratePerDay || 0;
+                return sum + (rate * days);
+            }, 0)
 
         return bikeTotal + optionsTotal
     }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
-
-        //TODO: update the terms tick and payment information when done
-
         if (!termsTick) {
             console.log("Terms not checked, showing toast") // Debug log
             console.log("Current termsTick value: ", termsTick);
@@ -177,8 +202,15 @@ export default function CheckoutPage() {
         setIsSubmitting(true)
 
         try {
+            const selectedPeripherals = peripherals
+                .filter(option => option.isSelected)
+                .map(option => ({
+                    peripheralId: option.peripheralId,
+                    name: option.name,
+                    ratePerDay: option.ratePerDay || 0
+                }));
+
             const booking: Booking = {
-                id: '',
                 customerId: user.userId,
                 customerName: user.fullName,
                 customerEmail: user.email,
@@ -193,21 +225,12 @@ export default function CheckoutPage() {
                 deposit: bike.upFrontPercentage,
                 pickupLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
                 returnLocation: selectedLocation === "bikeShop" ? bike.shop : selectedLocation,
-                paymentMethod: 'Credit Card'
+                paymentMethod: 'Credit Card',
+                peripherals: selectedPeripherals
             };
 
-            console.log(`passing booking api data: ${booking.customerId, booking.customerName, booking.vehicleModelId, booking.startDate}`)
-
-            //payment should be complete in order to call this api
-            //update the booking status before calling the api
-            //const bookingResult = await rentalAPI.createBooking(booking);
-
-            //console.log(`booking result ${bookingResult}`);
-
-            //toast({
-            //    title: "Booking Confirmed!",
-            //    description: `Your rental for ${bike.displayName} has been confirmed for ${format(startDate, 'MMM d')} - ${format(endDate, 'MMM d, yyyy')} at ${location}.`,
-            //})
+            console.log(`passing booking api data:`, booking);
+            console.log(`selected peripherals:`, selectedPeripherals);
 
             const response = await fetch(`${API}/api/rentals/book`, {
                 method: 'POST',
@@ -276,8 +299,26 @@ export default function CheckoutPage() {
         return null // Will redirect
     }
 
+    const formatVND = (amount: number): string => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    }
+
     const days = startDate && endDate ? differenceInDays(endDate, startDate) : 0
-    const total = calculateTotal()
+    const fullRentalPrice = calculateFullRentalPrice();
+
+    // Calculate deposit amount instead of full rental price
+    const calculateDepositAmount = () => {
+        if (!startDate || !endDate || !bike) return 0
+        const depositAmount = fullRentalPrice * (bike.upFrontPercentage / 100)
+        return depositAmount
+    }
+
+    const depositAmount = formatVND(calculateDepositAmount());
 
     return (
         <div className="container mx-auto px-4 py-8 max-w-6xl">
@@ -418,88 +459,50 @@ export default function CheckoutPage() {
                             <div className="space-y-4">
                                 <Label className="text-base font-semibold">Additional Options</Label>
                                 <div className="space-y-3">
-                                    {selectedOptions.map((option) => (
-                                        <div key={option.id} className="flex items-center space-x-3">
-                                            <Checkbox
-                                                id={option.id}
-                                                checked={option.selected}
-                                                onCheckedChange={() => handleOptionToggle(option.id)}
-                                            />
-                                            <div className="flex-1 flex justify-between items-center">
-                                                <Label htmlFor={option.id} className="cursor-pointer">
-                                                    {option.name}
-                                                </Label>
-                                                <span className="text-sm font-medium">
-                                                    ${option.price}/day
-                                                </span>
+                                    {peripherals.length > 0 ? (
+                                        peripherals.map((option) => (
+                                            <div key={option.peripheralId} className="flex items-center space-x-3">
+                                                <Checkbox
+                                                    id={option.peripheralId.toString()}
+                                                    checked={option.isSelected}
+                                                    onCheckedChange={() => handleOptionToggle(option.peripheralId)}
+                                                />
+                                                <div className="flex-1 flex justify-between items-center">
+                                                    <Label htmlFor={option.peripheralId.toString()} className="cursor-pointer">
+                                                        {option.name}
+                                                    </Label>
+                                                    <span className="text-sm font-medium">
+                                                        {(option.ratePerDay || 0) > 0 ? 
+                                                            `${formatVND(option.ratePerDay || 0)}/day` : 
+                                                            'Free'
+                                                        }
+                                                    </span>
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        ))
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">No additional options available</p>
+                                    )}
                                 </div>
                             </div>
                         </CardContent>
                     </Card>
-
-                    {/* Payment Information */}
-                    {/*<Card>*/}
-                    {/*    <CardHeader>*/}
-                    {/*        <CardTitle>Payment Information</CardTitle>*/}
-                    {/*        <CardDescription>*/}
-                    {/*            Enter your payment details*/}
-                    {/*        </CardDescription>*/}
-                    {/*    </CardHeader>*/}
-                    {/*    <CardContent className="space-y-4">*/}
-                    {/*        <div className="grid grid-cols-2 gap-4">*/}
-                    {/*            <div className="space-y-2">*/}
-                    {/*                <Label htmlFor="cardNumber">Card Number</Label>*/}
-                    {/*                <Input*/}
-                    {/*                    id="cardNumber"*/}
-                    {/*                    placeholder="1234 5678 9012 3456"*/}
-                    {/*                    type="text"*/}
-                    {/*                />*/}
-                    {/*            </div>*/}
-                    {/*            <div className="space-y-2">*/}
-                    {/*                <Label htmlFor="expiryDate">Expiry Date</Label>*/}
-                    {/*                <Input*/}
-                    {/*                    id="expiryDate"*/}
-                    {/*                    placeholder="MM/YY"*/}
-                    {/*                    type="text"*/}
-                    {/*                />*/}
-                    {/*            </div>*/}
-                    {/*        </div>*/}
-                    {/*        <div className="grid grid-cols-2 gap-4">*/}
-                    {/*            <div className="space-y-2">*/}
-                    {/*                <Label htmlFor="cvv">CVV</Label>*/}
-                    {/*                <Input*/}
-                    {/*                    id="cvv"*/}
-                    {/*                    placeholder="123"*/}
-                    {/*                    type="text"*/}
-                    {/*                />*/}
-                    {/*            </div>*/}
-                    {/*            <div className="space-y-2">*/}
-                    {/*                <Label htmlFor="cardName">Cardholder Name</Label>*/}
-                    {/*                <Input*/}
-                    {/*                    id="cardName"*/}
-                    {/*                    placeholder="John Doe"*/}
-                    {/*                    type="text"*/}
-                    {/*                />*/}
-                    {/*            </div>*/}
-                    {/*        </div>*/}
-                    {/*    </CardContent>*/}
-                    {/*</Card>*/}
                 </div>
 
                 {/* Order Summary */}
                 <div className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>Order Summary</CardTitle>
+                            <CardTitle>Deposit Summary</CardTitle>
+                            <CardDescription>
+                                Initial deposit required to secure your rental
+                            </CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             {/* Bike Details */}
                             <div className="flex space-x-4">
                                 <img
-                                    src={`images/` + bike.imageFile.split('"')[0]}
+                                    src={`${window.location.protocol}//${window.location.host}/images/` + bike.imageFile.split('"')[0]}
                                     alt={bike.displayName}
                                     className="w-20 h-20 object-cover rounded-lg"
                                 />
@@ -517,25 +520,43 @@ export default function CheckoutPage() {
 
                             {/* Pricing Breakdown */}
                             <div className="space-y-2">
-                                <div className="flex justify-between text-sm">
-                                    <span>Bike rental ({days} {days === 1 ? 'day' : 'days'})</span>
-                                    <span>${(bike.ratePerDay * days).toFixed(2)}</span>
+                                <div className="flex justify-between text-sm text-muted-foreground">
+                                    <span>Full rental price ({days} {days === 1 ? 'day' : 'days'})</span>
+                                    <span>{formatVND(fullRentalPrice)}</span>
                                 </div>
 
-                                {selectedOptions
-                                    .filter(option => option.selected)
-                                    .map(option => (
-                                        <div key={option.id} className="flex justify-between text-sm">
-                                            <span>{option.name} ({days} {days === 1 ? 'day' : 'days'})</span>
-                                            <span>${(option.price * days).toFixed(2)}</span>
-                                        </div>
-                                    ))}
+                                {/* Show selected peripherals breakdown */}
+                                {peripherals.filter(p => p.isSelected && (p.ratePerDay || 0) > 0).length > 0 && (
+                                    <div className="text-xs text-muted-foreground space-y-1">
+                                        {peripherals
+                                            .filter(p => p.isSelected && (p.ratePerDay || 0) > 0)
+                                            .map(peripheral => (
+                                                <div key={peripheral.peripheralId} className="flex justify-between">
+                                                    <span>• {peripheral.name}</span>
+                                                    <span>{formatVND((peripheral.ratePerDay || 0) * days)}</span>
+                                                </div>
+                                            ))
+                                        }
+                                    </div>
+                                )}
+
+                                <div className="flex justify-between text-sm text-muted-foreground">
+                                    <span>Deposit percentage</span>
+                                    <span>{bike.upFrontPercentage}%</span>
+                                </div>
 
                                 <Separator />
 
-                                <div className="flex justify-between font-semibold">
-                                    <span>Total</span>
-                                    <span>${total.toFixed(2)}</span>
+                                <div className="flex justify-between font-semibold text-lg">
+                                    <span>Deposit Amount</span>
+                                    <span className="text-primary">{depositAmount}</span>
+                                </div>
+
+                                <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                                    <p className="text-xs text-blue-700">
+                                        <strong>Note:</strong> This is the upfront deposit ({bike.upFrontPercentage}% of total rental cost).
+                                        The remaining balance will be collected at pickup or upon rental completion.
+                                    </p>
                                 </div>
                             </div>
 
@@ -576,7 +597,7 @@ export default function CheckoutPage() {
                                 ) : (
                                     <>
                                         <CreditCard className="w-4 h-4 mr-2" />
-                                        Confirm Booking - ${total.toFixed(2)}
+                                        Pay Deposit - {depositAmount}
                                     </>
                                 )}
                             </Button>

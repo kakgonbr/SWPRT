@@ -103,7 +103,7 @@ namespace rental_services.Server.Utils
             // database to view
             // to eagerly load: user, vehicle, model (from vehicle), manufacturer (from model), payments
             CreateMap<Booking, BookingDTO>()
-                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.BookingId.ToString()))
+                .ForMember(dest => dest.Id, opt => opt.MapFrom(src => src.BookingId))
                 .ForMember(dest => dest.CustomerId, opt => opt.MapFrom(src => src.UserId))
                 .ForMember(dest => dest.BikeId, opt => opt.MapFrom(src => src.VehicleId))
                 .ForMember(dest => dest.VehicleModelId, opt => opt.MapFrom(src => src.Vehicle.ModelId))
@@ -128,7 +128,10 @@ namespace rental_services.Server.Utils
                 .ForMember(dest => dest.CustomerEmail, opt => opt.MapFrom(src => src.User.Email
                 ));
 
-            CreateMap<DriverLicense, DriverLicenseDto>();
+            CreateMap<DriverLicense, DriverLicenseDto>()
+                .ForMember(dst => dst.LicenseTypeStr, opt => opt.MapFrom(
+                    src => src.LicenseType.LicenseTypeCode
+                ));
 
             CreateMap<User, UserDto>()
                 .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role.ToLower()
@@ -140,6 +143,7 @@ namespace rental_services.Server.Utils
                 .ForMember(dest => dest.DriverLicenses, opt => opt.Ignore())
                 .ForMember(dest => dest.PhoneNumber, opt => opt.Ignore())
                 .ForMember(dest => dest.Sub, opt => opt.Ignore())
+                .ForMember(dest => dest.PasswordHash, opt => opt.Ignore())
                 .ForMember(dest => dest.CreationDate, opt => opt.Ignore());
 
             CreateMap<Banner, BannerDTO>()

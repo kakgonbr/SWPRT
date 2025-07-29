@@ -3,6 +3,8 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using rental_services.Server.Data;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.CookiePolicy;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
@@ -18,6 +20,8 @@ using System.Net;
 using rental_services.Server.Models.DTOs;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authentication.Google;
+using Microsoft.AspNetCore.DataProtection;
+using System.Threading.Tasks;
 
 namespace rental_services.Server
 {
@@ -28,7 +32,7 @@ namespace rental_services.Server
             return true;
         }
 
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
             builder.Logging.ClearProviders();
@@ -36,9 +40,16 @@ namespace rental_services.Server
             
             // Auto Mapper
             builder.Services.AddAutoMapper(typeof(Utils.DTOMapper));
-            
+
             // Schedulers
             //builder.Services.AddHostedService<Utils.FileCleanupService>();
+
+            // Case-sensitive URLs
+            builder.Services.Configure<RouteOptions>(options =>
+            {
+                options.LowercaseUrls = true; // Make URLs lowercase
+                options.LowercaseQueryStrings = true; // Make query strings
+            });
 
             // Configure forwarded headers for NGINX
             builder.Services.Configure<ForwardedHeadersOptions>(options =>
@@ -51,15 +62,13 @@ namespace rental_services.Server
             string jwtKey = Environment.GetEnvironmentVariable("JWT_KEY") ?? throw new InvalidOperationException("Environment Variable 'JWT_KEY' not found.");
             string jwtIssuer = Environment.GetEnvironmentVariable("JWT_ISSUER") ?? throw new InvalidOperationException("Environment Variable 'JWT_ISSUER' not found.");
             string jwtAudience = Environment.GetEnvironmentVariable("JWT_AUDIENCE") ?? throw new InvalidOperationException("Environment Variable 'JWT_AUDIENCE' not found.");
-            string googleClientId = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_ID") ?? throw new InvalidOperationException("Environment Variable 'GOOGLE_CLIENT_ID' not found.");
-            string googleClientSecret = Environment.GetEnvironmentVariable("GOOGLE_CLIENT_SECRET") ?? throw new InvalidOperationException("Environment Variable 'GOOGLE_CLIENT_SECRET' not found.");
             
             // Add JWT + Google Authentication
             builder.Services
                 .AddAuthentication(options =>
                 {
-                    options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
-                    options.DefaultChallengeScheme = GoogleDefaults.AuthenticationScheme;
+                    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
                 })
                 .AddJwtBearer(options =>
                 {
@@ -87,17 +96,8 @@ namespace rental_services.Server
                             return Task.CompletedTask;
                         }
                     };
-                })
-                .AddGoogle(options =>
-                {
-                    options.ClientId = googleClientId;
-                    options.ClientSecret = googleClientSecret;
-                    options.CallbackPath = "/api/auth/login/google/callback"; // Must match Google Cloud Console redirect URI
-                    options.SaveTokens = true; // Save Google tokens if needed
-                    options.Scope.Add("email"); // Request email scope
-                    options.Scope.Add("profile"); // Request profile scope
                 });
-            
+
             // Policies for API authorization
             builder.Services.AddAuthorization(options =>
             {
@@ -138,11 +138,16 @@ namespace rental_services.Server
                 .AddScoped<IReportRepository, ReportRepository>()
                 .AddScoped<IReportService, ReportService>()
                 .AddScoped<IImageService, ImageService>()
+                .AddScoped<IGoogleOAuthService, GoogleOAuthService>()
                 .AddScoped<rental_services.Server.Repositories.IFeedbackRepository, rental_services.Server.Repositories.FeedbackRepository>()
                 .AddScoped<rental_services.Server.Services.IFeedbackService, rental_services.Server.Services.FeedbackService>();
           
             builder.Services.AddHostedService<Utils.CleanupService>();
 
+            // Add HttpClient for Google OAuth
+            builder.Services.AddHttpClient();
+
+            // Add controllers and CORS policy
             builder.Services.AddControllers();
             builder.Services.AddCors(options =>
             {
@@ -170,6 +175,7 @@ namespace rental_services.Server
             // Use files
             app.UseDefaultFiles();
             app.UseStaticFiles();
+            app.UseCookiePolicy();
 
             // Use NGINX forwarded headers
             app.UseForwardedHeaders();
@@ -197,9 +203,14 @@ namespace rental_services.Server
             app.UseMiddleware<MaintenanceMiddleware>();
 
             app.MapFallbackToFile("index.html");
-            //app.UseHttpsRedirection(); // nginx handles https
             app.MapControllers();
-            
+
+            app.UseCookiePolicy(new CookiePolicyOptions()
+            {
+                MinimumSameSitePolicy = SameSiteMode.None,
+                Secure = CookieSecurePolicy.Always
+            });
+
             // Add SignalR endpoint
             app.MapHub<Controllers.Realtime.ChatHub>("/hubs/chat");
             app.MapHub<Controllers.Realtime.StaffStatisticsHub>("/hubs/staff");

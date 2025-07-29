@@ -49,7 +49,7 @@ export default function LoginPage() {
             } else {
                 toast({
                     title: "Login Failed",
-                    description: "Invalid email or password. Please try again.",
+                    description: "Invalid credentials. Please try again.",
                     variant: "destructive",
                 });
             }
@@ -57,7 +57,7 @@ export default function LoginPage() {
             console.error('Login error:', error);
             toast({
                 title: "Error",
-                description: "An error occurred during login. Please try again.",
+                description: "Invalid credentials. Please try again.",
                 variant: "destructive",
             });
         } finally {
@@ -68,7 +68,7 @@ export default function LoginPage() {
     const handleGoogleLogin = async () => {
         setIsGoogleLoading(true);
         try {
-            window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/login/google`;
+            window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/google/login`;
         } catch (error) {
             console.error('Google login error:', error)
             toast({
@@ -79,18 +79,6 @@ export default function LoginPage() {
         } finally {
             setIsGoogleLoading(false)
         }
-    }
-
-    // Demo credentials helper
-    // In auth0, it is renter@motorent.com - demo123456!
-    const fillDemoCredentials = (userType: 'renter' | 'admin' | 'staff') => {
-        const demoUsers = {
-            renter: { email: 'renter@motorent.com', password: 'demo123' },
-            admin: { email: 'admin@vroomvroom.vn', password: 'Abc@12345' },
-            staff: { email: 'staff@motorent.com', password: 'demo123' }
-        }
-
-        setFormData(demoUsers[userType])
     }
 
     return (
@@ -220,39 +208,6 @@ export default function LoginPage() {
                                 )}
                             </Button>
                         </form>
-
-                        {/* Demo Credentials */}
-                        <div className="mt-6 pt-6 border-t">
-                            <p className="text-sm text-muted-foreground text-center mb-3">
-                                Demo Credentials:
-                            </p>
-                            <div className="grid grid-cols-3 gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => fillDemoCredentials('renter')}
-                                    disabled={isLoading || isGoogleLoading}
-                                >
-                                    Renter
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => fillDemoCredentials('admin')}
-                                    disabled={isLoading || isGoogleLoading}
-                                >
-                                    Admin
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => fillDemoCredentials('staff')}
-                                    disabled={isLoading || isGoogleLoading}
-                                >
-                                    Staff
-                                </Button>
-                            </div>
-                        </div>
 
                         <div className="mt-6 text-center">
                             <p className="text-sm text-muted-foreground">

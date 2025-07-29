@@ -58,6 +58,15 @@ const getManufacturers = () => fetchList<ManufacturerDTO[]>('/api/bikes/manufact
 const getShops = () => fetchList<ShopDTO[]>('/api/bikes/shops');
 const getPeripherals = () => fetchList<PeripheralDTO[]>('/api/bikes/peripherals');
 
+const formatVND = (amount: number): string => {
+    return new Intl.NumberFormat('vi-VN', {
+        style: 'currency',
+        currency: 'VND',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+    }).format(amount);
+}
+
 export default function BikesTab() {
     const { toast } = useToast()
     const [bikes, setBikes] = useState<Bike[]>()
@@ -448,10 +457,7 @@ export default function BikesTab() {
                                                     Available: <span className="font-medium text-green-600">{nameData.availableCount}</span>
                                                 </p>
                                                 <p className="text-sm">
-                                                    Price Range: ${nameData.priceRange.min}
-                                                    {nameData.priceRange.min !== nameData.priceRange.max &&
-                                                        ` - $${nameData.priceRange.max}`
-                                                    }/day
+                                                    Price Range: {nameData.priceRange.min}{nameData.priceRange.min !== nameData.priceRange.max && ` - $${nameData.priceRange.max}`}/day
                                                 </p>
                                             </div>
                                         </div>
@@ -490,7 +496,7 @@ export default function BikesTab() {
                                             <p className="text-sm text-muted-foreground">
                                                 Quantity: <span className="font-medium">{bike.quantity || 1}</span>
                                             </p>
-                                            <p className="text-sm font-semibold">${bike.ratePerDay}/day</p>
+                                            <p className="text-sm font-semibold">{formatVND(bike.ratePerDay)}/day</p>
                                             {bike.shops && bike.shops.length > 0 && (
                                                 <p className="text-xs text-muted-foreground">
                                                     📍 {bike.shops.join(', ')}

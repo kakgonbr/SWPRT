@@ -7,7 +7,7 @@ export type BookingStatus =
     | 'Completed'
     | 'Cancelled';
 export interface Booking {
-    id: string;
+    id?: number;
     customerId: number;
     startDate: string;
     endDate: string;
@@ -24,8 +24,21 @@ export interface Booking {
     pickupLocation?: string;
     returnLocation?: string;
     paymentMethod?: string;
+    peripherals?: Peripherals[];
     notes?: string;
     deposit?: number;
     tax?: number;
     discount?: number;
+}
+
+export interface RentalStatus {
+    id?: number;
+    status: BookingStatus;
+}
+
+export interface Peripherals {
+    peripheralId: number;
+    name?: string;
+    ratePerDay?: number;
+    isSelected?: boolean;
 }

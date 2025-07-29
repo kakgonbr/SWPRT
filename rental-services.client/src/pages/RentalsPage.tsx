@@ -79,6 +79,15 @@ export default function RentalsPage() {
     //const [showReportDialog, setShowReportDialog] = useState(false)
     //const [rentalToReport, setRentalToReport] = useState<Rental | null>(null)
 
+    const formatVND = (amount: number): string => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    }
+
     useEffect(() => {
         if (loading) return
 
@@ -237,12 +246,12 @@ export default function RentalsPage() {
 
             const hoursUntilStart = differenceInHours(rentalToCancel.startDate, new Date())
             const refundPercentage = hoursUntilStart >= 24 ? 100 : hoursUntilStart >= 12 ? 50 : 0
-            const refundAmount = (rentalToCancel.totalPrice! * refundPercentage) / 100
+            //const refundAmount = (rentalToCancel.totalPrice! * refundPercentage) / 100
 
             toast({
                 title: "Rental Cancelled Successfully",
                 description: refundPercentage > 0
-                    ? `Your rental has been cancelled. You will receive a ${refundPercentage}% refund of $${refundAmount.toFixed(2)}.`
+                    ? `Your rental has been cancelled. You will receive a ${refundPercentage}% refund.`
                     : "Your rental has been cancelled. No refund is available for cancellations less than 12 hours before the start date.",
             })
 
@@ -322,7 +331,8 @@ export default function RentalsPage() {
                     </p>
                     <p className="text-sm text-foreground/80 mb-2">
                         <DollarSign className="inline w-4 h-4 mr-1.5 text-muted-foreground" />
-                        Total: ${rental.totalPrice!.toFixed(2)}
+                        {/*Total: ${rental.totalPrice!.toFixed(2)}*/}
+                        Total: {formatVND(rental.totalPrice || 0)}
                     </p>
                     {rental.peripherals.length > 0 && (
                         <p className="text-xs text-muted-foreground mt-1">
@@ -369,6 +379,7 @@ export default function RentalsPage() {
                                         } else {
                                             throw new Error("Cannot get payment URL.")
                                         }
+                                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                                     } catch (error : any) {
                                         toast({
                                             title: "Payment link request failed",
@@ -523,13 +534,13 @@ export default function RentalsPage() {
                                         <div className="text-sm text-blue-700">
                                             {(() => {
                                                 const policy = getCancellationPolicy(rentalToCancel)
-                                                const refundAmount = (rentalToCancel.totalPrice! * policy.refundPercentage) / 100
+                                                //const refundAmount = (rentalToCancel.totalPrice! * policy.refundPercentage) / 100
 
                                                 return (
                                                     <>
                                                         <p><strong>{policy.message}</strong></p>
                                                         {policy.refundPercentage > 0 && (
-                                                            <p>You will receive: ${refundAmount.toFixed(2)}</p>
+                                                            <p>You will receive:</p>
                                                         )}
                                                         <p className="mt-2 text-xs">
                                                             • 24+ hours before: 100% refund<br />

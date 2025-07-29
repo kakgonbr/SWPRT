@@ -223,7 +223,7 @@ namespace rental_services.Server.Services
             return await _vehicleModelRepository.SaveAsync() != 0;
         }
 
-        public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(DateOnly? startDate,
+        public async Task<List<Models.DTOs.VehicleModelDTO>> GetAvailableModelsAsync(int? userId, DateOnly? startDate,
             DateOnly? endDate, string? address, string? searchTerm)
         {
             if (startDate == null || endDate == null || startDate.Value > endDate.Value)
@@ -234,11 +234,11 @@ namespace rental_services.Server.Services
             List<VehicleModel> vehicleModels;
             if (string.IsNullOrEmpty(searchTerm))
             {
-                vehicleModels = await _vehicleModelRepository.GetAllEagerShopTypeAsync();
+                vehicleModels = await _vehicleModelRepository.GetAllEagerShopTypeAsync(userId);
             }
             else
             {
-                vehicleModels = await _vehicleModelRepository.GetAllEagerShopTypeAsync(searchTerm);
+                vehicleModels = await _vehicleModelRepository.GetAllEagerShopTypeAsync(userId, searchTerm);
             }
 
             var result = new List<VehicleModel>();
@@ -264,7 +264,7 @@ namespace rental_services.Server.Services
                     bool isAvailable = true;
                     foreach (var booking in vehicle.Bookings)
                     {
-                        if (!(booking.EndDate < startDate || booking.StartDate > endDate))
+                        if (!(booking.EndDate < startDate || booking.StartDate > endDate) || booking.Status == Utils.Config.BookingStatus.Upcoming || booking.Status == Utils.Config.BookingStatus.Active)
                         {
                             isAvailable = false;
                             break;

@@ -16,9 +16,9 @@ import { parseISO } from 'date-fns/parseISO'
 interface RentalApprovalDialogProps {
     isOpen: boolean
     onClose: () => void
-    selectedRental: Booking | undefined
-    onApprove: (rentalId: string) => void
-    onReject: (rentalId: string) => void
+    selectedRental?: Booking
+    onApprove: (rentalId: number) => Promise<void>
+    onReject: (rentalId: number) => Promise<void>
     isLoading: boolean
 }
 
@@ -32,7 +32,7 @@ export default function RentalApprovalDialog({
 }: RentalApprovalDialogProps) {
     const getStatusBadgeVariant = (status: BookingStatus) => {
         switch (status) {
-            case 'Awaiting Payment': return 'secondary'
+            // case 'Awaiting Payment': return 'secondary'
             case 'Confirmed': return 'default'
             case 'Upcoming': return 'default'
             case 'Active': return 'default'
@@ -213,14 +213,22 @@ export default function RentalApprovalDialog({
                         <>
                             <Button
                                 variant="destructive"
-                                onClick={() => selectedRental && onReject(selectedRental.id)}
+                                onClick={async () => {
+                                    if (selectedRental?.id) {
+                                        await onReject(selectedRental.id);
+                                    }
+                                }}
                                 disabled={isLoading}
                             >
                                 <X className="h-4 w-4 mr-2" />
                                 Reject Rental
                             </Button>
                             <Button
-                                onClick={() => selectedRental && onApprove(selectedRental.id)}
+                                onClick={async () => {
+                                    if (selectedRental?.id) {
+                                        await onApprove(selectedRental.id);
+                                    }
+                                }}
                                 disabled={isLoading}
                                 className="bg-green-600 hover:bg-green-700"
                             >

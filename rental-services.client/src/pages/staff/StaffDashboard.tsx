@@ -18,8 +18,8 @@ import ReportsManagementTab from '../../components/staff/ReportsManagementTab'
 import RentalApprovalDialog from '../../components/staff/RentalApprovalDialog'
 import {usePendingMessages} from '../../hooks/usePendingMessages'
 import {useStaffReport} from '../../contexts/StaffReportProvider';
-import {rentalAPI} from '../../lib/api'
-import {type Booking} from '../../types/booking'
+import { rentalAPI } from '../../lib/api'
+import { type Booking, type RentalStatus } from '../../types/booking'
 
 export default function StaffDashboard() {
     const navigate = useNavigate()
@@ -31,7 +31,7 @@ export default function StaffDashboard() {
     const [rentals, setRentals] = useState<Booking[]>([]);
     const needResolvedReportsCount = unresolvedCount;
     const [isApprovalDialogOpen, setIsApprovalDialogOpen] = useState(false);
-    const [selectedRental, setSelectedRental] = useState<Booking>();
+    const [selectedRental, setSelectedRental] = useState<Booking | undefined>(undefined);
     const [isApprovalLoading, setIsApprovalLoading] = useState(false);
 
     // Authentication check
@@ -50,7 +50,6 @@ export default function StaffDashboard() {
             try {
                 const rentals = await rentalAPI.getRentals();
                 setRentals(rentals);
-                console.log('Complete rental info:', JSON.stringify(rentals, null, 2));
             } catch (error) {
                 console.error(`error fetching rentals (staff page): ${error}`);
             }
@@ -92,13 +91,21 @@ export default function StaffDashboard() {
         setSelectedRental(undefined);
     }
 
-    const handleApprovalRental = async (rentalId: string) => {
+    const handleApprovalRental = async (rentalId: number) => {
         setIsApprovalLoading(true);
         try {
             //call the related api
+            const rentalStatus: RentalStatus = {
+                id: selectedRental?.id,
+                status: 'Active'
+            }
+
+            const response = await rentalAPI.updateStatus(rentalStatus);
+
+            console.log(`update status response: ${response}`);
 
             //update local state
-            setRentals(prev => prev.map(rental => rental.id === rentalId ? {
+            setRentals(prev => prev.map(rental => rental?.id === rentalId ? {
                 ...rental,
                 status: 'Active' as const
             } : rental));
@@ -120,13 +127,21 @@ export default function StaffDashboard() {
         }
     }
 
-    const handleRejectApproval = async (rentalId: string) => {
+    const handleRejectApproval = async (rentalId: number) => {
         setIsApprovalLoading(true);
         try {
             //call the related api
+            const rentalStatus: RentalStatus = {
+                id: selectedRental?.id,
+                status: 'Cancelled'
+            }
 
+            const response = await rentalAPI.updateStatus(rentalStatus);
+
+            console.log(`update status response: ${response}`);
+            
             //update local state
-            setRentals(prev => prev.map(rental => rental.id === rentalId ? {
+            setRentals(prev => prev.map(rental => rental?.id === rentalId ? {
                 ...rental,
                 status: 'Cancelled' as const
             } : rental));
@@ -193,7 +208,7 @@ export default function StaffDashboard() {
                     <RentalManagementTab
                         rentals={rentals}
                         onOpenApproval={handleOpenApproval}
-                        onRejectRental={handleCloseApproval}
+                        onRejectRental={handleRejectApproval}
                     />
                 </TabsContent>
 

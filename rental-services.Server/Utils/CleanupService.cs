@@ -4,7 +4,8 @@ namespace rental_services.Server.Utils
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<CleanupService> _logger;
-        private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
+        //private readonly TimeSpan _interval = TimeSpan.FromMinutes(5);
+        private readonly TimeSpan _interval = TimeSpan.FromSeconds(10);
 
         public CleanupService(IServiceProvider serviceProvider, ILogger<CleanupService> logger)
         {

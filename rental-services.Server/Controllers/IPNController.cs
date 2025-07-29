@@ -60,6 +60,9 @@ namespace rental_services.Server.Controllers
 
             string calculatedHash = VnpConfig.HashAllFields(fields);
 
+            bool finalPayment = txnRef.StartsWith('f');
+            int bookingId = finalPayment ? int.Parse(txnRef.Substring(1).Split("_")[0]) : int.Parse(txnRef.Split("_")[0]);
+
             bool success = false;
             if (string.Equals(calculatedHash, secureHash, StringComparison.OrdinalIgnoreCase))
             {
@@ -67,7 +70,7 @@ namespace rental_services.Server.Controllers
 
                 if (responseCode == "00")
                 {
-                    if (await _rentalService.InformPaymentSuccessAsync(int.Parse(txnRef.Split("_")[0]), (long) decimal.Truncate(paidAmount)))
+                    if (await _rentalService.InformPaymentSuccessAsync(bookingId, (long) decimal.Truncate(paidAmount), finalPayment))
                     {
                         _logger.LogInformation("Payment successful.");
                     }
@@ -75,12 +78,12 @@ namespace rental_services.Server.Controllers
                     {
                         _logger.LogWarning("Payment successful, but payment failed to proceed further, refunding");
                         // TODO: REFUNDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD
-                        await _rentalService.HandleCancelAndRefundAsync(-1, int.Parse(txnRef.Split("_")[0]));
+                        await _rentalService.HandleCancelAndRefundAsync(-1, bookingId);
                     }
                 }
                 else
                 {
-                    await _rentalService.InformPaymentFailureAsync(int.Parse(txnRef.Split("_")[0]));
+                    await _rentalService.InformPaymentFailureAsync(bookingId);
                     _logger.LogInformation("Response code is not 00");
                 }
             }

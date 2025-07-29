@@ -1,7 +1,7 @@
 ﻿//using axios to fetch data from api
 import axios from 'axios';
 import type { VehicleModelDTO } from "./types.ts";
-import type { Booking } from '../types/booking.ts';
+import type { Booking, RentalStatus } from '../types/booking.ts';
 
 const BASE_API_URL = '/api'
 
@@ -22,7 +22,7 @@ export const bikeApi = {
         return response.data;
     },
 
-    getAvailableBike: async (startDate: string, endDate: string, address?: string, searchTerm?: string): Promise<VehicleModelDTO[]> => {
+    getAvailableBike: async (startDate: string, endDate: string, address?: string, searchTerm?: string, auth?: boolean): Promise<VehicleModelDTO[]> => {
         const params: Record<string, string> = {
             startDate,
             endDate,
@@ -33,7 +33,13 @@ export const bikeApi = {
         if (searchTerm !== undefined) {
             params.searchTerm = searchTerm;
         }
-        const response = await axios.get(`${BASE_API_URL}/bikes/available`, { params: params });
+
+        if (auth == null || !auth) {
+            const response = await axios.get(`${BASE_API_URL}/bikes/available`, { params: params, method: 'GET'});
+            return response.data;
+        }
+
+        const response = await axios.get(`${BASE_API_URL}/bikes/available`, { params: params, method: 'GET', headers: {Authorization: `Bearer ${localStorage.getItem("token")}`} });
         return response.data;
     }
 };
@@ -71,6 +77,22 @@ export const rentalAPI = {
         } catch (error) {
             console.error(`Error fetching rental list: ${error}`);
             throw error;
-        }   
-    }
+        }
+    },
+
+    updateStatus: async (rentalStatus: RentalStatus): Promise<string> => {
+        try {
+            const response = await axios.post(`${BASE_API_URL}/rentals`, rentalStatus, {
+                headers: {
+                    'Content-type': 'application/json',
+                    ...getAuthHeaders()
+                }
+            });
+            return response.data;
+        } catch (error) {
+            console.error('error updating the status of the rental');
+            throw error;
+        }
+    },
+
 }

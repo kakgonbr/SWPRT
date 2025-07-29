@@ -20,6 +20,7 @@ namespace rental_services.Server.Controllers
     {
         private readonly IOcrService _ocrService;
         private readonly ILogger<OcrController> _logger;
+        DriverLicenseRepository _driverLicenseRepository = new DriverLicenseRepository(new RentalContext());
 
         public OcrController(IOcrService ocrService, ILogger<OcrController> logger)
         {
@@ -34,7 +35,7 @@ namespace rental_services.Server.Controllers
             string extractedText;
             try
             {
-                // Đọc ảnh vào memory stream thay vì lưu file
+               
                 using (var memoryStream = new MemoryStream())
                 {
                     await image.CopyToAsync(memoryStream);
@@ -52,19 +53,28 @@ namespace rental_services.Server.Controllers
             }
             catch (Exception ex)
             {
-                // _logger.LogError(ex, "Lỗi nghiêm trọng trong quá trình xử lý OCR");
-                // return StatusCode(500, $"Lỗi OCR: {ex.Message}");
+               
                 var baseException = ex.GetBaseException();
-    _logger.LogError(ex, "Lỗi nghiêm trọng trong quá trình xử lý OCR");
-    return StatusCode(500, $"Lỗi OCR: {baseException.Message}");
+                _logger.LogError(ex, "Error Ocr");
+                return StatusCode(500, $"Error OCR: {baseException.Message}");
             }
 
             var parser = new GplxParser(extractedText);
             var gplxData = parser.Parse();
+           
+
+            var licenseType = await _driverLicenseRepository.GetLicenseTypeByCodeAsync(gplxData.LicenseClass);
+
+            if (licenseType == null)
+            {
+                return BadRequest(new { message = $"License class '{gplxData.LicenseClass}' is not supported." ,
+                    extractedText
+                });
+            }
 
             return Ok(new
             {
-                message = "Xử lý OCR thành công. Vui lòng xem xét và xác nhận thông tin.",
+                message = "OCR  successful. Please review and confirm the information.",
                 extractedData = gplxData,
                 extractedText
             });
@@ -77,29 +87,29 @@ namespace rental_services.Server.Controllers
             var userIdClaim = User.FindFirstValue("VroomVroomUserId");
             if (string.IsNullOrEmpty(userIdClaim))
             {
-                return Unauthorized("Không thể xác định người dùng từ token.");
+                return Unauthorized("Can not identify user from token..");
             }
 
             try
             {
                 // Lưu dữ liệu vào database khi user confirm
                 await _ocrService.ProcessGplxDataAsync(int.Parse(userIdClaim), gplxData);
-                
+
                 return Ok(new
                 {
-                    message = "Thông tin bằng lái đã được xác nhận và lưu thành công.",
+                    message = "Driver's license information has been successfully confirmed and saved..",
                     success = true
                 });
             }
             catch (BadHttpRequestException ex)
             {
-                return BadRequest(ex.Message);
+                return BadRequest(new { message = ex.Message });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi khi lưu thông tin bằng lái");
-                return StatusCode(500, "Lỗi server khi lưu thông tin.");
+                _logger.LogError(ex, "Error saving driver's license information");
+                return StatusCode(500, "Server error while saving information.");
             }
         }
     }
-} 
+}

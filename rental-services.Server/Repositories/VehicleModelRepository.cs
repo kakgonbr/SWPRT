@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace rental_services.Server.Repositories
 {
@@ -75,7 +76,7 @@ namespace rental_services.Server.Repositories
         {
             return await _rentalContext.Vehicles.Where(v => v.ModelId == modelId).ToListAsync();
         }
-        
+
         /// <summary>
         /// return vehicle list follow the vehicle model id
         /// </summary>
@@ -89,41 +90,62 @@ namespace rental_services.Server.Repositories
                 .ToListAsync();
         }
 
-        public async Task<List<Models.VehicleModel>> GetAllEagerShopTypeAsync()
+        public async Task<List<Models.VehicleModel>> GetAllEagerShopTypeAsync(int? userId)
         {
+            //return await _rentalContext.VehicleModels
+            //.Where(vm => vm.IsAvailable)
+            //.Include(vm => vm.Vehicles)
+            //    .ThenInclude(v => v.Shop)
+            //.Include(vm => vm.Vehicles)
+            //    .ThenInclude(v => v.Bookings)
+            //.Include(vm => vm.VehicleType)
+            //.Include(vm => vm.Manufacturer)
+            //    .ToListAsync();
+
+
             return await _rentalContext.VehicleModels
-                .Where(vm => vm.IsAvailable)
-                .Include(vm => vm.Vehicles)
-                    .ThenInclude(v => v.Shop)
-                .Include(vm => vm.Vehicles)
-                    .ThenInclude(v => v.Bookings)
-                .Include(vm => vm.VehicleType)
-                .Include(vm => vm.Manufacturer)
-                .ToListAsync();
+                    .Where(vm => vm.IsAvailable && (userId == null || _rentalContext.DriverLicenses
+                        .Where(dl => dl.UserId == userId)
+                        .SelectMany(dl => dl.LicenseType.VehicleTypes)
+                        .Select(vt => vt.VehicleTypeId)
+                        .Distinct()
+                        .Contains(vm.VehicleTypeId))
+                    )
+                    .Include(vm => vm.Vehicles)
+                        .ThenInclude(v => v.Shop)
+                    .Include(vm => vm.Vehicles)
+                        .ThenInclude(v => v.Bookings)
+                    .Include(vm => vm.VehicleType)
+                    .Include(vm => vm.Manufacturer)
+                    .ToListAsync();
 
             //return null;
         }
 
-        public async Task<List<Models.VehicleModel>> GetAllEagerShopTypeAsync(string searchTerm)
+        public async Task<List<Models.VehicleModel>> GetAllEagerShopTypeAsync(int? userId, string searchTerm)
         {
             var loweredTerm = searchTerm.ToLower();
             return await _rentalContext.VehicleModels
-                .Where(vm => vm.IsAvailable &&
+                    .Where(vm => vm.IsAvailable &&
                     (
-                        vm.ModelName.ToLower().Contains(loweredTerm) ||
-                        vm.Description.ToLower().Contains(loweredTerm) ||
-                        vm.Manufacturer.ManufacturerName.ToLower().Contains(loweredTerm)
+                        vm.ModelName.Contains(loweredTerm, StringComparison.CurrentCultureIgnoreCase) ||
+                        vm.Description.Contains(loweredTerm, StringComparison.CurrentCultureIgnoreCase) ||
+                        vm.Manufacturer.ManufacturerName.Contains(loweredTerm, StringComparison.CurrentCultureIgnoreCase)
                     )
-                )
-                .Include(vm => vm.Vehicles)
-                    .ThenInclude(v => v.Shop)
-                .Include(vm => vm.Vehicles)
-                    .ThenInclude(v => v.Bookings)
-                .Include(vm => vm.VehicleType)
-                .Include(vm => vm.Manufacturer)
-                .ToListAsync();
-
-            //return null;
+                    && vm.IsAvailable && (userId == null || _rentalContext.DriverLicenses
+                        .Where(dl => dl.UserId == userId)
+                        .SelectMany(dl => dl.LicenseType.VehicleTypes)
+                        .Select(vt => vt.VehicleTypeId)
+                        .Distinct()
+                        .Contains(vm.VehicleTypeId))
+                    )
+                    .Include(vm => vm.Vehicles)
+                        .ThenInclude(v => v.Shop)
+                    .Include(vm => vm.Vehicles)
+                        .ThenInclude(v => v.Bookings)
+                    .Include(vm => vm.VehicleType)
+                    .Include(vm => vm.Manufacturer)
+                    .ToListAsync();
         }
     }
 }

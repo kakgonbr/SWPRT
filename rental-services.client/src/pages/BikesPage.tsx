@@ -1,19 +1,22 @@
 // src/pages/BikesPage.tsx
-import {useState, useMemo, useEffect} from 'react'
-import {Link, useSearchParams} from 'react-router-dom'
-import {Search, MapPin, Star} from 'lucide-react'
-import {Bike as BikeIcon} from 'lucide-react'
-import {Button} from '../components/ui/button'
-import {Input} from '../components/ui/input'
-import {Card, CardContent, CardDescription, CardHeader, CardTitle} from '../components/ui/card'
-import {Badge} from '../components/ui/badge'
-import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from '../components/ui/select'
-import type {VehicleModelDTO} from '../lib/types'
-import {bikeApi} from "../lib/api.ts";
+import { useState, useMemo, useEffect } from 'react'
+import { Link, useSearchParams } from 'react-router-dom'
+import { Search, MapPin, Star } from 'lucide-react'
+import { Bike as BikeIcon } from 'lucide-react'
+import { Button } from '../components/ui/button'
+import { Input } from '../components/ui/input'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
+import { Badge } from '../components/ui/badge'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select'
+import type { VehicleModelDTO, DriverLicenseDto } from '../lib/types'
+import { bikeApi } from "../lib/api.ts";
+
+const API = import.meta.env.VITE_API_BASE_URL;
 
 export default function BikesPage() {
     const [searchParams] = useSearchParams();
     const [searchTerm, setSearchTerm] = useState('')
+    const [driverLicenses, setDriverLicenses] = useState<DriverLicenseDto[]>([]);
     const [searchInputValue, setSearchInputValue] = useState('')
     const [selectedType, setSelectedType] = useState<string>('all')
     const [selectedLocation, setSelectedLocation] = useState<string>('all')
@@ -21,6 +24,7 @@ export default function BikesPage() {
     const [loading, setLoading] = useState(false);
     const [bikes, setBikes] = useState<VehicleModelDTO[]>([]);
     const [error, setError] = useState<string>('');
+    const [isShowingAll, setIsShowingAll] = useState<boolean>(false);
 
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
@@ -31,39 +35,115 @@ export default function BikesPage() {
     }
 
     useEffect(() => {
-        async function fetchBikeModels() {
+        async function fetchData() {
             if (!startDate || !endDate) {
                 return;
             }
 
             setLoading(true);
             try {
-                //customer must type in start date and end date to be allowed to see bike list
-                //TODO: add parameters to getAvailable method when this method updated
+                // First, fetch the driver license data
+                const licenseResponse = await fetch(`${API}/api/users/licenses`, {
+                    method: 'GET',
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}`,
+                    }
+                });
+                if (!licenseResponse.ok) {
+                    const data = await bikeApi.getAvailableBike(
+                        String(startDate),
+                        String(endDate),
+                        location || undefined,
+                        searchTerm || undefined,
+                        false
+                    );
+                    setBikes(data);
+
+                    return;
+                }
+
+                const licenses: DriverLicenseDto[] = await licenseResponse.json();
+
+                if (licenses.length === 0) {
+                    setDriverLicenses([]);
+                    setIsShowingAll(true);
+
+                    const data = await bikeApi.getAvailableBike(
+                        String(startDate),
+                        String(endDate),
+                        location || undefined,
+                        searchTerm || undefined,
+                        false
+                    );
+                    setBikes(data);
+
+                    return;
+                }
+
+                setDriverLicenses(licenses);
+
+                // Now proceed to fetch bikes
                 const data = await bikeApi.getAvailableBike(
                     String(startDate),
                     String(endDate),
                     location || undefined,
-                    searchTerm || undefined
+                    searchTerm || undefined,
+                    true
                 );
                 setBikes(data);
             } catch (error) {
-                console.error('Error fetching bikes:', error);
-                setError('Failed to load bikes. Please try again later.');
+                console.error('Error during data fetch:', error);
+                setError('Failed to load data. Please try again later.');
             } finally {
                 setLoading(false);
             }
         }
 
-        //debounce implementation to void to many api calls
+        // Debounce to avoid too many API calls
         const handler = setTimeout(() => {
-            fetchBikeModels();
+            fetchData();
         }, 500);
 
         return () => {
             clearTimeout(handler);
-        }
+        };
     }, [startDate, endDate, location, searchTerm]);
+
+
+    //useEffect(() => {
+    //    async function fetchBikeModels() {
+    //        if (!startDate || !endDate) {
+    //            return;
+    //        }
+
+    //        setLoading(true);
+    //        try {
+    //            //customer must type in start date and end date to be allowed to see bike list
+    //            //TODO: add parameters to getAvailable method when this method updated
+    //            const data = await bikeApi.getAvailableBike(
+    //                String(startDate),
+    //                String(endDate),
+    //                location || undefined,
+    //                searchTerm || undefined
+    //            );
+    //            setBikes(data);
+    //        } catch (error) {
+    //            console.error('Error fetching bikes:', error);
+    //            setError('Failed to load bikes. Please try again later.');
+    //        } finally {
+    //            setLoading(false);
+    //        }
+    //    }
+
+    //    //debounce implementation to void to many api calls
+    //    const handler = setTimeout(() => {
+    //        fetchBikeModels();
+    //    }, 500);
+
+    //    return () => {
+    //        clearTimeout(handler);
+    //    }
+    //}, [startDate, endDate, location, searchTerm]);
 
     console.log(bikes)
 
@@ -74,6 +154,15 @@ export default function BikesPage() {
     const locations = useMemo(() => {
         return Array.from(new Set(bikes.map(bike => bike.shop)))
     }, [bikes]);
+
+    const formatVND = (amount: number): string => {
+        return new Intl.NumberFormat('vi-VN', {
+            style: 'currency',
+            currency: 'VND',
+            minimumFractionDigits: 0,
+            maximumFractionDigits: 0
+        }).format(amount);
+    }
 
     // Filter and sort bikes
     const filteredBikes = useMemo(() => {
@@ -106,7 +195,7 @@ export default function BikesPage() {
         return filtered
     }, [bikes, selectedType, selectedLocation, sortBy])
 
-    const BikeCard = ({bikes}: { bikes: VehicleModelDTO }) => (
+    const BikeCard = ({ bikes }: { bikes: VehicleModelDTO }) => (
         <Card className="overflow-hidden hover:shadow-lg transition-shadow">
             <div className="aspect-video relative">
                 <img
@@ -126,19 +215,19 @@ export default function BikesPage() {
                         <CardTitle className="text-lg">{bikes.displayName}</CardTitle>
                         <CardDescription className="flex items-center mt-1">
                             <Badge variant="outline" className="mr-2">{bikes.vehicleType}</Badge>
-                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 mr-1"/>
+                            <Star className="w-3 h-3 fill-yellow-400 text-yellow-400 mr-1" />
                             {bikes.rating}
                         </CardDescription>
                     </div>
                     <div className="text-right">
-                        <p className="text-2xl font-bold text-primary">${bikes.ratePerDay}</p>
+                        <p className="text-2xl font-bold text-primary">{formatVND(bikes.ratePerDay)}</p>
                         <p className="text-sm text-muted-foreground">per day</p>
                     </div>
                 </div>
             </CardHeader>
             <CardContent>
                 <div className="flex items-center text-sm text-muted-foreground mb-3">
-                    <MapPin className="w-4 h-4 mr-1"/>
+                    <MapPin className="w-4 h-4 mr-1" />
                     {bikes.shop}
                 </div>
                 <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
@@ -151,7 +240,7 @@ export default function BikesPage() {
                             state={{
                                 rentalParams: `startDate=${startDate}&endDate=${endDate}${location ? `&location=${location}` : ''}`
                             }}>
-                            <BikeIcon className="w-4 h-4 mr-2"/>
+                            <BikeIcon className="w-4 h-4 mr-2" />
                             {bikes.isAvailable ? 'View Details' : 'Unavailable'}
                         </Link>
                     </Button>
@@ -167,13 +256,81 @@ export default function BikesPage() {
                 <p className="text-muted-foreground">
                     Find the perfect motorbike for your Vietnamese adventure
                 </p>
+                {driverLicenses.length === 0 ? (
+                    <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 px-4 py-3 rounded mt-4" role="alert">
+                        <p className="font-semibold">No driver licenses found.</p>
+                        <p>Showing all available bikes. Please add or verify your licenses before browsing available bikes.</p>
+                    </div>
+                ) : isShowingAll ? (
+                    <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 px-4 py-3 rounded mt-4" role="alert">
+                        <p className="font-semibold">Showing all bikes.</p>
+                        <p>Your licenses may not allow you to rent a bike listed here.</p>
+                        <Button
+                            variant="outline"
+                            className="mt-2"
+                            onClick={() => {
+                                setError('');
+                                setLoading(true);
+                                if (startDate && endDate) {
+                                    bikeApi.getAvailableBike(
+                                        String(startDate),
+                                        String(endDate),
+                                        location || undefined,
+                                        undefined,
+                                        true
+                                    ).then(data => {
+                                        setBikes(data);
+                                        setLoading(false);
+                                        setIsShowingAll(false);
+                                    }).catch(err => {
+                                        console.error('Error fetching bikes:', err);
+                                        setError('Failed to load bikes. Please try again later.');
+                                    });
+                                }
+                            }}
+                        >
+                            Show driver license specific
+                        </Button>
+                    </div>
+                ) : (
+                    <div className="bg-blue-100 border-l-4 border-blue-500 text-blue-700 px-4 py-3 rounded mt-4" role="alert">
+                        <p className="font-semibold">License-based filtering active.</p>
+                        <p>We are showing bikes suitable for license types: <strong>{driverLicenses?.map(l => l.licenseTypeStr).filter(Boolean).join(', ')}</strong></p>
+                        <Button
+                            variant="outline"
+                            className="mt-2"
+                            onClick={() => {
+                                setError('');
+                                setLoading(true);
+                                if (startDate && endDate) {
+                                    bikeApi.getAvailableBike(
+                                        String(startDate),
+                                        String(endDate),
+                                        location || undefined,
+                                        undefined,
+                                        false
+                                    ).then(data => {
+                                        setBikes(data);
+                                        setLoading(false);
+                                        setIsShowingAll(true);
+                                    }).catch(err => {
+                                        console.error('Error fetching bikes:', err);
+                                        setError('Failed to load bikes. Please try again later.');
+                                    });
+                                }
+                            }}
+                        >
+                            Show all
+                        </Button>
+                    </div>
+                )}
             </div>
 
             {/* Filters */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
                 <div className="relative w-full">
                     <Search
-                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4"/>
+                        className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                     <Input
                         placeholder="Search bikes..."
                         value={searchInputValue}
@@ -198,13 +355,13 @@ export default function BikesPage() {
                         size="icon"
                         className="absolute right-0 top-0 h-full"
                     >
-                        <Search className="h-4 w-4"/>
+                        <Search className="h-4 w-4" />
                     </Button>
                 </div>
 
                 <Select value={selectedType} onValueChange={setSelectedType}>
                     <SelectTrigger>
-                        <SelectValue placeholder="All Types"/>
+                        <SelectValue placeholder="All Types" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Types</SelectItem>
@@ -216,7 +373,7 @@ export default function BikesPage() {
 
                 <Select value={selectedLocation} onValueChange={setSelectedLocation}>
                     <SelectTrigger>
-                        <SelectValue placeholder="All Locations"/>
+                        <SelectValue placeholder="All Locations" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Locations</SelectItem>
@@ -228,7 +385,7 @@ export default function BikesPage() {
 
                 <Select value={sortBy} onValueChange={setSortBy}>
                     <SelectTrigger>
-                        <SelectValue placeholder="Sort by"/>
+                        <SelectValue placeholder="Sort by" />
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="name">Name A-Z</SelectItem>
@@ -262,15 +419,19 @@ export default function BikesPage() {
                         variant="outline"
                         className="mt-2"
                         onClick={() => {
+                            setLoading(true);
                             setError('');
                             if (startDate && endDate) {
                                 // Retry loading
                                 bikeApi.getAvailableBike(
                                     String(startDate),
                                     String(endDate),
-                                    location || undefined
+                                    location || undefined,
+                                    undefined,
+                                    !isShowingAll
                                 ).then(data => {
                                     setBikes(data);
+                                    setLoading(false);
                                 }).catch(err => {
                                     console.error('Error fetching bikes:', err);
                                     setError('Failed to load bikes. Please try again later.');
@@ -287,12 +448,12 @@ export default function BikesPage() {
             {filteredBikes.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredBikes.map(bike => (
-                        <BikeCard key={bike.modelId} bikes={bike}/>
+                        <BikeCard key={bike.modelId} bikes={bike} />
                     ))}
                 </div>
             ) : (
                 <div className="text-center py-12">
-                    <BikeIcon className="w-16 h-16 mx-auto text-muted-foreground mb-4"/>
+                    <BikeIcon className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
                     <h3 className="text-lg font-semibold mb-2">No bikes found</h3>
                     <p className="text-muted-foreground">
                         Try adjusting your search criteria

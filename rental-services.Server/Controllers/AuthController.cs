@@ -1,10 +1,4 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Google;
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
@@ -13,7 +7,11 @@ using rental_services.Server.Models;
 using rental_services.Server.Models.DTOs;
 using rental_services.Server.Data;
 using rental_services.Server.Services;
-using Microsoft.EntityFrameworkCore;
+using rental_services.Server.Utils;
+using System.Collections.Concurrent;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace rental_services.Server.Controllers;
 
@@ -26,15 +24,18 @@ public class AuthController : ControllerBase
     private readonly RentalContext _db;
     private readonly IUserService _userService;
     private AutoMapper.IMapper _mapper;
+    private static readonly ConcurrentDictionary<string, (string Otp, DateTime Expiry)> _otpStore = new();
+    private readonly IGoogleOAuthService _googleService;
 
     public AuthController(IOptions<JwtSettings> jwtSettings, IPasswordHasher<User> hasher, RentalContext db,
-        IUserService userService, AutoMapper.IMapper mapper)
+        IUserService userService, AutoMapper.IMapper mapper, IGoogleOAuthService googleService)
     {
         _jwtSettings = jwtSettings.Value;
         _hasher = hasher;
         _db = db;
         _userService = userService;
         _mapper = mapper ?? throw new ArgumentNullException(nameof(mapper), "Mapper cannot be null");
+        _googleService = googleService;
     }
 
     /// <summary>
@@ -66,7 +67,11 @@ public class AuthController : ControllerBase
 
         if (!Utils.Validator.Password(request.Password))
         {
-            return BadRequest(new { Message = "Password must be between 8 to 32 characters, contain a lowercase character, an uppercase character, a number and a special character at least." });
+            return BadRequest(new
+            {
+                Message =
+                    "Password must be between 8 to 32 characters, contain a lowercase character, an uppercase character, a number and a special character at least."
+            });
         }
 
         string normalizedPhoneNumber = request.PhoneNumber.Replace(" ", "");
@@ -138,6 +143,9 @@ public class AuthController : ControllerBase
         // Check against hashed password
         var mappedUser = _mapper.Map<User>(existingUser);
         mappedUser.Sub = existingUser.Sub; // for editing, changed the dto to ignore sub, do this manually
+        mappedUser.PasswordHash =
+            existingUser.PasswordHash; // for editing, changed the dto to ignore password, do this manually
+        mappedUser.CreationDate = existingUser.CreationDate;
         var verifyHashedPassword =
             _hasher.VerifyHashedPassword(mappedUser, mappedUser.PasswordHash, request.Password);
         if (verifyHashedPassword == PasswordVerificationResult.Failed)
@@ -147,7 +155,9 @@ public class AuthController : ControllerBase
         }
 
         // Generate JWT token
-        var accessToken = GenerateJwtToken(mappedUser, out var expires) ?? throw new ArgumentNullException("GenerateJwtToken(_mapper.Map<User>(mappedUser), out var expires)");
+        var accessToken = GenerateJwtToken(mappedUser, out var expires) ??
+                          throw new ArgumentNullException(
+                              "GenerateJwtToken(_mapper.Map<User>(mappedUser), out var expires)");
         var userDto = new UserDto(
             mappedUser.UserId,
             mappedUser.Email,
@@ -164,95 +174,323 @@ public class AuthController : ControllerBase
             mappedUser.DriverLicenses.Select(dl => new DriverLicenseDto(
                 dl.LicenseId,
                 dl.HolderName,
-                dl.DateOfIssue
+                dl.DateOfIssue,
+                null
                 //dl.ImageLicenseUrl
             ))
         );
         return Ok(new LoginResponse(accessToken, null, expires, userDto));
     }
     
-    
-    [HttpGet("login/google")]
-    public IActionResult GoogleLogin()
+    /// <summary>
+    /// Initiates the forgot password process by sending an OTP (One-Time Password) to the user's email address.
+    /// </summary>
+    /// <param name="request">The <see cref="ForgotPasswordRequest"/> containing the user's email address.</param>
+    /// <returns>
+    /// Returns <see cref="OkObjectResult"/> with a success message if the OTP is sent successfully.
+    /// <br/>
+    /// Returns <see cref="BadRequestObjectResult"/> with an error message if the email is invalid or not found.
+    /// <br/>
+    /// Returns <see cref="StatusCodeResult"/> with status 500 if there's an error sending the email.
+    /// </returns>
+    /// <remarks>
+    /// The OTP is valid for 10 minutes and is stored in memory. The email must be valid and exist in the system.
+    /// <br/>
+    /// Route: POST /api/auth/forgot-password
+    /// </remarks>
+    [HttpPost("forgot-password")]
+    public async Task<IActionResult> ForgotPassword([FromBody] Models.DTOs.ForgotPasswordRequest request)
     {
-        // Redirect to Google OAuth login
-        var props = new AuthenticationProperties { RedirectUri = Url.Action("GoogleCallback", "Auth") };
-        return Challenge(props, GoogleDefaults.AuthenticationScheme);
-    }
-    
-    [HttpGet("login/google/callback")]
-    public async Task<IActionResult> GoogleCallback()
-    {
-        // Authenticate the user with Google
-        var result = await HttpContext.AuthenticateAsync(GoogleDefaults.AuthenticationScheme);
-        if (!result.Succeeded)
+        if (request == null || string.IsNullOrWhiteSpace(request.Email))
         {
-            Console.WriteLine("AuthController: Google authentication failed.");
-            return BadRequest(new { Message = "Google authentication failed." });
+            return BadRequest(new { Message = "Email is required." });
         }
 
-        // Extract user info from Google
-        var claims = result.Principal.Claims;
-        var email = claims.FirstOrDefault(c => c.Type == ClaimTypes.Email)?.Value;
-        var name = claims.FirstOrDefault(c => c.Type == ClaimTypes.Name)?.Value;
-        var googleId = claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-        
-        if (string.IsNullOrEmpty(email) || string.IsNullOrEmpty(googleId))
+        if (!Utils.Validator.Email(request.Email))
         {
-            Console.WriteLine("AuthController: Unable to retrieve user information from Google.");
-            return BadRequest(new { Message = "Unable to retrieve user information from Google." });
+            return BadRequest(new { Message = "Invalid email format." });
         }
-        
-        var user = _mapper.Map<User>(_userService.GetUser(email));
+
+        var user = await _userService.GetUser(request.Email); // UserDto
         if (user == null)
         {
-            user = new User
-            {
-                Email = email,
-                FullName = name,
-                GoogleuserId = googleId,
-                Role = "User", // Default role
-                CreationDate = DateOnly.FromDateTime(DateTime.UtcNow),
-                EmailConfirmed = true, // Google verifies email
-                Sub = Guid.NewGuid().ToString(),
-                PhoneNumber = "", // Optional: Prompt user to add later
-                IsActive = true
-            };
-            try
-            {
-                _userService.CreateUser(user);
-                await _db.SaveChangesAsync();
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("AuthController: Error creating Google user: " + e.Message);
-                return BadRequest(new { Message = "Failed to create user: " + e.Message });
-            }
+            return BadRequest(new { Message = "Email not found." });
         }
-        // Generate JWT token
-        var accessToken = GenerateJwtToken(user, out var expires);
-        var userDto = new UserDto(
-            user.UserId,
-            user.Email,
-            user.PhoneNumber,
-            null,
-            user.Role,
-            user.FullName,
-            user.Address,
-            user.CreationDate,
-            user.EmailConfirmed,
-            user.DateOfBirth,
-            user.IsActive,
-            user.Sub,
-            user.DriverLicenses?.Select(dl => new DriverLicenseDto(
-                dl.LicenseId,
-                dl.HolderName,
-                dl.DateOfIssue
-            ))
-        );
-        
-        var redirectUrl = $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:3000"}/auth/login/google/callback?token={accessToken}";
-        return Redirect(redirectUrl);
+
+        // Generate OTP (6 digits)
+        var otp = new Random().Next(100000, 999999).ToString();
+        var expiry = DateTime.UtcNow.AddMinutes(10); // OTP expires in 10 minutes
+
+        // Store OTP in memory
+        _otpStore[user.Email] = (otp, expiry);
+
+        // Send OTP via email
+        try
+        {
+            var subject = "Password Reset OTP";
+            var content =
+                $"Hello {user.FullName},\n\nYour OTP for password reset is: {otp}\n\nThis OTP is valid for 10 minutes.";
+            EmailService.SendEmail(user.Email, subject, content);
+        }
+        catch (Exception e)
+        {
+            return StatusCode(500, new { Message = "Error sending OTP email: " + e.Message });
+        }
+
+        return Ok(new { Message = "An OTP has been sent to your email." });
+    }
+
+    /// <summary>
+    /// Verifies the OTP (One-Time Password) provided by the user during the password reset process.
+    /// </summary>
+    /// <param name="request">The <see cref="VerifyOtpRequest"/> containing the user's email and OTP.</param>
+    /// <returns>
+    /// Returns <see cref="OkObjectResult"/> with a success message if the OTP is valid.
+    /// <br/>
+    /// Returns <see cref="BadRequestObjectResult"/> with an error message if the OTP is invalid, expired, or not found.
+    /// </returns>
+    /// <remarks>
+    /// This endpoint validates the OTP without consuming it. The OTP remains valid until it expires or is used in the reset password process.
+    /// <br/>
+    /// Route: POST /api/auth/verify-otp
+    /// </remarks>
+    [HttpPost("verify-otp")]
+    public IActionResult VerifyOtp([FromBody] VerifyOtpRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Otp))
+        {
+            return BadRequest(new { Message = "Email and OTP are required." });
+        }
+
+        if (!_otpStore.TryGetValue(request.Email, out var otpData))
+        {
+            return BadRequest(new { Message = "No OTP found for this email." });
+        }
+
+        if (otpData.Expiry < DateTime.UtcNow)
+        {
+            _otpStore.TryRemove(request.Email, out _);
+            return BadRequest(new { Message = "OTP has expired." });
+        }
+
+        if (otpData.Otp != request.Otp)
+        {
+            return BadRequest(new { Message = "Invalid OTP." });
+        }
+
+        return Ok(new { Message = "OTP verified successfully." });
+    }
+
+    /// <summary>
+    /// Verifies the OTP (One-Time Password) provided by the user during the password reset process.
+    /// </summary>
+    /// <param name="request">The <see cref="VerifyOtpRequest"/> containing the user's email and OTP.</param>
+    /// <returns>
+    /// Returns <see cref="OkObjectResult"/> with a success message if the OTP is valid.
+    /// <br/>
+    /// Returns <see cref="BadRequestObjectResult"/> with an error message if the OTP is invalid, expired, or not found.
+    /// </returns>
+    /// <remarks>
+    /// This endpoint validates the OTP without consuming it. The OTP remains valid until it expires or is used in the reset password process.
+    /// <br/>
+    /// Route: POST /api/auth/verify-otp
+    /// </remarks>
+    [HttpPost("reset-password")]
+    public async Task<IActionResult> ResetPassword([FromBody] Models.DTOs.ResetPasswordRequest request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Otp) ||
+            string.IsNullOrWhiteSpace(request.NewPassword))
+        {
+            return BadRequest(new { Message = "Email, OTP, and new password are required." });
+        }
+
+        if (!Utils.Validator.Password(request.NewPassword))
+        {
+            return BadRequest(new
+            {
+                Message =
+                    "Password must be between 8 to 32 characters, contain a lowercase character, an uppercase character, a number and a special character at least."
+            });
+        }
+
+        if (!_otpStore.TryGetValue(request.Email, out var otpData))
+        {
+            return BadRequest(new { Message = "No OTP found for this email." });
+        }
+
+        if (otpData.Expiry < DateTime.UtcNow)
+        {
+            _otpStore.TryRemove(request.Email, out _);
+            return BadRequest(new { Message = "OTP has expired." });
+        }
+
+        if (otpData.Otp != request.Otp)
+        {
+            return BadRequest(new { Message = "Invalid OTP." });
+        }
+
+        var user = await _userService.GetUser(request.Email); // UserDto
+        var mappedUser = _mapper.Map<User>(user); // User
+        if (mappedUser == null)
+        {
+            return BadRequest(new { Message = "Email not found." });
+        }
+
+        // Update password
+        mappedUser.PasswordHash = _hasher.HashPassword(mappedUser, request.NewPassword);
+        var updatedUser = user with { PasswordHash = mappedUser.PasswordHash };
+
+        try
+        {
+            await _userService.UpdateUser(updatedUser);
+            _otpStore.TryRemove(request.Email, out _); // Clear OTP after successful reset
+        }
+        catch (Exception e)
+        {
+            return BadRequest(new { Message = "Error updating password: " + e.Message });
+        }
+
+        return Ok(new { Message = "Password has been reset successfully." });
+    }
+
+    /// <summary>
+    /// Initiates Google OAuth authentication by redirecting the user to Google's authorization server.
+    /// </summary>
+    /// <returns>
+    /// Returns <see cref="RedirectResult"/> to Google's OAuth authorization URL on success.
+    /// <br/>
+    /// Returns <see cref="RedirectResult"/> to the frontend with an error parameter if Google OAuth configuration fails.
+    /// </returns>
+    /// <remarks>
+    /// This endpoint generates the Google OAuth URL and redirects the user to Google for authentication.
+    /// <br/>
+    /// Route: GET /api/auth/google/login
+    /// </remarks>
+    [HttpGet("google/login")]
+    public IActionResult GoogleLogin()
+    {
+        try
+        {
+            var googleAuthUrl = _googleService.GenerateGoogleOAuthUrl();
+            Console.WriteLine($"AuthController: Redirecting to Google OAuth URL: {googleAuthUrl}");
+            return Redirect(googleAuthUrl);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"AuthController: Error generating Google OAuth URL: {ex.Message}");
+            var errorUrl =
+                $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=google_config_error";
+            return Redirect(errorUrl);
+        }
+    }
+
+    /// <summary>
+    /// Handles the callback from Google OAuth authentication and processes the authorization code to authenticate or create a user.
+    /// </summary>
+    /// <param name="code">The authorization code returned by Google OAuth.</param>
+    /// <param name="state">The state parameter for CSRF protection.</param>
+    /// <param name="error">Any error returned by Google OAuth.</param>
+    /// <returns>
+    /// Returns <see cref="RedirectResult"/> to the frontend with a JWT token on successful authentication.
+    /// <br/>
+    /// Returns <see cref="RedirectResult"/> to the frontend with an error parameter if authentication fails.
+    /// </returns>
+    /// <exception cref="Exception">Thrown if there's an error during user creation or token generation.</exception>
+    /// <remarks>
+    /// This endpoint exchanges the authorization code for user information, creates a new user if they don't exist,
+    /// and generates a JWT token for authentication. The user is then redirected to the frontend with the token.
+    /// <br/>
+    /// Route: GET /api/auth/google/callback
+    /// </remarks>
+    [HttpGet("google/callback")]
+    public async Task<IActionResult> GoogleCallback([FromQuery] string code, [FromQuery] string state,
+        [FromQuery] string? error)
+    {
+        try
+        {
+            Console.WriteLine(
+                $"AuthController: Google callback received - Code: {!string.IsNullOrEmpty(code)}, State: {state}, Error: {error}");
+
+            if (!string.IsNullOrEmpty(error))
+            {
+                Console.WriteLine($"AuthController: Google OAuth error: {error}");
+                var errorUrl =
+                    $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=google_oauth_error";
+                return Redirect(errorUrl);
+            }
+
+            if (string.IsNullOrEmpty(code))
+            {
+                Console.WriteLine("AuthController: No authorization code received");
+                var errorUrl =
+                    $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=missing_code";
+                return Redirect(errorUrl);
+            }
+
+            // Get user info from Google
+            var googleUserInfo = await _googleService.GetUserInfoFromCodeAsync(code);
+            Console.WriteLine(
+                $"AuthController: Google user info received - Email: {googleUserInfo.Email}, Name: {googleUserInfo.Name}");
+
+            // Check if user exists or create new user
+            var existingUserDto = await _userService.GetUser(googleUserInfo.Email);
+            var user = existingUserDto != null ? _mapper.Map<User>(existingUserDto) : null;
+
+            if (user != null)
+            {
+                // Manually map the fields that might be ignored by AutoMapper
+                user.Sub = existingUserDto.Sub;
+                user.PasswordHash = existingUserDto.PasswordHash;
+                Console.WriteLine($"AuthController: Existing user found - ID: {user.UserId}");
+            }
+            else
+            {
+                Console.WriteLine("AuthController: Creating new user");
+                user = new User
+                {
+                    Email = googleUserInfo.Email,
+                    FullName = googleUserInfo.Name,
+                    GoogleuserId = googleUserInfo.GoogleId,
+                    Role = "Customer",
+                    CreationDate = DateOnly.FromDateTime(DateTime.UtcNow),
+                    EmailConfirmed = googleUserInfo.EmailVerified,
+                    Sub = Guid.NewGuid().ToString(),
+                    PhoneNumber = string.Empty,
+                    IsActive = true
+                };
+
+                try
+                {
+                    _userService.CreateUser(user);
+                    Console.WriteLine($"AuthController: New user created - ID: {user.UserId}");
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("AuthController: Error creating Google user: " + e.Message);
+                    var errorUrl =
+                        $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=user_creation_failed";
+                    return Redirect(errorUrl);
+                }
+            }
+
+            // Generate JWT token
+            Console.WriteLine("AuthController: Generating JWT token");
+            var accessToken = GenerateJwtToken(user, out var expires);
+            Console.WriteLine($"AuthController: JWT token generated, length: {accessToken.Length}");
+
+            var redirectUrl =
+                $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login/google/callback?token={accessToken}";
+            Console.WriteLine($"AuthController: Redirecting to: {redirectUrl}");
+            return Redirect(redirectUrl);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("AuthController: Exception in GoogleCallback: " + ex.Message);
+            Console.WriteLine("AuthController: Stack trace: " + ex.StackTrace);
+            var errorUrl =
+                $"{Environment.GetEnvironmentVariable("FRONTEND_URL") ?? "http://localhost:5000"}/auth/login?error=server_error";
+            return Redirect(errorUrl);
+        }
     }
 
     /// <summary>
@@ -267,16 +505,6 @@ public class AuthController : ControllerBase
     public async Task<IActionResult> Logout([FromBody] string refreshToken)
     {
         return Ok(new { Message = "Refresh token revoked successfully." });
-    }
-    
-    /// <summary>
-    /// A
-    /// </summary>
-    [HttpPost("forgot-password")]
-    public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
-    {
-        // This endpoint is not implemented yet
-        return Ok(new { Message = "Forgot password functionality is not implemented yet." });
     }
 
     /// <summary>
@@ -295,7 +523,8 @@ public class AuthController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> Me()
     {
-        var userSub = User.FindFirst(ClaimTypes.NameIdentifier) ?? User.FindFirst("sub") ?? User.FindFirst(JwtRegisteredClaimNames.Sub);
+        var userSub = User.FindFirst(ClaimTypes.NameIdentifier) ??
+                      User.FindFirst("sub") ?? User.FindFirst(JwtRegisteredClaimNames.Sub);
         var user = await _userService.GetUserBySubAsync(userSub.Value);
         if (user == null) return NotFound(new { Message = "User not found" });
         return Ok(new UserDto(
@@ -314,7 +543,8 @@ public class AuthController : ControllerBase
             user.DriverLicenses?.Select(dl => new DriverLicenseDto(
                 dl.LicenseId,
                 dl.HolderName,
-                dl.DateOfIssue
+                dl.DateOfIssue,
+                null
             ))));
     }
 
@@ -336,7 +566,7 @@ public class AuthController : ControllerBase
         var email = user.Email ?? throw new ArgumentNullException(nameof(user.Email), "User Email cannot be null");
         var role = user.Role ?? "Customer"; // Default role if null
         var userId = user.UserId.ToString();
-        
+
         var claims = new[]
         {
             new Claim(JwtRegisteredClaimNames.Sub, sub),

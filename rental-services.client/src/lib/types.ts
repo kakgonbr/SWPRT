@@ -32,13 +32,21 @@ export interface VehicleModelDTO {
     ratePerDay: number;
     imageFile: string;
     upFrontPercentage: number; //deposit money when place a rental
-    isAvailable: boolean;   
+    isAvailable: boolean;
+    peripherals?: ServerPeripheral[];
     rating: number;
     vehicleType: string;
     shop: string;
 }
 
+export interface ServerPeripheral {
+    peripheralId: number;
+    name?: string,
+    ratePerDay?: number
+}
+
 export interface Bike {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     availableLocations: any;
     id: string
     name: string
@@ -154,4 +162,11 @@ export interface AIChatMessageDTO {
     userId: number;
     isHuman: boolean;
     content: string;
+}
+
+export interface DriverLicenseDto {
+    licenseId: string,
+    holderName?: string,
+    dateOfissue?: Date,
+    licenseTypeStr?: string
 }

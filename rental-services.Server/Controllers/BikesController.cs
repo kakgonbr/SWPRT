@@ -3,6 +3,8 @@ using rental_services.Server.Services;
 using rental_services.Server.Models.DTOs;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
+using rental_services.Server.Models;
+using System.Security.Claims;
 
 namespace rental_services.Server.Controllers;
 
@@ -14,10 +16,12 @@ namespace rental_services.Server.Controllers;
 public class BikesController : ControllerBase
 {
     private readonly IBikeService _bikeService;
+    private readonly IUserService _userService;
 
-    public BikesController(IBikeService vehicleModelService)
+    public BikesController(IBikeService vehicleModelService, IUserService userService)
     {
         _bikeService = vehicleModelService;
+        _userService = userService;
     }
 
     // GET /bikes
@@ -50,11 +54,22 @@ public class BikesController : ControllerBase
 
     // GET /bikes/available?startDate=2024-06-01&endDate=2024-06-10&address=abc&searchTerm=honda
     [HttpGet("available")]
+    [AllowAnonymous]
+    [Authorize]
     public async Task<ActionResult<List<VehicleModelDTO>>> GetAvailable(DateOnly? startDate, DateOnly? endDate, string? address = null, string? searchTerm = null)
     {
+        string? sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        User? dbUser = null;
+        int? userId = null;
+
+        if (sub is not null && (dbUser = await _userService.GetUserBySubAsync(sub)) is not null)
+        {
+            userId = dbUser.UserId;
+        }
+
         try
         {
-            var availableModels = await _bikeService.GetAvailableModelsAsync(startDate, endDate, address, searchTerm);
+            var availableModels = await _bikeService.GetAvailableModelsAsync(userId, startDate, endDate, address, searchTerm);
             if (availableModels == null)
                 return NotFound("No available models found for the given date range and address.");
             return Ok(availableModels);

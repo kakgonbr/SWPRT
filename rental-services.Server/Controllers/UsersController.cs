@@ -2,6 +2,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using rental_services.Server.Models;
 using rental_services.Server.Models.DTOs;
 using rental_services.Server.Services;
 
@@ -75,6 +77,37 @@ namespace rental_services.Server.Controllers
             {
                 return StatusCode(500, new { message = "An error occurred while changing password" });
             }
+        }
+
+        [HttpGet("licenses")]
+        [Authorize]
+        [AllowAnonymous]
+        public async Task<ActionResult<List<DriverLicenseDto>>> GetOwnLicenses()
+        {
+            string? sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            User? dbUser = null;
+
+            if (sub is null || (dbUser = await _userService.GetUserBySubAsync(sub)) is null)
+            {
+                return Ok(new List<DriverLicenseDto>());
+            }
+
+            return Ok(await _userService.GetOwnLicenses(dbUser.UserId));
+        }
+
+        [HttpDelete("licenses/{id}")]
+        [Authorize]
+        public async Task<ActionResult> DeleteLicense(string id)
+        {
+            string? sub = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            User? dbUser = null;
+
+            if (sub is null || (dbUser = await _userService.GetUserBySubAsync(sub)) is null)
+            {
+                return Unauthorized();
+            }
+
+            return await _userService.DeleteLicense(dbUser.UserId, id) ? Ok() : BadRequest();
         }
     }
 }

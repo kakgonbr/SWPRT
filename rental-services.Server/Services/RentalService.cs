@@ -1,4 +1,6 @@
-﻿using System.Globalization;
+﻿using rental_services.Server.Models;
+using rental_services.Server.Models.DTOs;
+using System.Globalization;
 
 namespace rental_services.Server.Services
 {
@@ -22,12 +24,12 @@ namespace rental_services.Server.Services
 
             public RentalTracker()
             {
-                _createdAt = DateTime.Now;
+                _createdAt = Utils.CustomDateTime.CurrentTime;
             }
 
             public RentalTracker(Models.Booking booking)
             {
-                _createdAt = DateTime.Now;
+                _createdAt = Utils.CustomDateTime.CurrentTime;
 
                 BookingId = booking.BookingId;
                 UserId = booking.UserId;
@@ -37,7 +39,7 @@ namespace rental_services.Server.Services
             {
                 get
                 {
-                    return DateTime.Now - _createdAt >= TimeSpan.FromMinutes(Utils.Config.VnpConfig.PAYMENT_TIMEOUT_MIN);
+                    return Utils.CustomDateTime.CurrentTime - _createdAt >= TimeSpan.FromMinutes(Utils.Config.VnpConfig.PAYMENT_TIMEOUT_MIN);
                 }
             }
 
@@ -78,7 +80,7 @@ namespace rental_services.Server.Services
                 {
                     UserId = rental.UserId,
                     BookingId = rental.BookingId,
-                    Amount = (long)(rental.Vehicle.Model.RatePerDay * ((double) rental.Vehicle.Model.UpFrontPercentage / 100))
+                    Amount = CalculateAmount(rental.Vehicle.Model, rental.EndDate.DayNumber - rental.StartDate.DayNumber)
                 });
             }
         }
@@ -229,6 +231,11 @@ namespace rental_services.Server.Services
             return await _bookingRepository.UpdateStatusAsync(id, status) != 0;
         }
 
+        private static long CalculateAmount(Models.VehicleModel model, long peripheralPerDay, int days = 1)
+        {
+            return (long)((model.RatePerDay + peripheralPerDay) * days * ((double)model.UpFrontPercentage / 100));
+        }
+
         public enum CreateRentalResult
         {
             CREATE_SUCCESS,
@@ -246,26 +253,44 @@ namespace rental_services.Server.Services
         /// <param name="end"></param>
         /// <param name="amount"></param>
         /// <returns></returns>
-        public async Task<CreateRentalResult> CreateRentalAsync(int userId, int modelId, DateOnly start, DateOnly end, string? pickupLocation)
+        public async Task<CreateRentalResult> CreateRentalAsync(int userId, int modelId, BookingDTO booking, string? pickupLocation)
         {
-            int vehicleId = await _bikeService.AssignAvailableVehicleAsync(modelId, start, end, pickupLocation) ?? 0;
+            _logger.LogInformation("Rental creation request for UID: {userId}, MDLID: {modelId}, STRT: {startDate}, END: {endDate}", userId, modelId, booking.StartDate, booking.EndDate);
+
+            int vehicleId = await _bikeService.AssignAvailableVehicleAsync(modelId, booking.StartDate, booking.EndDate, pickupLocation) ?? 0;
             //(await _vehicleModelRepository.GetByIdAsync(modelId))?.Vehicles?.FirstOrDefault()?.ModelId ?? 0;
 
             if (vehicleId == 0)
             {
+                _logger.LogInformation("Create rental request for: UID: {userId}, MDLID: {modelId} failed, no vehicle found.", userId, modelId);
+
                 return CreateRentalResult.CREATE_FAILURE;
             }
 
             Models.VehicleModel? model = await _vehicleModelRepository.GetByIdAsync(modelId);
 
-            if (model is null)
+            if (model is null || !model.IsAvailable)
             {
                 // cant be
+                _logger.LogInformation("Create rental request for: UID: {userId}, MDLID: {modelId} failed, no model found.", userId, modelId);
                 return CreateRentalResult.CREATE_FAILURE;
             }
 
+            long peripheralPerDay = 0;
+            if (booking.Peripherals != null)
+            {
+                foreach (var peri in booking.Peripherals)
+                {
+                    var peripheral = await _peripheralRepository.GetByIdAsync(peri.PeripheralId);
+                    if (peripheral != null)
+                    {
+                        peripheralPerDay += peripheral.RatePerDay;
+                    }
+                }
+            }
+
             // round down? idk
-            long amount = (long)(model.RatePerDay * ((double) model.UpFrontPercentage / 100));
+            long amount = CalculateAmount(model, peripheralPerDay, booking.EndDate.DayNumber - booking.StartDate.DayNumber);
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
@@ -274,16 +299,35 @@ namespace rental_services.Server.Services
                 return CreateRentalResult.ALREADY_EXIST;
             }
 
-            if (!await _bookingRepository.CanBook(userId, vehicleId, start, end))
+            if (!await _bookingRepository.CanBook(userId, vehicleId, booking.StartDate, booking.EndDate))
             {
+                _logger.LogInformation("Create rental request for: UID: {userId}, MDLID: {modelId}, VHCLID: {vehicleId} failed, cannot book.", userId, modelId, vehicleId);
                 return CreateRentalResult.CREATE_FAILURE;
             }
 
             Models.Booking newBooking = new Models.Booking()
-            { BookingId = 0, UserId = userId, VehicleId = vehicleId, StartDate = start, EndDate = end, Status = Utils.Config.BookingStatus.AwaitingPayment };
+            { BookingId = 0, UserId = userId, VehicleId = vehicleId, StartDate = booking.StartDate, EndDate = booking.EndDate, Status = Utils.Config.BookingStatus.AwaitingPayment };
 
             // would throw and end the request if database validations fail, a little rough but saves quite a bit of code, functionality wise, it is acceptable.
             await _bookingRepository.AddAsync(newBooking);
+
+            newBooking.Peripherals.Clear();
+
+            if (booking.Peripherals is not null)
+            {
+                foreach (var pDto in booking.Peripherals)
+                {
+                    var dbPeripheral = await _peripheralRepository.GetByIdAsync(pDto.PeripheralId);
+                    if (dbPeripheral is null)
+                    {
+                        continue;
+                    }
+
+                    newBooking.Peripherals.Add(dbPeripheral);
+                }
+            }
+
+            await _bookingRepository.SaveAsync();
 
             rentalTrackers.Add(new RentalTracker()
             { BookingId = newBooking.BookingId, UserId = userId, Amount = amount });
@@ -293,7 +337,7 @@ namespace rental_services.Server.Services
 
         public async Task<string?> GetPaymentLinkAsync(int userId, string userIp)
         {
-            //_logger.LogInformation("{Trackers}", rentalTrackers);
+            _logger.LogInformation("Getting payment link for : UID {userId}", userId);
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
@@ -381,7 +425,7 @@ namespace rental_services.Server.Services
         /// <param name="userId"></param>
         /// <param name="amount"></param>
         /// <returns>false if the payment should be refunded, true if otherwise</returns>
-        public async Task<bool> InformPaymentSuccessAsync(int bookingId, long amount)
+        public async Task<bool> InformPaymentSuccessAsync(int bookingId, long amount, bool finalPayment)
         {
             RentalTracker? existing;
             rentalTrackers.TryGetValue(new() { BookingId = bookingId }, out existing);
@@ -407,10 +451,12 @@ namespace rental_services.Server.Services
             {
                 return false;
             }
+            if (!finalPayment)
+            {
+                dbBooking.Status = Utils.Config.BookingStatus.Upcoming;
 
-            dbBooking.Status = Utils.Config.BookingStatus.Upcoming;
-
-            await _bookingRepository.SaveAsync();
+                await _bookingRepository.SaveAsync();
+            }
 
             DateTime paymentDate;
             if (existing.LastRef is null || !DateTime.TryParseExact(existing.LastRef.Split("_").Last(), "yyyyMMddHHmmss",
@@ -426,6 +472,13 @@ namespace rental_services.Server.Services
             try
             {
                 await _paymentRepository.AddAsync(newPayment);
+
+                if (finalPayment)
+                {
+                    dbBooking.Status = Utils.Config.BookingStatus.Completed;
+                }
+
+                await _bookingRepository.SaveAsync();
             }
             catch (Exception e) // TODO: figure out the possible exceptions
             {
@@ -485,6 +538,45 @@ namespace rental_services.Server.Services
             await _bookingRepository.DeleteAsync(bookingId);
 
             return true;
+        }
+
+        /// <summary>
+        /// Call to generate a payment link for when a booking transitions from upcoming to active or active to completed depending on the implementation
+        /// </summary>
+        /// <param name="userId"></param>
+        /// <param name="bookingId"></param>
+        /// <param name="userIp"></param>
+        /// <returns></returns>
+        public async Task<string?> GetTotalPaymentLink(int userId, int bookingId, string userIp)
+        {
+            Models.Booking? booking = await _bookingRepository.GetByIdAsync(bookingId);
+
+            if (booking is null || booking.Status != Utils.Config.BookingStatus.Completed || (userId != -1 && booking.UserId != userId))
+            {
+                _logger.LogWarning("Cannot find booking for ID {BookingId}", bookingId);
+                return null;
+            }
+
+            Models.Payment? payment = await _paymentRepository.GetByBookingIdAsync(bookingId);
+
+            if (payment is null)
+            {
+                _logger.LogWarning("Cannot find payment for booking ID {BookingId}", bookingId);
+                return null;
+            }
+
+            int totalDays = booking.EndDate.DayNumber - booking.StartDate.DayNumber;
+
+            long peripheralTotal = 0;
+
+            foreach (Peripheral p in booking.Peripherals)
+            {
+                peripheralTotal += p.RatePerDay * totalDays;
+            }
+
+            long totalAmount = totalDays * booking.Vehicle.Model.RatePerDay + peripheralTotal - payment.AmountPaid;
+
+            return VNPayService.GetLink(userIp, null, totalAmount * 100, null, string.Join("_", "f", bookingId, VNPayService.GetGmtPlus7Now().ToString("yyyyMMddHHmmss", CultureInfo.InvariantCulture)));
         }
     }
 }

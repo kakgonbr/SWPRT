@@ -107,7 +107,7 @@ export default function RentalDetailsDialog({
                             <div>
                                 <p className="text-lg font-medium">{rental.bikeName}</p>
                                 <p className="text-sm text-muted-foreground">
-                                    ${formatVND(pricePerDay)} per day
+                                    {formatVND(pricePerDay)} per day
                                 </p>
                             </div>
                         </div>
@@ -204,7 +204,7 @@ export default function RentalDetailsDialog({
                                 <div className="space-y-2">
                                     <div className="flex justify-between">
                                         <span>Price per day:</span>
-                                        <span>${formatVND(pricePerDay)}</span>
+                                        <span>{formatVND(pricePerDay)}</span>
                                     </div>
                                     <div className="flex justify-between">
                                         <span>Duration:</span>
@@ -212,31 +212,31 @@ export default function RentalDetailsDialog({
                                     </div>
                                     <div className="flex justify-between">
                                         <span>Subtotal:</span>
-                                        <span>${totalPrice}</span>
+                                        <span>{totalPrice}</span>
                                     </div>
                                     {rental.tax && (
                                         <div className="flex justify-between">
                                             <span>Tax:</span>
-                                            <span>${rental.tax.toFixed(2)}</span>
+                                            <span>{rental.tax.toFixed(2)}</span>
                                         </div>
                                     )}
                                     {rental.discount && (
                                         <div className="flex justify-between text-green-600">
                                             <span>Discount:</span>
-                                            <span>-${rental.discount.toFixed(2)}</span>
+                                            <span>-{rental.discount.toFixed(2)}</span>
                                         </div>
                                     )}
                                     {rental.deposit && (
                                         <div className="flex justify-between">
                                             <span>Security Deposit:</span>
-                                            <span>${formatVND(rental.deposit)}</span>
+                                            <span>{formatVND(rental.deposit)}</span>
                                         </div>
                                     )}
                                 </div>
                                 <div className="space-y-2">
                                     <div className="flex justify-between font-semibold text-lg">
                                         <span>Total Amount:</span>
-                                        <span>${totalPrice}</span>
+                                        <span>{totalPrice}</span>
                                     </div>
                                     {rental.paymentMethod && (
                                         <div className="flex justify-between">
