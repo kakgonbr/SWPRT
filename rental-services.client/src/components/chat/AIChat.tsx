@@ -55,7 +55,7 @@ export default function AIChat({ onBack }: { onBack: () => void }) {
                             )}
                             <div>
                                 <div
-                                    className={`p-2 rounded-lg text-sm ${msg.isHuman
+                                    className={`p-2 rounded-lg text-sm whitespace-pre-line ${msg.isHuman
                                         ? 'bg-primary text-primary-foreground'
                                         : 'bg-muted'
                                         }`}
