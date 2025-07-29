@@ -59,7 +59,7 @@ public partial class RentalContext : DbContext
     {
         modelBuilder.Entity<Banner>(entity =>
         {
-            entity.HasKey(e => e.BannerId).HasName("PK__Banners__32E86AD1E994C655");
+            entity.HasKey(e => e.BannerId).HasName("PK__Banners__32E86AD12CB78B4A");
 
             entity.Property(e => e.Background)
                 .HasMaxLength(7)
@@ -85,7 +85,7 @@ public partial class RentalContext : DbContext
 
         modelBuilder.Entity<Booking>(entity =>
         {
-            entity.HasKey(e => e.BookingId).HasName("PK__Bookings__73951AED228F1218");
+            entity.HasKey(e => e.BookingId).HasName("PK__Bookings__73951AED668D8CE9");
 
             entity.Property(e => e.Status)
                 .HasMaxLength(20)
@@ -105,7 +105,7 @@ public partial class RentalContext : DbContext
 
         modelBuilder.Entity<Chat>(entity =>
         {
-            entity.HasKey(e => e.ChatId).HasName("PK__Chats__A9FBE7C6B70CA357");
+            entity.HasKey(e => e.ChatId).HasName("PK__Chats__A9FBE7C6201DA0E3");
 
             entity.Property(e => e.OpenTime)
                 .HasDefaultValueSql("(getdate())")
@@ -132,7 +132,7 @@ public partial class RentalContext : DbContext
 
         modelBuilder.Entity<ChatMessage>(entity =>
         {
-            entity.HasKey(e => e.ChatMessageId).HasName("PK__ChatMess__9AB610358F9059A8");
+            entity.HasKey(e => e.ChatMessageId).HasName("PK__ChatMess__9AB610357629D17A");
 
             entity.Property(e => e.SendTime)
                 .HasDefaultValueSql("(getdate())")
@@ -171,7 +171,7 @@ public partial class RentalContext : DbContext
 
         modelBuilder.Entity<DriverLicenseType>(entity =>
         {
-            entity.HasKey(e => e.LicenseTypeId).HasName("PK__DriverLi__48F794F8D1D594D4");
+            entity.HasKey(e => e.LicenseTypeId).HasName("PK__DriverLi__48F794F85428B426");
 
             entity.Property(e => e.LicenseTypeCode)
                 .HasMaxLength(5)
@@ -197,7 +197,7 @@ public partial class RentalContext : DbContext
 
         modelBuilder.Entity<Feedback>(entity =>
         {
-            entity.HasKey(e => e.FeedBackId).HasName("PK__Feedback__E2CB3B8711183963");
+            entity.HasKey(e => e.FeedBackId).HasName("PK__Feedback__E2CB3B87A22A502B");
 
             entity.Property(e => e.ImagePath)
                 .HasMaxLength(256)
@@ -212,14 +212,14 @@ public partial class RentalContext : DbContext
 
         modelBuilder.Entity<Manufacturer>(entity =>
         {
-            entity.HasKey(e => e.ManufacturerId).HasName("PK__Manufact__357E5CC139043428");
+            entity.HasKey(e => e.ManufacturerId).HasName("PK__Manufact__357E5CC1B1F5B728");
 
             entity.Property(e => e.ManufacturerName).HasMaxLength(100);
         });
 
         modelBuilder.Entity<Payment>(entity =>
         {
-            entity.HasKey(e => e.PaymentId).HasName("PK__Payments__9B556A386E601709");
+            entity.HasKey(e => e.PaymentId).HasName("PK__Payments__9B556A382DDE0748");
 
             entity.Property(e => e.PaymentId)
                 .HasMaxLength(100)
@@ -236,7 +236,7 @@ public partial class RentalContext : DbContext
 
         modelBuilder.Entity<Peripheral>(entity =>
         {
-            entity.HasKey(e => e.PeripheralId).HasName("PK__Peripher__17994575D49BDE4C");
+            entity.HasKey(e => e.PeripheralId).HasName("PK__Peripher__17994575C62FEB3B");
 
             entity.Property(e => e.Name).HasMaxLength(50);
 
@@ -276,7 +276,7 @@ public partial class RentalContext : DbContext
 
         modelBuilder.Entity<Report>(entity =>
         {
-            entity.HasKey(e => e.ReportId).HasName("PK__Reports__D5BD480564F68096");
+            entity.HasKey(e => e.ReportId).HasName("PK__Reports__D5BD480527A30E03");
 
             entity.Property(e => e.ImagePath)
                 .HasMaxLength(256)
@@ -303,14 +303,14 @@ public partial class RentalContext : DbContext
 
         modelBuilder.Entity<ReportType>(entity =>
         {
-            entity.HasKey(e => e.ReportTypeId).HasName("PK__ReportTy__78CF8CE3A8131145");
+            entity.HasKey(e => e.ReportTypeId).HasName("PK__ReportTy__78CF8CE3EB4FD1BB");
 
             entity.Property(e => e.Description).HasMaxLength(100);
         });
 
         modelBuilder.Entity<Review>(entity =>
         {
-            entity.HasKey(e => e.ReviewId).HasName("PK__Reviews__74BC79CE4876D2C8");
+            entity.HasKey(e => e.ReviewId).HasName("PK__Reviews__74BC79CEE6CA9458");
 
             entity.HasOne(d => d.Model).WithMany(p => p.Reviews)
                 .HasForeignKey(d => d.ModelId)
@@ -325,7 +325,7 @@ public partial class RentalContext : DbContext
 
         modelBuilder.Entity<Shop>(entity =>
         {
-            entity.HasKey(e => e.Shopid).HasName("PK__Shops__67C453A1F0957B3A");
+            entity.HasKey(e => e.Shopid).HasName("PK__Shops__67C453A132BBD06D");
 
             entity.Property(e => e.Address).HasMaxLength(256);
             entity.Property(e => e.Status)
@@ -335,13 +335,13 @@ public partial class RentalContext : DbContext
 
         modelBuilder.Entity<User>(entity =>
         {
-            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C42A663DD");
+            entity.HasKey(e => e.UserId).HasName("PK__Users__1788CC4C35E2390A");
 
-            entity.HasIndex(e => e.PhoneNumber, "UQ__Users__85FB4E3847E9C1F9").IsUnique();
+            entity.HasIndex(e => e.PhoneNumber, "UQ__Users__85FB4E38C780B143").IsUnique();
 
-            entity.HasIndex(e => e.Email, "UQ__Users__A9D105347011C903").IsUnique();
+            entity.HasIndex(e => e.Email, "UQ__Users__A9D10534B0042D2A").IsUnique();
 
-            entity.HasIndex(e => e.Sub, "UQ__Users__CA32102AAED75EFD").IsUnique();
+            entity.HasIndex(e => e.Sub, "UQ__Users__CA32102A3895AEE1").IsUnique();
 
             entity.Property(e => e.Address).HasMaxLength(256);
             entity.Property(e => e.CreationDate).HasDefaultValueSql("(getdate())");
@@ -370,7 +370,7 @@ public partial class RentalContext : DbContext
 
         modelBuilder.Entity<Vehicle>(entity =>
         {
-            entity.HasKey(e => e.VehicleId).HasName("PK__Vehicles__476B5492C8F903E8");
+            entity.HasKey(e => e.VehicleId).HasName("PK__Vehicles__476B5492EC246875");
 
             entity.Property(e => e.Condition)
                 .HasMaxLength(100)
@@ -389,7 +389,7 @@ public partial class RentalContext : DbContext
 
         modelBuilder.Entity<VehicleModel>(entity =>
         {
-            entity.HasKey(e => e.ModelId).HasName("PK__VehicleM__E8D7A12C5D031B33");
+            entity.HasKey(e => e.ModelId).HasName("PK__VehicleM__E8D7A12C2E8D4FE1");
 
             entity.Property(e => e.ImageFile)
                 .HasMaxLength(100)
@@ -410,7 +410,7 @@ public partial class RentalContext : DbContext
 
         modelBuilder.Entity<VehicleType>(entity =>
         {
-            entity.HasKey(e => e.VehicleTypeId).HasName("PK__VehicleT__9F4496433429DB8A");
+            entity.HasKey(e => e.VehicleTypeId).HasName("PK__VehicleT__9F449643ED3EA46F");
 
             entity.Property(e => e.CylinderVolumeCm3).HasColumnName("CylinderVolume_cm3");
             entity.Property(e => e.VehicleTypeName)
