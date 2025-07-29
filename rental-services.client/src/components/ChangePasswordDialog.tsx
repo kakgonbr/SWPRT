@@ -12,13 +12,16 @@ import { Button } from '../components/ui/button'
 import { Input } from '../components/ui/input'
 import { Label } from '../components/ui/label'
 import { useToast } from '../contexts/toast-context'
+import { useAuth } from "../contexts/auth-context.tsx";
+
 interface ChangePasswordDialogProps {
     isOpen: boolean
     onClose: () => void
 }
 
 export default function ChangePasswordDialog({ isOpen, onClose }: ChangePasswordDialogProps) {
-    const { toast } = useToast()
+    const { toast } = useToast();
+    const { hasPassword, markPasswordAsSet } = useAuth();
     const [formData, setFormData] = useState({
         currentPassword: '',
         newPassword: '',
@@ -67,10 +70,12 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
         }
         let isValid = true
 
-        // Validate current password
+        // Validate current password (only required if user already has a password)
         if (!formData.currentPassword) {
-            newErrors.currentPassword = 'Current password is required'
-            isValid = false
+            if (hasPassword) {
+                newErrors.currentPassword = 'Current password is required'
+                isValid = false
+            }
         }
 
         // Validate new password
@@ -94,8 +99,8 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
             isValid = false
         }
 
-        // Check if new password is same as current
-        if (formData.currentPassword === formData.newPassword) {
+        // Check if new password is same as current (only if they have a current password)
+        if (hasPassword && formData.currentPassword === formData.newPassword) {
             newErrors.newPassword = 'New password must be different from current password'
             isValid = false
         }
@@ -130,6 +135,10 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
                     title: "Password Changed Successfully",
                     description: "Your password has been updated. Please use your new password for future logins.",
                 })
+
+                // Mark that the user now has a password
+                markPasswordAsSet();
+
                 handleClose()
             } else {
                 const errorData = await response.json()
@@ -201,49 +210,54 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <Key className="h-5 w-5" />
-                        Change Password
+                        {hasPassword ? 'Change Password' : 'Set Password'}
                     </DialogTitle>
                     <DialogDescription>
-                        Enter your current password and choose a new secure password for your account.
+                        {hasPassword
+                            ? 'Enter your current password and choose a new secure password for your account.'
+                            : 'Set a secure password for your account to ensure full access to all features.'
+                        }
                     </DialogDescription>
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Current Password */}
-                    <div className="space-y-2">
-                        <Label htmlFor="currentPassword">Current Password</Label>
-                        <div className="relative">
-                            <Input
-                                id="currentPassword"
-                                name="currentPassword"
-                                type={showPasswords.current ? 'text' : 'password'}
-                                value={formData.currentPassword}
-                                onChange={handleInputChange}
-                                placeholder="Enter your current password"
-                                className={errors.currentPassword ? 'border-red-500' : ''}
-                            />
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                                onClick={() => togglePasswordVisibility('current')}
-                            >
-                                {showPasswords.current ? (
-                                    <EyeOff className="h-4 w-4" />
-                                ) : (
-                                    <Eye className="h-4 w-4" />
-                                )}
-                            </Button>
+                    {/* Current Password - only show if user has a password */}
+                    {hasPassword && (
+                        <div className="space-y-2">
+                            <Label htmlFor="currentPassword">Current Password</Label>
+                            <div className="relative">
+                                <Input
+                                    id="currentPassword"
+                                    name="currentPassword"
+                                    type={showPasswords.current ? 'text' : 'password'}
+                                    value={formData.currentPassword}
+                                    onChange={handleInputChange}
+                                    placeholder="Enter your current password"
+                                    className={errors.currentPassword ? 'border-red-500' : ''}
+                                />
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                                    onClick={() => togglePasswordVisibility('current')}
+                                >
+                                    {showPasswords.current ? (
+                                        <EyeOff className="h-4 w-4" />
+                                    ) : (
+                                        <Eye className="h-4 w-4" />
+                                    )}
+                                </Button>
+                            </div>
+                            {errors.currentPassword && (
+                                <p className="text-sm text-red-600">{errors.currentPassword}</p>
+                            )}
                         </div>
-                        {errors.currentPassword && (
-                            <p className="text-sm text-red-600">{errors.currentPassword}</p>
-                        )}
-                    </div>
+                    )}
 
                     {/* New Password */}
                     <div className="space-y-2">
-                        <Label htmlFor="newPassword">New Password</Label>
+                        <Label htmlFor="newPassword">{hasPassword ? 'New Password' : 'Password'}</Label>
                         <div className="relative">
                             <Input
                                 id="newPassword"
@@ -251,7 +265,7 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
                                 type={showPasswords.new ? 'text' : 'password'}
                                 value={formData.newPassword}
                                 onChange={handleInputChange}
-                                placeholder="Enter your new password"
+                                placeholder={hasPassword ? "Enter your new password" : "Enter your password"}
                                 className={errors.newPassword ? 'border-red-500' : ''}
                             />
                             <Button
@@ -298,7 +312,7 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
 
                     {/* Confirm Password */}
                     <div className="space-y-2">
-                        <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                        <Label htmlFor="confirmPassword">Confirm {hasPassword ? 'New ' : ''}Password</Label>
                         <div className="relative">
                             <Input
                                 id="confirmPassword"
@@ -306,7 +320,7 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
                                 type={showPasswords.confirm ? 'text' : 'password'}
                                 value={formData.confirmPassword}
                                 onChange={handleInputChange}
-                                placeholder="Confirm your new password"
+                                placeholder={hasPassword ? "Confirm your new password" : "Confirm your password"}
                                 className={errors.confirmPassword ? 'border-red-500' : ''}
                             />
                             <Button
@@ -363,11 +377,11 @@ export default function ChangePasswordDialog({ isOpen, onClose }: ChangePassword
                         disabled={isLoading}
                     >
                         {isLoading ? (
-                            <>Changing...</>
+                            <>Processing...</>
                         ) : (
                             <>
                                 <Save className="h-4 w-4 mr-2" />
-                                Change Password
+                                {hasPassword ? 'Change Password' : 'Set Password'}
                             </>
                         )}
                     </Button>

@@ -3,6 +3,8 @@ using rental_services.Server.Models;
 using rental_services.Server.Models.DTOs;
 using rental_services.Server.Repositories;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
 
 namespace rental_services.Server.Services;
 
@@ -62,6 +64,8 @@ public class UserService : IUserService
         }
 
         _mapper.Map(user, dbUser);
+        dbUser.Sub = user.Sub;
+        dbUser.PasswordHash = user.PasswordHash;
 
         // Possible business logic/validation
         //return await _userRepository.Update(_mapper.Map<User>(user)) != 0;
@@ -80,20 +84,26 @@ public class UserService : IUserService
         {
             // Get user from database
             var user = await _userRepository.GetBySub(sub);
+            PasswordVerificationResult verificationResult;
+            var passwordHasher = new Microsoft.AspNetCore.Identity.PasswordHasher<User>();
+            
             if (user == null)
             {
                 return new ChangePasswordResponse(false, "User not found");
             }
-
-            // Verify current password
-            var passwordHasher = new Microsoft.AspNetCore.Identity.PasswordHasher<User>();
-            var verificationResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, currentPassword);
-
-            if (verificationResult == Microsoft.AspNetCore.Identity.PasswordVerificationResult.Failed)
+            if (currentPassword.IsNullOrEmpty() || currentPassword.Equals("") || currentPassword.Equals("NULL", StringComparison.OrdinalIgnoreCase))
             {
-                return new ChangePasswordResponse(false, "Current password is incorrect");
+                verificationResult = Microsoft.AspNetCore.Identity.PasswordVerificationResult.Success;
             }
-
+            else
+            {
+                // Verify current password
+                verificationResult = passwordHasher.VerifyHashedPassword(user, user.PasswordHash, currentPassword);
+                if (verificationResult == Microsoft.AspNetCore.Identity.PasswordVerificationResult.Failed)
+                {
+                    return new ChangePasswordResponse(false, "Current password is incorrect");
+                }
+            }
             if (!Utils.Validator.Password(newPassword))
             {
                 return new ChangePasswordResponse(false, "Password must be between 8 to 32 characters, contain a lowercase character, an uppercase character, a number and a special character at least.");
