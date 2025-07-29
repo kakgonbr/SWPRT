@@ -69,6 +69,9 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(({
     const [mapStyle, setMapStyle] = useState('Normal');
     const [showStyleMenu, setShowStyleMenu] = useState(false);
 
+    // Use refs for flags to prevent re-renders from affecting the logic
+    const isProgrammaticFillRef = useRef(false);
+
     const mapStyles = [
         { name: 'Normal', url: `${MAP_URL}goong_map_web.json?api_key=${MAP_KEY}` },
         { name: 'Satellite', url: `${MAP_URL}goong_satellite.json?api_key=${MAP_KEY}` },
@@ -85,14 +88,23 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(({
 
     // Exposed method to set directions from external components
     const setDirectionsFromExternal = (start: string, end: string) => {
+        // Set flag to prevent autocomplete
+        isProgrammaticFillRef.current = true;
+
         setStartLocation(start);
         setEndLocation(end);
         setShowDirections(true);
-        // Clear any existing suggestions
+
+        // Clear any existing suggestions immediately
         setStartSuggestions([]);
         setEndSuggestions([]);
         setShowStartSuggestions(false);
         setShowEndSuggestions(false);
+
+        // Reset flag after component updates
+        setTimeout(() => {
+            isProgrammaticFillRef.current = false;
+        }, 500);
     };
 
     // Expose the method via useImperativeHandle
@@ -112,7 +124,8 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(({
             center: center
         });
 
-        map.current.addControl(new mapboxgl.NavigationControl());
+        // Add navigation control and position it properly to avoid overlap
+        map.current.addControl(new mapboxgl.NavigationControl(), 'top-right');
         map.current.scrollZoom.disable();
 
         map.current.on('load', () => {
@@ -256,6 +269,11 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(({
 
     // New function for fetching autocomplete suggestions for direction inputs
     const fetchDirectionAutoComplete = async (query: string, type: 'start' | 'end') => {
+        // Don't fetch if programmatically filled
+        if (isProgrammaticFillRef.current) {
+            return;
+        }
+
         if (query.length < 2) {
             if (type === 'start') {
                 setStartSuggestions([]);
@@ -356,17 +374,27 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(({
         setSearchResults([]);
     };
 
-    // New handlers for direction suggestion clicks
+    // Handlers for direction suggestion clicks
     const handleStartSuggestionClick = (result: SearchResult) => {
+        isProgrammaticFillRef.current = true;
         setStartLocation(result.description);
         setStartSuggestions([]);
         setShowStartSuggestions(false);
+        // Reset flag after a delay
+        setTimeout(() => {
+            isProgrammaticFillRef.current = false;
+        }, 300);
     };
 
     const handleEndSuggestionClick = (result: SearchResult) => {
+        isProgrammaticFillRef.current = true;
         setEndLocation(result.description);
         setEndSuggestions([]);
         setShowEndSuggestions(false);
+        // Reset flag after a delay
+        setTimeout(() => {
+            isProgrammaticFillRef.current = false;
+        }, 300);
     };
 
     const changeMapStyle = (styleUrl: string, name: string) => {
@@ -556,6 +584,10 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(({
 
     // Effect for start location autocomplete
     useEffect(() => {
+        if (isProgrammaticFillRef.current) {
+            return; // Don't fetch autocomplete if programmatically filled
+        }
+
         const timeoutId = setTimeout(() => {
             fetchDirectionAutoComplete(startLocation, 'start');
         }, 300);
@@ -565,6 +597,10 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(({
 
     // Effect for end location autocomplete
     useEffect(() => {
+        if (isProgrammaticFillRef.current) {
+            return; // Don't fetch autocomplete if programmatically filled
+        }
+
         const timeoutId = setTimeout(() => {
             fetchDirectionAutoComplete(endLocation, 'end');
         }, 300);
@@ -622,10 +658,14 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(({
                                     onChange={(e) => setStartLocation(e.target.value)}
                                     placeholder="Start location (address or lat,lng)"
                                     className="w-60"
-                                    onFocus={() => setShowStartSuggestions(startSuggestions.length > 0)}
+                                    onFocus={() => {
+                                        if (startSuggestions.length > 0 && !isProgrammaticFillRef.current) {
+                                            setShowStartSuggestions(true);
+                                        }
+                                    }}
                                     onBlur={() => setTimeout(() => setShowStartSuggestions(false), 200)}
                                 />
-                                {showStartSuggestions && startSuggestions.length > 0 && (
+                                {showStartSuggestions && startSuggestions.length > 0 && !isProgrammaticFillRef.current && (
                                     <div className="absolute top-full left-0 right-0 bg-white border rounded-b-lg shadow-lg z-30 max-h-48 overflow-y-auto">
                                         {startSuggestions.map((result, index) => (
                                             <div
@@ -650,6 +690,7 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(({
                                     setEndSuggestions([]);
                                     setShowStartSuggestions(false);
                                     setShowEndSuggestions(false);
+                                    isProgrammaticFillRef.current = false;
                                     if (map.current && map.current.getLayer('route')) {
                                         map.current.removeLayer('route');
                                         map.current.removeSource('route');
@@ -665,10 +706,14 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(({
                                 onChange={(e) => setEndLocation(e.target.value)}
                                 placeholder="End location (address or lat,lng)"
                                 className="w-60"
-                                onFocus={() => setShowEndSuggestions(endSuggestions.length > 0)}
+                                onFocus={() => {
+                                    if (endSuggestions.length > 0 && !isProgrammaticFillRef.current) {
+                                        setShowEndSuggestions(true);
+                                    }
+                                }}
                                 onBlur={() => setTimeout(() => setShowEndSuggestions(false), 200)}
                             />
-                            {showEndSuggestions && endSuggestions.length > 0 && (
+                            {showEndSuggestions && endSuggestions.length > 0 && !isProgrammaticFillRef.current && (
                                 <div className="absolute top-full left-0 right-0 bg-white border rounded-b-lg shadow-lg z-30 max-h-48 overflow-y-auto">
                                     {endSuggestions.map((result, index) => (
                                         <div
@@ -689,18 +734,18 @@ const MapboxMap = forwardRef<MapboxMapRef, MapboxMapProps>(({
                 )}
             </div>
 
-            {/* Map Style Selector */}
-            <div className="absolute top-4 right-4 z-10">
+            {/* Map Style Selector - Positioned to avoid overlap with zoom controls */}
+            <div className="absolute bottom-4 right-4 z-10">
                 <div className="relative">
                     <Button
                         variant="outline"
                         onClick={() => setShowStyleMenu(!showStyleMenu)}
-                        className="bg-white"
+                        className="bg-white shadow-lg"
                     >
                         {mapStyle}
                     </Button>
                     {showStyleMenu && (
-                        <div className="absolute top-full right-0 mt-1 bg-white border rounded-lg shadow-lg z-20">
+                        <div className="absolute bottom-full right-0 mb-1 bg-white border rounded-lg shadow-lg z-20">
                             {mapStyles.map((style) => (
                                 <div
                                     key={style.name}
