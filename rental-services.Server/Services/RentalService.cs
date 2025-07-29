@@ -80,7 +80,7 @@ namespace rental_services.Server.Services
                 {
                     UserId = rental.UserId,
                     BookingId = rental.BookingId,
-                    Amount = CalculateAmount(rental.Vehicle.Model, rental.EndDate.DayNumber - rental.StartDate.DayNumber)
+                    Amount = CalculateAmount(rental.Vehicle.Model, 0, rental.EndDate.DayNumber - rental.StartDate.DayNumber)
                 });
             }
         }
@@ -276,21 +276,21 @@ namespace rental_services.Server.Services
                 return CreateRentalResult.CREATE_FAILURE;
             }
 
-            long peripheralPerDay = 0;
-            if (booking.Peripherals != null)
-            {
-                foreach (var peri in booking.Peripherals)
-                {
-                    var peripheral = await _peripheralRepository.GetByIdAsync(peri.PeripheralId);
-                    if (peripheral != null)
-                    {
-                        peripheralPerDay += peripheral.RatePerDay;
-                    }
-                }
-            }
+            //long peripheralPerDay = 0;
+            //if (booking.Peripherals != null)
+            //{
+            //    foreach (var peri in booking.Peripherals)
+            //    {
+            //        var peripheral = await _peripheralRepository.GetByIdAsync(peri.PeripheralId);
+            //        if (peripheral != null)
+            //        {
+            //            peripheralPerDay += peripheral.RatePerDay;
+            //        }
+            //    }
+            //}
 
             // round down? idk
-            long amount = CalculateAmount(model, peripheralPerDay, booking.EndDate.DayNumber - booking.StartDate.DayNumber);
+            long amount = CalculateAmount(model, 0, booking.EndDate.DayNumber - booking.StartDate.DayNumber);
 
             RentalTracker? existing = rentalTrackers.Where(rt => rt.UserId == userId).FirstOrDefault();
 
