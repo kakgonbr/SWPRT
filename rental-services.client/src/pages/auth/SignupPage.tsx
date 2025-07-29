@@ -33,41 +33,15 @@ export default function SignupPage() {
         }))
     }
 
-    const handleGoogleSignup = async () => {
-        setIsGoogleLoading(true)
-
+    const handleGoogleLogin = async () => {
+        setIsGoogleLoading(true);
         try {
-            // Option 1: Redirect to Google OAuth with signup intent
-            window.location.href = `${import.meta.env.VITE_API_URL}/auth/google?signup=true`
-
-            // Option 2: If using Google Sign-In library (uncomment if you prefer this approach)
-            /*
-            const response = await fetch('/api/auth/google-signup', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    // Google token would be here
-                })
-            })
-            
-            if (response.ok) {
-                const data = await response.json()
-                toast({
-                    title: "Account Created",
-                    description: "Welcome to VroomVroom! Your account has been created successfully.",
-                })
-                navigate('/')
-            } else {
-                throw new Error('Google signup failed')
-            }
-            */
+            window.location.href = `${import.meta.env.VITE_API_BASE_URL}/api/auth/google/login`;
         } catch (error) {
-            console.error('Google signup error:', error)
+            console.error('Google login error:', error)
             toast({
-                title: "Google Signup Failed",
-                description: "Unable to sign up with Google. Please try again.",
+                title: "Google Login Failed",
+                description: "Unable to sign in with Google. Please try again.",
                 variant: "destructive",
             })
         } finally {
@@ -157,7 +131,7 @@ export default function SignupPage() {
                             type="button"
                             variant="outline"
                             className="w-full mb-4"
-                            onClick={handleGoogleSignup}
+                            onClick={handleGoogleLogin}
                             disabled={isGoogleLoading || isLoading}
                         >
                             {isGoogleLoading ? (
