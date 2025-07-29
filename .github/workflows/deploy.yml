@@ -9,6 +9,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       VITE_API_BASE_URL: ${{ secrets.VPS_DOMAIN }}
+      VITE_MAPBOX_API_URL: ${{ secrets.VITE_MAPBOX_API_URL }}
+      VITE_MAPBOX_MAP_URL: ${{ secrets.VITE_MAPBOX_MAP_URL }}
+      VITE_MAPBOX_API_KEY: ${{ secrets.VITE_MAPBOX_API_KEY }}
+      VITE_MAPBOX_MAP_KEY: ${{ secrets.VITE_MAPBOX_MAP_KEY }}
+      VITE_MAPBOX_ACCESS_TOKEN: ${{ secrets.VITE_MAPBOX_ACCESS_TOKEN }}
 
     steps:
     - uses: actions/checkout@v4

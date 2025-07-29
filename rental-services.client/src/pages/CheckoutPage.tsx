@@ -321,10 +321,11 @@ export default function CheckoutPage() {
     const days = startDate && endDate ? differenceInDays(endDate, startDate) : 0
     const fullRentalPrice = calculateFullRentalPrice();
 
+
     // Calculate deposit amount instead of full rental price
     const calculateDepositAmount = () => {
         if (!startDate || !endDate || !bike) return 0
-        const depositAmount = fullRentalPrice * (bike.upFrontPercentage / 100)
+        const depositAmount = bike.ratePerDay * days * (bike.upFrontPercentage / 100)
         return depositAmount
     }
 
