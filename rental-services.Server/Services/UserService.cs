@@ -62,6 +62,8 @@ public class UserService : IUserService
         }
 
         _mapper.Map(user, dbUser);
+        //dbUser.Sub = user.Sub;
+        //dbUser.PasswordHash = user.PasswordHash;
 
         // Possible business logic/validation
         //return await _userRepository.Update(_mapper.Map<User>(user)) != 0;
