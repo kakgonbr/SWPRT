@@ -355,8 +355,10 @@ VALUES
 -- Insert into Shops (2 rows)
 INSERT INTO Shops (Address, Status)
 VALUES 
-    (N'123 Đường Lê Lợi, Quận 1, TP.HCM', 'Open'),
-    (N'456 Đường Nguyễn Huệ, Quận 1, TP.HCM', 'Open');
+    (N'40 Trần Văn Giàu, Xã Hòa Châu, Huyện Hòa Vang, Đà Nẵng', 'Open'),
+    (N'678 Trần Cao Vân, Xuân Hà, Thanh Khê, Đà Nẵng', 'Open'),
+    (N'1081 Hồng Hà, Chương Dương, Hoàn Kiếm, Hà Nội', 'Open'),
+    (N'1191 Phạm Thế Hiển, Phường 5, Quận 8, Hồ Chí Minh', 'Open');
 
 -- Insert into VehicleModels (15 rows: 5 per vehicle type)
 INSERT INTO VehicleModels (VehicleTypeId, ModelName, RatePerDay, ManufacturerId, ImageFile, Description, UpFrontPercentage, IsAvailable)

@@ -36,7 +36,7 @@ const locations = [
     {
         id: 'loc3',
         name: 'VroomVroom Hanoi Hong Ha',
-        address: '456 Hang Bac Street, Hoan Kiem District, Hanoi',
+        address: '1081 Hồng Hà, Chương Dương, Hoàn Kiếm, Hà Nội',
         city: 'Hanoi',
         phone: '+84 392 858 123',
         hours: 'Mon-Sun: 6:00 AM - 11:00 PM',
